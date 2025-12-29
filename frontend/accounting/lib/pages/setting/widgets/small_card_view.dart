@@ -6,23 +6,50 @@ class SmallCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double cardWidth = MediaQuery.of(context).size.width / 3 - 16;
+    const numInRow = 3;
+    const spacing = 12.0;
 
-    return Align(
-      alignment: AlignmentGeometry.topCenter,
-      child: SingleChildScrollView(
-        padding: EdgeInsetsGeometry.all(8),
-        child: Wrap(
-          alignment: WrapAlignment.start,
-          spacing: 12,
-          runSpacing: 12,
-          children: List.generate(dataList.length, (index) {
-            return SizedBox(
-              width: cardWidth,
-              height: 90,
-              child: Card(child: Center(child: Text(dataList[index]))),
-            );
-          }),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = (screenWidth - spacing * 4) / numInRow;
+    final gridWidth = cardWidth * numInRow + spacing * (numInRow - 1);
+
+    final rows = <List<String>>[];
+    for (int i = 0; i < dataList.length; i += numInRow) {
+      rows.add(
+        dataList.sublist(
+          i,
+          i + numInRow > dataList.length ? dataList.length : i + numInRow,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: SizedBox(
+          width: gridWidth, // 🔥 fixed grid width
+          child: Column(
+            children: rows.map((row) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: spacing),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: row.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: spacing / 3,
+                      ),
+                      child: SizedBox(
+                        width: cardWidth,
+                        height: 90,
+                        child: Card(child: Center(child: Text(item))),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );

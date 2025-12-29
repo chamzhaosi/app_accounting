@@ -9,4 +9,6 @@ class AppColors {
   static const onPressLightGray = Color.fromRGBO(163, 163, 163, 0.5);
 
   static const selectedTabBarBgColor = Color.fromRGBO(0, 38, 141, 0.8);
+
+  static const blackWithOpcity15 = Color(0x26000000);
 }
