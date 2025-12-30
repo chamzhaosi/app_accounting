@@ -1,6 +1,7 @@
 package com.accounting.accounting.common.exception;
 
 import com.accounting.accounting.common.response.ApiResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -23,7 +24,7 @@ public class GlobalExceptionHandler {
 
         ex.getBindingResult().getFieldErrors().forEach(fieldError -> fieldErrors.put(fieldError.getField(), fieldError.getDefaultMessage()));
 
-        return new ApiResponse<>(fieldErrors, 400, false, "Validation failed");
+        return new ApiResponse<>(fieldErrors, 400, false, "VALIDATION_FAILED");
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -39,12 +40,36 @@ public class GlobalExceptionHandler {
             }
         }
 
-        return new ApiResponse<>(message, 400, false, "Invalid format");
+        return new ApiResponse<>(message, 400, false, "INVALID_FORMAT");
            }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<String> handleNotFound(ResourceNotFoundException ex) {
-        return ApiResponse.fail(ex.getMessage(),404, "Not found" );
+        return ApiResponse.fail(ex.getMessage(),404, "NOT_FOUND" );
+    }
+
+    // This is DB level exception. Eg: If there are two users save same label and type under same account
+//    @ExceptionHandler(DataIntegrityViolationException.class)
+//    @ResponseStatus(HttpStatus.BAD_REQUEST)
+//    public ApiResponse<String> handleDuplicateKey(DataIntegrityViolationException ex) {
+//
+//        String msg = "Data already exists";
+//
+//        if (ex.getRootCause() != null && ex.getRootCause().getMessage() != null) {
+//            String cause = ex.getRootCause().getMessage().toLowerCase();
+//
+//            if (cause.contains("category") && cause.contains("label")) {
+//                msg = "Category label already exists under this transaction type";
+//            }
+//        }
+//
+//        return new ApiResponse<>(msg, 400, false, null);
+//    }
+
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<?> handleBadRequest(BadRequestException ex) {
+        return new ApiResponse<>(ex.getMessage(), 400, false, "EXISTS_IN_DB");
     }
 }

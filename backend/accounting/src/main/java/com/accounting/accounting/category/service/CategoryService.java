@@ -3,6 +3,7 @@ package com.accounting.accounting.category.service;
 import com.accounting.accounting.category.dto.CategoryRequest;
 import com.accounting.accounting.category.entity.Category;
 import com.accounting.accounting.category.repository.CategoryRepository;
+import com.accounting.accounting.common.exception.BadRequestException;
 import com.accounting.accounting.common.exception.ResourceNotFoundException;
 import com.accounting.accounting.transactionType.entity.TransactionType;
 import com.accounting.accounting.transactionType.repository.TransactionTypeRepository;
@@ -22,6 +23,14 @@ public class CategoryService {
 
     public Category create(CategoryRequest req){
         TransactionType type =transactionTypeRepository.findById(req.getTypeId()).orElseThrow(() -> new ResourceNotFoundException(("Invalid transaction type id")));
+
+        boolean exists = categoryRepository
+                .existsByLabelIgnoreCaseAndType_Id(req.getLabel().trim(), req.getTypeId());
+
+        if (exists) {
+            throw new BadRequestException("Category label already exists under this transaction type");
+        }
+
 
         Category ctr = new Category();
         ctr.setLabel(req.getLabel());
