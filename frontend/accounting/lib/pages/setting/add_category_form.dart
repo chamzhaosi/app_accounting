@@ -153,7 +153,12 @@ Widget labelInputField(TextEditingController controller) => TextFormField(
   autofocus: true,
   autovalidateMode: AutovalidateMode.onUserInteraction,
   validator: (v) {
-    if (v == null || v.isEmpty) return 'Label required';
+    final emptyErr = isEmptyValue(v);
+    if (emptyErr != null) return emptyErr;
+
+    final maxErr = isOverMaxLenValue(v, 20);
+    if (maxErr != null) return maxErr;
+
     return null;
   },
 );
@@ -171,7 +176,12 @@ Widget descriptionTextArea(TextEditingController controller) => TextFormField(
   ),
   autovalidateMode: AutovalidateMode.onUserInteraction,
   validator: (v) {
-    if (v == null || v.isEmpty) return 'Description required';
+    final emptyErr = isEmptyValue(v);
+    if (emptyErr != null) return emptyErr;
+
+    final maxErr = isOverMaxLenValue(v, 100);
+    if (maxErr != null) return maxErr;
+
     return null;
   },
 );
@@ -229,3 +239,15 @@ Widget saveButton(
     ),
   ),
 );
+
+String? isEmptyValue(String? v) {
+  if (v == null || v.isEmpty) return 'Description required';
+  return null;
+}
+
+String? isOverMaxLenValue(String? v, int max) {
+  if (v != null && v.trim().length > max) {
+    return 'Maximum length is $max characters';
+  }
+  return null;
+}
