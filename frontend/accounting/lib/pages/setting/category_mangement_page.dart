@@ -4,6 +4,8 @@ import 'package:accounting/cubits/common/global_toast_cubit.dart';
 import 'package:accounting/cubits/setting/category/category_cubit.dart';
 import 'package:accounting/cubits/setting/txn_type/txn_type_cubit.dart';
 import 'package:accounting/cubits/setting/txn_type/txn_type_state.dart';
+import 'package:accounting/helper/type/type_label_map.dart';
+import 'package:accounting/l10n/generated/app_localizations.dart';
 import 'package:accounting/pages/setting/add_category_form.dart';
 import 'package:accounting/pages/setting/category_tab_bar_view.dart';
 import 'package:accounting/theme/app_colors.dart';
@@ -15,6 +17,7 @@ class CategoryMangementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -35,14 +38,14 @@ class CategoryMangementPage extends StatelessWidget {
             p.isFetching != c.isFetching,
         builder: (context, state) {
           List<Tab> tabs = state.txnTypeList.map((e) {
-            return Tab(text: e.displayName);
+            return Tab(text: TypeLabelMap.fromBELabel(l10n, e.typeCode));
           }).toList();
 
           return DefaultTabController(
             length: state.txnTypeList.length,
             child: Scaffold(
               appBar: AppBar(
-                title: Text('Category Management'),
+                title: Text(l10n.category_management),
                 bottom: state.isFetching || state.txnTypeList.isEmpty
                     ? null
                     : TabBar(tabs: tabs),
@@ -50,11 +53,7 @@ class CategoryMangementPage extends StatelessWidget {
               body: state.isFetching
                   ? Center(child: CircularProgressIndicator())
                   : state.txnTypeList.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No type available at the moment. Please try again later.',
-                      ),
-                    )
+                  ? Center(child: Text(l10n.no_type_available))
                   : TabBarView(
                       children: state.txnTypeList.map((t) {
                         return CategoryTabBarView(typeId: t.id.toString());

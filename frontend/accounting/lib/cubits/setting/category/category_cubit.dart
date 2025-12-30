@@ -25,12 +25,12 @@ class CategoryCubit extends Cubit<CategoryState> {
       final list = await CategoryService.getCategoryByTypeId(typeId);
       emit(state.copyWith(categoryList: list, isFetching: false));
     } catch (e, stack) {
-      globalErrorCubit.show(e.toString(), stack);
+      globalErrorCubit.show(e, stack);
       emit(state.copyWith(isFetching: false));
     }
   }
 
-  Future<void> addNewCategoryWithType(
+  Future<bool> addNewCategoryWithType(
     AddCategoryReq category,
     bool isRefetch,
   ) async {
@@ -40,8 +40,11 @@ class CategoryCubit extends Cubit<CategoryState> {
       globalToastCubit.show('Save successfully');
 
       if (isRefetch) getCategoryByTypeId(category.typeId.toString());
+
+      return true;
     } catch (e, stack) {
-      globalErrorCubit.show(e.toString(), stack);
+      globalErrorCubit.show(e, stack);
+      return false;
     } finally {
       globalLoadingCubit.hide();
     }

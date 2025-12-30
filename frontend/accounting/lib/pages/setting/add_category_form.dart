@@ -2,6 +2,8 @@ import 'package:accounting/cubits/setting/category/category_cubit.dart';
 import 'package:accounting/cubits/setting/category/category_state.dart';
 import 'package:accounting/cubits/setting/txn_type/txn_type_cubit.dart';
 import 'package:accounting/cubits/setting/txn_type/txn_type_state.dart';
+import 'package:accounting/helper/type/type_label_map.dart';
+import 'package:accounting/l10n/generated/app_localizations.dart';
 import 'package:accounting/models/setting/category/category_model.dart';
 import 'package:accounting/models/setting/txn_type/txn_type_model.dart';
 import 'package:accounting/theme/app_colors.dart';
@@ -30,12 +32,20 @@ class _AddCategoryFormState extends State<AddCategoryForm> {
   }
 
   @override
+  void dispose() {
+    labelCtrl.dispose();
+    descCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final CategoryCubit categoryCubit = context.read<CategoryCubit>();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Add Category')),
+      appBar: AppBar(title: Text(l10n.add_category)),
       body: BlocBuilder<CategoryCubit, CategoryState>(
         buildWhen: (previous, current) => previous.isSaving != current.isSaving,
         builder: (context, state) {
@@ -53,6 +63,7 @@ class _AddCategoryFormState extends State<AddCategoryForm> {
                         child: BlocBuilder<TxnTypeCubit, TxnTypeState>(
                           builder: (context, state) {
                             return typeDropdownField(
+                              context,
                               selectedTypeId,
                               state.txnTypeList,
                               (value) {
@@ -66,10 +77,10 @@ class _AddCategoryFormState extends State<AddCategoryForm> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(child: labelInputField(labelCtrl)),
+                      Expanded(child: labelInputField(context, labelCtrl)),
                     ],
                   ),
-                  descriptionTextArea(descCtrl),
+                  descriptionTextArea(context, descCtrl),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -116,20 +127,22 @@ class _AddCategoryFormState extends State<AddCategoryForm> {
 }
 
 Widget typeDropdownField(
+  BuildContext context,
   String value,
   List<TxnType> options,
   void Function(String? v) onChange,
 ) {
+  final l10n = AppLocalizations.of(context)!;
   return DropdownButtonFormField2<String>(
     value: value,
-    decoration: const InputDecoration(
-      labelText: 'Type',
+    decoration: InputDecoration(
+      labelText: l10n.type,
       border: OutlineInputBorder(),
     ),
     items: options.map((e) {
       return DropdownMenuItem<String>(
         value: e.id.toString(),
-        child: Text(e.displayName),
+        child: Text(TypeLabelMap.fromBELabel(l10n, e.typeCode)),
       );
     }).toList(),
     onChanged: onChange,
@@ -137,54 +150,64 @@ Widget typeDropdownField(
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
     ),
     validator: (v) {
-      if (v == null || v.isEmpty) return 'Type required';
+      final emptyErr = isEmptyValue(context, v, l10n.type);
+      if (emptyErr != null) return emptyErr;
       return null;
     },
   );
 }
 
-Widget labelInputField(TextEditingController controller) => TextFormField(
-  controller: controller,
-  decoration: InputDecoration(
-    labelText: 'Label',
-    hintText: 'Please enter label',
-    border: OutlineInputBorder(),
-  ),
-  autofocus: true,
-  autovalidateMode: AutovalidateMode.onUserInteraction,
-  validator: (v) {
-    final emptyErr = isEmptyValue(v);
-    if (emptyErr != null) return emptyErr;
+Widget labelInputField(BuildContext context, TextEditingController controller) {
+  final l10n = AppLocalizations.of(context)!;
+  return TextFormField(
+    controller: controller,
+    decoration: InputDecoration(
+      labelText: l10n.label,
+      hintText: l10n.enter_field(l10n.label),
+      border: OutlineInputBorder(),
+    ),
+    autofocus: true,
+    autovalidateMode: AutovalidateMode.onUserInteraction,
+    validator: (v) {
+      final emptyErr = isEmptyValue(context, v, l10n.label);
+      if (emptyErr != null) return emptyErr;
 
-    final maxErr = isOverMaxLenValue(v, 20);
-    if (maxErr != null) return maxErr;
+      final maxErr = isOverMaxLenValue(context, v, 20);
+      if (maxErr != null) return maxErr;
 
-    return null;
-  },
-);
+      return null;
+    },
+  );
+}
 
-Widget descriptionTextArea(TextEditingController controller) => TextFormField(
-  controller: controller,
-  maxLines: 4, // how tall it is
-  minLines: 3, // optional
-  keyboardType: TextInputType.multiline,
-  decoration: const InputDecoration(
-    labelText: 'Description',
-    hintText: 'Please enter description',
-    border: OutlineInputBorder(),
-    alignLabelWithHint: true, // keeps label at top
-  ),
-  autovalidateMode: AutovalidateMode.onUserInteraction,
-  validator: (v) {
-    final emptyErr = isEmptyValue(v);
-    if (emptyErr != null) return emptyErr;
+Widget descriptionTextArea(
+  BuildContext context,
+  TextEditingController controller,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  return TextFormField(
+    controller: controller,
+    maxLines: 4, // how tall it is
+    minLines: 3, // optional
+    keyboardType: TextInputType.multiline,
+    decoration: InputDecoration(
+      labelText: l10n.description,
+      hintText: l10n.enter_field(l10n.description),
+      border: OutlineInputBorder(),
+      alignLabelWithHint: true, // keeps label at top
+    ),
+    autovalidateMode: AutovalidateMode.onUserInteraction,
+    validator: (v) {
+      final emptyErr = isEmptyValue(context, v, l10n.description);
+      if (emptyErr != null) return emptyErr;
 
-    final maxErr = isOverMaxLenValue(v, 100);
-    if (maxErr != null) return maxErr;
+      final maxErr = isOverMaxLenValue(context, v, 100);
+      if (maxErr != null) return maxErr;
 
-    return null;
-  },
-);
+      return null;
+    },
+  );
+}
 
 Widget saveButton(
   BuildContext context,
@@ -195,59 +218,69 @@ Widget saveButton(
   TextEditingController descCtrl,
   String selectedTypeId,
   bool isRefetch,
-) => ElevatedButton(
-  onPressed: () async {
-    if (formKey.currentState!.validate()) {
-      final req = AddCategoryReq(
-        typeId: int.parse(selectedTypeId),
-        label: labelCtrl.text.trim(),
-        description: descCtrl.text.trim(),
-      );
+) {
+  final l10n = AppLocalizations.of(context)!;
+  return ElevatedButton(
+    onPressed: () async {
+      if (formKey.currentState!.validate()) {
+        final req = AddCategoryReq(
+          typeId: int.parse(selectedTypeId),
+          label: labelCtrl.text.trim(),
+          description: descCtrl.text.trim(),
+        );
 
-      await categoryCubit.addNewCategoryWithType(req, isRefetch);
+        bool isSuccess = await categoryCubit.addNewCategoryWithType(
+          req,
+          isRefetch,
+        );
 
-      if (isAddAnother) {
-        formKey.currentState!.reset();
-      } else {
-        if (context.mounted) Navigator.pop(context);
+        if (!isSuccess) return;
+
+        if (isAddAnother) {
+          formKey.currentState!.reset();
+        } else {
+          if (context.mounted) Navigator.pop(context);
+        }
       }
-    }
-    return;
-  },
-  style: isAddAnother
-      ? ButtonStyle(
-          backgroundColor: WidgetStateProperty.all(AppColors.primary),
-          overlayColor: WidgetStateProperty.resolveWith<Color>((states) {
-            if (states.contains(WidgetState.pressed)) {
-              return AppColors.onPressLightGray;
-            }
-            return Colors.transparent;
-          }),
-          shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+      return;
+    },
+    style: isAddAnother
+        ? ButtonStyle(
+            backgroundColor: WidgetStateProperty.all(AppColors.primary),
+            overlayColor: WidgetStateProperty.resolveWith<Color>((states) {
+              if (states.contains(WidgetState.pressed)) {
+                return AppColors.onPressLightGray;
+              }
+              return Colors.transparent;
+            }),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            ),
+          )
+        : ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5.0),
+            ),
           ),
-        )
-      : ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5.0),
-          ),
-        ),
-  child: Center(
-    child: Text(
-      isAddAnother ? 'Save & Add Another' : 'Save',
-      style: isAddAnother ? TextStyle(color: AppColors.white) : null,
+    child: Center(
+      child: Text(
+        isAddAnother ? l10n.save_and_add_another : l10n.save,
+        style: isAddAnother ? TextStyle(color: AppColors.white) : null,
+      ),
     ),
-  ),
-);
+  );
+}
 
-String? isEmptyValue(String? v) {
-  if (v == null || v.isEmpty) return 'Description required';
+String? isEmptyValue(BuildContext context, String? v, String field) {
+  if (v == null || v.isEmpty) {
+    return AppLocalizations.of(context)!.field_required(field);
+  }
   return null;
 }
 
-String? isOverMaxLenValue(String? v, int max) {
+String? isOverMaxLenValue(BuildContext context, String? v, int max) {
   if (v != null && v.trim().length > max) {
-    return 'Maximum length is $max characters';
+    return AppLocalizations.of(context)!.max_length_error(max);
   }
   return null;
 }

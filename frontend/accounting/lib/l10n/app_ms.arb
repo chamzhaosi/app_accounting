@@ -1,0 +1,35 @@
+{
+  "category_exists_in_db": "Kategori ini sudah wujud.",
+  "error_unknown": "Ralat tidak dijangka berlaku.",
+  "no_found_page": "Halaman tidak dijumpai",
+  "add_category": "Tambah Kategori",
+  "setting": "Tetapan",
+  "category_management": "Pengurusan Kategori",
+  "no_category_available": "Tiada kategori. Sila tambah satu untuk bermula.",
+  "no_type_available": "Tiada jenis tersedia buat masa ini. Sila cuba lagi kemudian.",
+  "type": "Jenis",
+  "label": "Label",
+  "description": "Penerangan",
+  "enter_field": "Sila masukkan {field}",
+  "@enter_field": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "save": "Simpan",
+  "save_and_add_another": "Simpan & Tambah Lagi",
+  "max_length_error": "Panjang maksimum ialah {max} aksara",
+  "@max_length_error": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "field_required": "{field} diperlukan",
+  "@field_required": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "income": "Pendapatan",
+  "expense": "Perbelanjaan"
+}

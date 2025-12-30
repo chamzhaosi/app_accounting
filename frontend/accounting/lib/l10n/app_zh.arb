@@ -1,0 +1,35 @@
+{
+  "category_exists_in_db": "该分类已存在。",
+  "error_unknown": "发生未知错误。",
+  "no_found_page": "找不到页面",
+  "add_category": "新增分类",
+  "setting": "设置",
+  "category_management": "分类管理",
+  "no_category_available": "暂无分类，请先新增一个。",
+  "no_type_available": "当前没有可用类型，请稍后再试。",
+  "type": "类型",
+  "label": "名称",
+  "description": "描述",
+  "enter_field": "请输入{field}",
+  "@enter_field": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "save": "保存",
+  "save_and_add_another": "保存并继续新增",
+  "max_length_error": "最多只能输入 {max} 个字符",
+  "@max_length_error": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "field_required": "{field}为必填项",
+  "@field_required": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "income": "收入",
+  "expense": "支出"
+}

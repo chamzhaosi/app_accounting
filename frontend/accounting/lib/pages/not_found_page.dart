@@ -1,3 +1,4 @@
+import 'package:accounting/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class Notfoundpage extends StatelessWidget {
@@ -5,6 +6,7 @@ class Notfoundpage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('No found page'));
+    final l10n = AppLocalizations.of(context)!;
+    return Center(child: Text(l10n.no_found_page));
   }
 }

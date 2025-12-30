@@ -15,10 +15,16 @@ class TypeService {
       );
 
       if (!apiRes.success) {
-        throw Exception(apiRes.message ?? 'Unknown error');
+        if (apiRes.fieldErrors != null) {
+          throw Exception(apiRes.fieldErrors!.values.join(", "));
+        } else {
+          throw Exception(
+            apiRes.errorText ?? apiRes.message ?? 'Unknown error',
+          );
+        }
       }
 
-      return apiRes.data;
+      return apiRes.data ?? [];
     } else {
       throw Exception('Failed to load transaction type');
     }

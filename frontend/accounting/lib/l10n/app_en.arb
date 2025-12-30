@@ -1,0 +1,35 @@
+{
+  "category_exists_in_db": "This category already exists.",
+  "error_unknown": "An unexpected error occurred.",
+  "no_found_page": "Page not found",
+  "add_category": "Add Category",
+  "setting": "Setting",
+  "category_management": "Category Management",
+  "no_category_available": "No categories available. Please add one to get started.",
+  "no_type_available": "No types available at the moment. Please try again later.",
+  "type": "Type",
+  "label": "Label",
+  "description": "Description",
+  "enter_field": "Please enter {field}",
+  "@enter_field": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "save": "Save",
+  "save_and_add_another": "Save & Add Another",
+  "max_length_error": "Maximum length is {max} characters",
+  "@max_length_error": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "field_required": "{field} is required",
+  "@field_required": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "income": "Income",
+  "expense": "Expense"
+}

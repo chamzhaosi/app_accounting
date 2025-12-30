@@ -4,6 +4,7 @@ import 'package:accounting/cubits/common/global_toast_cubit.dart';
 import 'package:accounting/global_error_listener.dart';
 import 'package:accounting/global_loading_overlay.dart';
 import 'package:accounting/global_toast_listener.dart';
+import 'package:accounting/l10n/generated/app_localizations.dart';
 import 'package:accounting/routes/app_routes.dart';
 import 'package:accounting/routes/route_names.dart';
 import 'package:accounting/theme/app_theme.dart';
@@ -31,6 +32,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: Locale('zh'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       navigatorKey: appNavigatorKey,
       themeMode: ThemeMode.system,
       theme: AppTheme.lightTheme,

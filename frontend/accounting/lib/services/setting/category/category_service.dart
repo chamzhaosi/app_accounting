@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:accounting/exceptions/api_exception.dart';
+import 'package:accounting/helper/category/category_error_key_map.dart';
 import 'package:accounting/models/setting/category/category_model.dart';
 import 'package:accounting/services/api_response.dart';
 import 'package:accounting/services/app_api.dart';
@@ -19,10 +21,16 @@ class CategoryService {
       );
 
       if (!apiRes.success) {
-        throw Exception(apiRes.message ?? 'Unknow error');
+        if (apiRes.fieldErrors != null) {
+          throw Exception(apiRes.fieldErrors!.values.join(", "));
+        } else {
+          throw Exception(
+            apiRes.errorText ?? apiRes.message ?? 'Unknown error',
+          );
+        }
       }
 
-      return apiRes.data;
+      return apiRes.data ?? [];
     } else {
       throw Exception('Failed to load category by type id');
     }
@@ -36,7 +44,17 @@ class CategoryService {
     );
 
     if (res.statusCode != 200 && res.statusCode != 201) {
-      throw Exception('Failed to create category');
+      final body = jsonDecode(res.body);
+      final apiRes = ApiResponse<Category>.fromJson(body);
+
+      if (apiRes.fieldErrors != null) {
+        throw ApiException(message: apiRes.fieldErrors!.values.join(","));
+      } else {
+        throw ApiException<CategoryErrorKey>(
+          beErrCode: CategoryErrorKeyMap.messageFromCode(apiRes.message),
+          message: apiRes.errorText ?? 'Unknown error',
+        );
+      }
     }
   }
 }
