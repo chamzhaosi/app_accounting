@@ -19,8 +19,8 @@ public class TransactionType {
     @Column(name = "display_name", nullable = false)
     private String displayName;
 
-    @Column(nullable = false)
-    private Boolean active;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -50,7 +50,7 @@ public class TransactionType {
     }
 
     public Boolean getActive() {
-        return active;
+        return isActive;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -9,12 +9,14 @@ public class CategoryRequest {
     @Size(max= 50, message = "labek must not exceed 50 characters")
     private String label;
 
-    @NotBlank(message = "description is required")
     @Size(max= 100, message = "description must not exceed 100 characters")
     private String description;
 
     @NotNull(message = "type_id is required")
     private Long typeId;
+
+    @NotNull(message = "isActive is required")
+    private Boolean isActive;
 
     public String getLabel() {
         return label;
@@ -39,4 +41,14 @@ public class CategoryRequest {
     public void setTypeId(Long typeId) {
         this.typeId = typeId;
     }
+
+    public boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+
 }

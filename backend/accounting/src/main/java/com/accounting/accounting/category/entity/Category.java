@@ -7,7 +7,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-
 @Entity
 @Table(
     name = "categories",
@@ -26,12 +25,19 @@ public class Category {
     @JoinColumn(name = "type_id", referencedColumnName = "id")
     private TransactionType type;
 
+    @Column(name="is_active", nullable = false)
+    private Boolean isActive = true;
+
     @CreationTimestamp
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public Long getId() {
+        return id;
+    }
 
     public String getLabel() {
         return label;
@@ -41,12 +47,16 @@ public class Category {
         return description;
     }
 
-//    public TransactionType getType() {
-//        return type;
-//    }
-
     public String getType() {
         return type.getTypeCode();
+    }
+
+    public Boolean getActive() {
+        return isActive;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setLabel(String label) {
@@ -59,5 +69,9 @@ public class Category {
 
     public void setType(TransactionType type) {
         this.type = type;
+    }
+
+    public void setActive(Boolean active) {
+        isActive = active;
     }
 }
