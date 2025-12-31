@@ -1,7 +1,7 @@
 import 'package:accounting/cubits/setting/category/category_cubit.dart';
 import 'package:accounting/cubits/setting/category/category_state.dart';
 import 'package:accounting/l10n/generated/app_localizations.dart';
-import 'package:accounting/pages/setting/widgets/small_card_view.dart';
+import 'package:accounting/pages/setting/widgets/small_card_info_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -46,8 +46,15 @@ class _CategoryTabBarViewState extends State<CategoryTabBarView> {
           return Center(child: Text(l10n.no_category_available));
         }
 
-        return SmallCardView(
-          dataList: state.categoryList.map((c) => c.label).toList(),
+        return SmallCardInfoView(
+          dataList: state.categoryList
+              .map(
+                (c) => SmallCardInfo(
+                  label: c.label,
+                  info: c.description!.isEmpty ? null : c.description,
+                ),
+              )
+              .toList(),
         );
       },
     );

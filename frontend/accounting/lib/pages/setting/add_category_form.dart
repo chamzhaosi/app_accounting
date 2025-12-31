@@ -198,9 +198,6 @@ Widget descriptionTextArea(
     ),
     autovalidateMode: AutovalidateMode.onUserInteraction,
     validator: (v) {
-      final emptyErr = isEmptyValue(context, v, l10n.description);
-      if (emptyErr != null) return emptyErr;
-
       final maxErr = isOverMaxLenValue(context, v, 100);
       if (maxErr != null) return maxErr;
 

@@ -7,8 +7,10 @@ class AppColors {
   static const black = Color(0xFF000000);
 
   static const onPressLightGray = Color.fromRGBO(163, 163, 163, 0.5);
+  static const onPressLightBlue = Color.fromRGBO(45, 154, 243, 0.25);
 
   static const selectedTabBarBgColor = Color.fromRGBO(0, 38, 141, 0.8);
 
   static const blackWithOpcity15 = Color(0x26000000);
+  static const primaryWithOpcity50 = Color.fromRGBO(63, 88, 135, 0.50);
 }
