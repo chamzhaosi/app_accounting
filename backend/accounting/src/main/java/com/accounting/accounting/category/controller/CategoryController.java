@@ -28,40 +28,21 @@ public class CategoryController {
     }
 
     @GetMapping("/{typeId}")
-    public ApiResponsePagination<CategoryResponse> getByTypeId (@PathVariable Long typeId, @RequestParam(defaultValue = "1") int page,
+    public ApiResponsePagination<CategoryResponse> find (@PathVariable Long typeId,
+                                                                @RequestParam(defaultValue = "") String param,
+                                                                @RequestParam(required = false) Boolean  active,
+                                                                @RequestParam(defaultValue = "1") int page,
                                                                 @RequestParam(defaultValue = "10") int size,
                                                                 @RequestParam(defaultValue = "id,desc") String sort
                                                            ) {
 
-        Page<@NonNull Category> result = service.findAllByTypeId(typeId, page, size, sort);
-        return Common.toApiResponsePage(result, CategoryResponse::from);
-    }
-
-    @GetMapping("/search/{typeId}")
-    public ApiResponsePagination<CategoryResponse> search (@PathVariable Long typeId, @RequestParam(defaultValue = "") String param,
-                                                           @RequestParam(defaultValue = "1") int page,
-                                                           @RequestParam(defaultValue = "10") int size,
-                                                           @RequestParam(defaultValue = "id,desc") String sort
-                                                           ){
-
-        Page<@NonNull Category> result = service.findAllByTypeIdWithParams(typeId, param, page, size, sort);
-        return Common.toApiResponsePage(result, CategoryResponse::from);
-    }
-
-    @GetMapping("/active/{typeId}")
-    public ApiResponsePagination<CategoryResponse> getActiveByTypeId (@PathVariable Long typeId, @RequestParam(defaultValue = "") String param,
-                                                           @RequestParam(defaultValue = "1") int page,
-                                                           @RequestParam(defaultValue = "10") int size,
-                                                           @RequestParam(defaultValue = "id,desc") String sort
-    ){
-
-        Page<@NonNull Category> result = service.findAllByTypeIdWithActive(typeId, page, size, sort);
+        Page<@NonNull Category> result = service.find(typeId, param, active ,page, size, sort);
         return Common.toApiResponsePage(result, CategoryResponse::from);
     }
 
     @PutMapping("/{categoryId}")
-    public ApiResponse<Category> updateCategoryById (@PathVariable Long categoryId, @Valid @RequestBody CategoryRequest request){
-        Category updatedCategory = service.updateById(categoryId, request);
+    public ApiResponse<Category> update (@PathVariable Long categoryId, @Valid @RequestBody CategoryRequest request){
+        Category updatedCategory = service.update(categoryId, request);
         return  ApiResponse.success(updatedCategory, "Update successfully");
     }
 

@@ -31,5 +31,10 @@
     }
   },
   "income": "收入",
-  "expense": "支出"
+  "expense": "支出",
+  "active": "启用",
+  "inactive": "停用",
+  "search": "搜索",
+  "update": "更新",
+  "noMoreData": "-- 没有更多数据了 --"
 }

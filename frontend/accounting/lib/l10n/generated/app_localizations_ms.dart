@@ -69,4 +69,19 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get expense => 'Perbelanjaan';
+
+  @override
+  String get active => 'Aktif';
+
+  @override
+  String get inactive => 'Tidak Aktif';
+
+  @override
+  String get search => 'Cari';
+
+  @override
+  String get update => 'Kemaskini';
+
+  @override
+  String get noMoreData => '-- Tiada lagi data --';
 }

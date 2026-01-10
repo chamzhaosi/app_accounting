@@ -14,4 +14,10 @@ public interface CategoryRepository extends JpaRepository<@NonNull Category, @No
 
     boolean existsByLabelIgnoreCaseAndType_Id(String label, Long typeId);
 
+    boolean existsByLabelIgnoreCaseAndType_IdAndIdNot(
+            String label,
+            Long typeId,
+            Long id
+    );
+
 }

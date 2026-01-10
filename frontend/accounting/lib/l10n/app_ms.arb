@@ -31,5 +31,10 @@
     }
   },
   "income": "Pendapatan",
-  "expense": "Perbelanjaan"
+  "expense": "Perbelanjaan",
+  "active": "Aktif",
+  "inactive": "Tidak Aktif",
+  "search": "Cari",
+  "update": "Kemaskini",
+  "noMoreData": "-- Tiada lagi data --"
 }

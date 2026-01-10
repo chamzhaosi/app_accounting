@@ -11,23 +11,39 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class AddCategoryForm extends StatefulWidget {
-  final String initialTypeId;
+enum FormType { create, edit }
 
-  const AddCategoryForm({super.key, required this.initialTypeId});
+class CategoryForm extends StatefulWidget {
+  final String? initialTypeId;
+  final Category? category;
+
+  const CategoryForm({super.key, this.initialTypeId, this.category});
 
   @override
-  State<AddCategoryForm> createState() => _AddCategoryFormState();
+  State<CategoryForm> createState() => _CategoryFormState();
 }
 
-class _AddCategoryFormState extends State<AddCategoryForm> {
+class _CategoryFormState extends State<CategoryForm> {
   final labelCtrl = TextEditingController();
   final descCtrl = TextEditingController();
   late String selectedTypeId;
+  late bool isActive;
+  final _labelFocus = FocusNode();
 
   @override
   void initState() {
-    selectedTypeId = widget.initialTypeId;
+    selectedTypeId = widget.initialTypeId ?? widget.category?.typeId ?? "0";
+    isActive = widget.category?.active ?? true;
+
+    if (widget.category != null) {
+      labelCtrl.text = widget.category!.label;
+      descCtrl.text = widget.category!.description ?? '';
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _labelFocus.requestFocus(); // focus only ONCE when page opens
+    });
+
     super.initState();
   }
 
@@ -35,6 +51,7 @@ class _AddCategoryFormState extends State<AddCategoryForm> {
   void dispose() {
     labelCtrl.dispose();
     descCtrl.dispose();
+    _labelFocus.dispose();
     super.dispose();
   }
 
@@ -43,6 +60,9 @@ class _AddCategoryFormState extends State<AddCategoryForm> {
     final formKey = GlobalKey<FormState>();
     final CategoryCubit categoryCubit = context.read<CategoryCubit>();
     final l10n = AppLocalizations.of(context)!;
+    final FormType formType = widget.category != null
+        ? FormType.edit
+        : FormType.create;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.add_category)),
@@ -77,45 +97,68 @@ class _AddCategoryFormState extends State<AddCategoryForm> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(child: labelInputField(context, labelCtrl)),
+                      Expanded(
+                        child: labelInputField(context, labelCtrl, _labelFocus),
+                      ),
                     ],
                   ),
                   descriptionTextArea(context, descCtrl),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: saveButton(
+                  ...formType == FormType.create
+                      ? [
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 1,
+                                  child: saveButton(
+                                    context,
+                                    true,
+                                    formKey,
+                                    categoryCubit,
+                                    labelCtrl,
+                                    descCtrl,
+                                    selectedTypeId,
+                                    widget.initialTypeId == selectedTypeId,
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  flex: 1,
+                                  child: saveButton(
+                                    context,
+                                    false,
+                                    formKey,
+                                    categoryCubit,
+                                    labelCtrl,
+                                    descCtrl,
+                                    selectedTypeId,
+                                    widget.initialTypeId == selectedTypeId,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ]
+                      : [
+                          activeCheckbox(context, isActive, (bool? value) {
+                            setState(() {
+                              isActive = value ?? false;
+                            });
+                            FocusManager.instance.primaryFocus?.unfocus();
+                          }),
+                          updateButton(
                             context,
-                            true,
                             formKey,
                             categoryCubit,
+                            widget.category!.id!,
                             labelCtrl,
                             descCtrl,
                             selectedTypeId,
-                            widget.initialTypeId == selectedTypeId,
+                            isActive,
                           ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          flex: 1,
-                          child: saveButton(
-                            context,
-                            false,
-                            formKey,
-                            categoryCubit,
-                            labelCtrl,
-                            descCtrl,
-                            selectedTypeId,
-                            widget.initialTypeId == selectedTypeId,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                        ],
                 ],
               ),
             ),
@@ -157,7 +200,11 @@ Widget typeDropdownField(
   );
 }
 
-Widget labelInputField(BuildContext context, TextEditingController controller) {
+Widget labelInputField(
+  BuildContext context,
+  TextEditingController controller,
+  FocusNode labelFocus,
+) {
   final l10n = AppLocalizations.of(context)!;
   return TextFormField(
     controller: controller,
@@ -166,7 +213,7 @@ Widget labelInputField(BuildContext context, TextEditingController controller) {
       hintText: l10n.enter_field(l10n.label),
       border: OutlineInputBorder(),
     ),
-    autofocus: true,
+    focusNode: labelFocus,
     autovalidateMode: AutovalidateMode.onUserInteraction,
     validator: (v) {
       final emptyErr = isEmptyValue(context, v, l10n.label);
@@ -237,6 +284,7 @@ Widget saveButton(
           formKey.currentState!.reset();
         } else {
           if (context.mounted) Navigator.pop(context);
+          FocusManager.instance.primaryFocus?.unfocus();
         }
       }
       return;
@@ -265,6 +313,66 @@ Widget saveButton(
         style: isAddAnother ? TextStyle(color: AppColors.white) : null,
       ),
     ),
+  );
+}
+
+Widget activeCheckbox(
+  BuildContext context,
+  bool isActive,
+  void Function(bool? v) onChange,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  return CheckboxListTile(
+    title: Text(l10n.active),
+    value: isActive,
+    onChanged: onChange,
+    controlAffinity: ListTileControlAffinity.leading,
+  );
+}
+
+Widget updateButton(
+  BuildContext context,
+  GlobalKey<FormState> formKey,
+  CategoryCubit categoryCubit,
+  int categoryId,
+  TextEditingController labelCtrl,
+  TextEditingController descCtrl,
+  String selectedTypeId,
+  bool isActive,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  return Row(
+    children: [
+      Expanded(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5.0),
+            ),
+          ),
+          onPressed: () async {
+            if (formKey.currentState!.validate()) {
+              FocusManager.instance.primaryFocus?.unfocus();
+              final req = UpdCategoryReg(
+                id: categoryId,
+                typeId: int.parse(selectedTypeId),
+                label: labelCtrl.text.trim(),
+                description: descCtrl.text.trim(),
+                isActive: isActive,
+              );
+
+              bool isSuccess = await categoryCubit.updCategory(req);
+
+              if (!isSuccess) return;
+
+              if (context.mounted) Navigator.pop(context);
+            }
+            return;
+          },
+          child: Text(l10n.update),
+        ),
+      ),
+    ],
   );
 }
 

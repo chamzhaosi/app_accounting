@@ -5,6 +5,7 @@ class AppColors {
   static const secondary = Color(0xFFFF9800);
   static const white = Color(0xffffffff);
   static const black = Color(0xFF000000);
+  static const dangerous = Color.fromARGB(214, 255, 167, 167);
 
   static const onPressLightGray = Color.fromRGBO(163, 163, 163, 0.5);
   static const onPressLightBlue = Color.fromRGBO(45, 154, 243, 0.25);

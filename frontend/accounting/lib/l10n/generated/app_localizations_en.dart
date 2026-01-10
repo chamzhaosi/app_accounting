@@ -69,4 +69,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expense => 'Expense';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get inactive => 'Inactive';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get update => 'Update';
+
+  @override
+  String get noMoreData => '-- No more data --';
 }

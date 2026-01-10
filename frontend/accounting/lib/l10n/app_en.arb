@@ -31,5 +31,10 @@
     }
   },
   "income": "Income",
-  "expense": "Expense"
+  "expense": "Expense",
+  "active": "Active",
+  "inactive": "Inactive",
+  "search": "Search",
+  "update": "Update",
+  "noMoreData": "-- No more data --"
 }

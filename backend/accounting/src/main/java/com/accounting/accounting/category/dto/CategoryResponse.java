@@ -6,14 +6,16 @@ public class CategoryResponse {
     private Long id;
     private String label;
     private String description;
-    private String type;
+    private String typeId;
+    private Boolean active;
 
     public static CategoryResponse from(Category category){
         CategoryResponse dto = new CategoryResponse();
         dto.setId(category.getId());
         dto.setLabel(category.getLabel());
         dto.setDescription(category.getDescription());
-        dto.setType(category.getType());
+        dto.setTypeId((category.getType()));
+        dto.setActive(category.getActive());
 
         return dto;
     }
@@ -31,8 +33,12 @@ public class CategoryResponse {
         this.id = id;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setTypeId(String typeId) {
+        this.typeId = typeId;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 
     public Long getId() {
@@ -47,7 +53,11 @@ public class CategoryResponse {
         return description;
     }
 
-    public String getType() {
-        return type;
+    public String getTypeId() {
+        return typeId;
+    }
+
+    public Boolean getActive() {
+        return active;
     }
 }

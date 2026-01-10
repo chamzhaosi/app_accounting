@@ -16,7 +16,7 @@ public class CategoryRequest {
     private Long typeId;
 
     @NotNull(message = "isActive is required")
-    private Boolean isActive;
+    private Boolean isActive = true;
 
     public String getLabel() {
         return label;

@@ -48,7 +48,7 @@ public class Category {
     }
 
     public String getType() {
-        return type.getTypeCode();
+        return type.getId().toString();
     }
 
     public Boolean getActive() {

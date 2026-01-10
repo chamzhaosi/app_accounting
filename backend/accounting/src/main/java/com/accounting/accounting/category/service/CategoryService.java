@@ -47,35 +47,29 @@ public class CategoryService {
         return categoryRepository.save(ctr);
     }
 
-    public Page<@NonNull Category> findAllByTypeId(Long typeId, int page, int size, String sort){
+    public Page<@NonNull Category> find(Long typeId, String param, Boolean active, int page, int size, String sort){
 
         TransactionType type = getTxnTypeById(typeId);
-
-        return categoryRepository.findAllByType(type, Common.genPageable(page, size, sort));
-    }
-
-    public Page<@NonNull Category> findAllByTypeIdWithParams(Long typeId, String param, int page, int size, String sort){
-        TransactionType type = getTxnTypeById(typeId);
-
         Specification<@NonNull Category> spec =
-                CategorySpecification.filterBy(type.getId(), param);
+                CategorySpecification.filterBy(type.getId(), param, active);
 
         return categoryRepository.findAll(spec, Common.genPageable(page, size, sort));
     }
 
-    public Page<@NonNull Category> findAllByTypeIdWithActive(Long typeId, int page, int size, String sort){
-        TransactionType type = getTxnTypeById(typeId);
-
-        return categoryRepository.findAllByTypeAndIsActiveTrue(type, Common.genPageable(page, size, sort));
-    }
-
     @Transactional
-    public Category updateById(Long id, CategoryRequest request){
+    public Category update(Long id, CategoryRequest request){
         TransactionType type = getTxnTypeById(request.getTypeId());
 
         Category category = categoryRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Category not found")
         );
+
+        boolean exists = categoryRepository
+                .existsByLabelIgnoreCaseAndType_IdAndIdNot(request.getLabel().trim(), request.getTypeId(), id);
+
+        if (exists) {
+            throw new BadRequestException("Category label already exists under this transaction type");
+        }
 
         category.setType(type);
         category.setLabel(request.getLabel());

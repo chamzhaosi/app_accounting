@@ -1,22 +1,34 @@
 class Category {
-  final String type;
+  final int? id;
+  final String typeId;
   final String label;
   final String? description;
+  final bool active;
 
-  Category({required this.label, required this.type, this.description});
+  Category({
+    required this.id,
+    required this.label,
+    required this.typeId,
+    this.description,
+    required this.active,
+  });
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
+      id: json['id'],
       label: json['label'],
-      type: json['type'],
+      typeId: json['typeId'],
       description: json['description'],
+      active: json['active'],
     );
   }
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'label': label,
-    'type': type,
+    'typeId': typeId,
     'description': description,
+    'active': active,
   };
 }
 
@@ -31,5 +43,27 @@ class AddCategoryReq {
     'typeId': typeId,
     'label': label,
     'description': description,
+  };
+}
+
+class UpdCategoryReg extends AddCategoryReq {
+  final int id;
+  final bool isActive;
+
+  UpdCategoryReg({
+    required this.id,
+    required super.typeId,
+    required super.label,
+    super.description,
+    required this.isActive,
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'typeId': typeId,
+    'label': label,
+    'description': description,
+    'isActive': isActive,
   };
 }

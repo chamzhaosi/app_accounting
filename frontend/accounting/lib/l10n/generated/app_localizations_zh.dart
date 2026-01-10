@@ -67,4 +67,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get expense => '支出';
+
+  @override
+  String get active => '启用';
+
+  @override
+  String get inactive => '停用';
+
+  @override
+  String get search => '搜索';
+
+  @override
+  String get update => '更新';
+
+  @override
+  String get noMoreData => '-- 没有更多数据了 --';
 }
