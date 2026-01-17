@@ -1,5 +1,5 @@
 import 'package:accounting/pages/not_found_page.dart';
-import 'package:accounting/pages/setting/category_mangement_page.dart';
+import 'package:accounting/pages/setting/category_management/category_mangement_page.dart';
 import 'package:accounting/pages/setting/setting_page.dart';
 import 'package:accounting/routes/route_names.dart';
 import 'package:flutter/material.dart';

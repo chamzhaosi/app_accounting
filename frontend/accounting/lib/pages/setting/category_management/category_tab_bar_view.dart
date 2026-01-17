@@ -2,7 +2,7 @@ import 'package:accounting/cubits/setting/category/category_cubit.dart';
 import 'package:accounting/cubits/setting/category/category_state.dart';
 import 'package:accounting/helper/common/debouncer.dart';
 import 'package:accounting/l10n/generated/app_localizations.dart';
-import 'package:accounting/pages/setting/widgets/small_card_info_view.dart';
+import 'package:accounting/pages/setting/category_management/small_card_info_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

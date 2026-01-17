@@ -2,7 +2,7 @@ import 'package:accounting/cubits/setting/category/category_cubit.dart';
 import 'package:accounting/cubits/setting/txn_type/txn_type_cubit.dart';
 import 'package:accounting/l10n/generated/app_localizations.dart';
 import 'package:accounting/models/setting/category/category_model.dart';
-import 'package:accounting/pages/setting/category_form.dart';
+import 'package:accounting/pages/setting/category_management/category_form.dart';
 import 'package:accounting/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
