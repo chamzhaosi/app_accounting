@@ -1,8 +1,8 @@
-package com.accounting.accounting.transactionType.controller;
+package com.accounting.accounting.transaction.controller;
 
 import com.accounting.accounting.common.response.ApiResponse;
-import com.accounting.accounting.transactionType.entity.TransactionType;
-import com.accounting.accounting.transactionType.service.TransactionTypeService;
+import com.accounting.accounting.transaction.entity.TransactionType;
+import com.accounting.accounting.transaction.service.TransactionTypeService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,13 +16,13 @@ public class TransactionTypeController {
         this.service = service;
     }
 
-    @GetMapping
+    @GetMapping("/list")
     public ApiResponse<List<TransactionType>> getAll(){
         return ApiResponse.success(service.findAll());
     }
 
-    @GetMapping("/{typeCode}")
-    public ApiResponse<List<TransactionType>> getByTypeCode(@PathVariable String typeCode){
-        return ApiResponse.success(service.findByTypeCode(typeCode));
+    @GetMapping("/{id}")
+    public ApiResponse<TransactionType> getByTypeId(@PathVariable Long id){
+        return ApiResponse.success(service.findById(id));
     }
 }

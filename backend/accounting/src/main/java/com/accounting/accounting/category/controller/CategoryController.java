@@ -21,7 +21,7 @@ public class CategoryController {
         this.service = service;
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ApiResponse<Category> create(@Valid @RequestBody CategoryRequest req){
         Category crt = service.create(req);
         return ApiResponse.success(crt, "Category created successfully.");
@@ -30,7 +30,7 @@ public class CategoryController {
     @GetMapping("/{typeId}")
     public ApiResponsePagination<CategoryResponse> find (@PathVariable Long typeId,
                                                                 @RequestParam(defaultValue = "") String param,
-                                                                @RequestParam(required = false) Boolean  active,
+                                                                @RequestParam(required = false) Boolean active,
                                                                 @RequestParam(defaultValue = "1") int page,
                                                                 @RequestParam(defaultValue = "10") int size,
                                                                 @RequestParam(defaultValue = "id,desc") String sort

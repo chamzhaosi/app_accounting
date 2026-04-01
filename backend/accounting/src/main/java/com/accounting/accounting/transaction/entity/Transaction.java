@@ -1,70 +1,42 @@
 package com.accounting.accounting.transaction.entity;
 
+import com.accounting.accounting.account.entity.AccountType;
+import com.accounting.accounting.category.entity.Category;
+import com.accounting.accounting.common.entity.EntityBase;
+import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "transactions")
-public class Transaction {
+public class Transaction extends EntityBase {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "txn_type_id", referencedColumnName = "id")
+    private TransactionType transactionType;
 
-    @Column(nullable = false, length = 255)
-    private String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ctgr_id", referencedColumnName = "id")
+    private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "acc_type_id", referencedColumnName = "id")
+    private AccountType accountType;
 
     @Column(nullable = false)
-    private boolean deleted = false;
+    private String description;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    public Long getId(){
-        return id;
-    }
-
-    public String getDescription(){
-        return description;
-    }
-
-    public BigDecimal getAmount(){
-        return amount;
-    }
-
-    public LocalDateTime getCreatedAt(){
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt(){
-        return updatedAt;
-    }
-
-    public void setDescription(String description){
-        this.description = description;
-    }
-
-    public void setAmount(BigDecimal amount){
-        this.amount = amount;
-    }
-
-    public void setDeleted(){
-        this.deleted = true;
-    }
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
 }

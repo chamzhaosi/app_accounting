@@ -7,8 +7,8 @@ import com.accounting.accounting.category.specification.CategorySpecification;
 import com.accounting.accounting.common.exception.BadRequestException;
 import com.accounting.accounting.common.exception.ResourceNotFoundException;
 import com.accounting.accounting.common.helper.Common;
-import com.accounting.accounting.transactionType.entity.TransactionType;
-import com.accounting.accounting.transactionType.repository.TransactionTypeRepository;
+import com.accounting.accounting.transaction.entity.TransactionType;
+import com.accounting.accounting.transaction.repository.TransactionTypeRepository;
 import jakarta.transaction.Transactional;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
@@ -20,8 +20,8 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final TransactionTypeRepository transactionTypeRepository;
 
-    private TransactionType getTxnTypeById(Long typeId) {
-        return transactionTypeRepository.findById(typeId).orElseThrow(() -> new ResourceNotFoundException(("Invalid transaction type id")));
+    private TransactionType getTxnTypeById(Long txnTypeId) {
+        return transactionTypeRepository.findById(txnTypeId).orElseThrow(() -> new ResourceNotFoundException(("Invalid transaction type id")));
     }
 
     public CategoryService(CategoryRepository categoryRepository, TransactionTypeRepository transactionTypeRepository){
@@ -30,10 +30,10 @@ public class CategoryService {
     }
 
     public Category create(CategoryRequest req){
-        TransactionType type = getTxnTypeById(req.getTypeId());
+        TransactionType type = getTxnTypeById(req.getTxnTypeId());
 
         boolean exists = categoryRepository
-                .existsByLabelIgnoreCaseAndType_Id(req.getLabel().trim(), req.getTypeId());
+                .existsByLabelIgnoreCaseAndType_Id(req.getLabel().trim(), req.getTxnTypeId());
 
         if (exists) {
             throw new BadRequestException("Category label already exists under this transaction type");
@@ -58,14 +58,14 @@ public class CategoryService {
 
     @Transactional
     public Category update(Long id, CategoryRequest request){
-        TransactionType type = getTxnTypeById(request.getTypeId());
+        TransactionType type = getTxnTypeById(request.getTxnTypeId());
 
         Category category = categoryRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Category not found")
         );
 
         boolean exists = categoryRepository
-                .existsByLabelIgnoreCaseAndType_IdAndIdNot(request.getLabel().trim(), request.getTypeId(), id);
+                .existsByLabelIgnoreCaseAndType_IdAndIdNot(request.getLabel().trim(), request.getTxnTypeId(), id);
 
         if (exists) {
             throw new BadRequestException("Category label already exists under this transaction type");
@@ -74,7 +74,7 @@ public class CategoryService {
         category.setType(type);
         category.setLabel(request.getLabel());
         category.setDescription(request.getDescription());
-        category.setActive(request.getIsActive());
+        category.setIsActive(request.getIsActive());
 
         return category;
     }

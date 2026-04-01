@@ -49,7 +49,7 @@ public class TransactionService {
     public void delete(Long id){
         Transaction tx = repository.findByIdAndDeletedFalse(id).orElseThrow(() -> notFoundTxnById(id));
 
-        tx.setDeleted();
+//        tx.setDeleted();
     }
 
     private ResourceNotFoundException notFoundTxnById(Long id){
