@@ -11,6 +11,7 @@ CREATE TABLE users(
 
 CREATE TABLE users_psw(
   id BIGINT     PRIMARY KEY AUTO_INCREMENT,
+  password      VARCHAR(255) NOT NULL,
   user_id       BIGINT NOT NULL,
   status        VARCHAR(50) NOT NULL,
   expired_at    DATETIME NOT NULL,
@@ -43,7 +44,7 @@ CREATE TABLE users_lgn(
 CREATE TABLE users_forget_psw(
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id       BIGINT NOT NULL,
-  token         BIGINT NOT NULL,
+  token         VARCHAR(255) NOT NULL,
   expired_at    DATETIME NOT NULL,
   status        VARCHAR(50) NOT NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
