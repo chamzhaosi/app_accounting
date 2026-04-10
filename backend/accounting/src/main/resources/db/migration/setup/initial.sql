@@ -58,6 +58,23 @@ CREATE TABLE users_forget_psw(
       REFERENCES users(id)
 );
 
+CREATE TABLE users_refresh_token(
+  id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id       BIGINT NOT NULL,
+  token         VARCHAR(255) NOT NULL,
+  -- 'U' = Used, 'A' = Active, 'I' = Inactive, 'E' = Expired
+  status        VARCHAR(50) NOT NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by    VARCHAR(100),
+  modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  modified_by   VARCHAR(100),
+  vrs           BIGINT DEFAULT 0,
+
+  CONSTRAINT fk_user_refresh_token_users
+      FOREIGN KEY (user_id)
+      REFERENCES users(id)
+)
+
 CREATE TABLE transaction_types (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id       BIGINT,

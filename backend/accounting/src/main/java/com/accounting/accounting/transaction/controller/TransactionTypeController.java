@@ -3,6 +3,7 @@ package com.accounting.accounting.transaction.controller;
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.transaction.entity.TransactionType;
 import com.accounting.accounting.transaction.service.TransactionTypeService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,7 +18,8 @@ public class TransactionTypeController {
     }
 
     @GetMapping("/list")
-    public ApiResponse<List<TransactionType>> getAll(){
+    public ApiResponse<List<TransactionType>> getAll(Authentication authentication){
+        System.out.println(authentication.getName());
         return ApiResponse.success(service.findAll());
     }
 

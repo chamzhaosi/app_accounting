@@ -1,36 +1,57 @@
 package com.accounting.accounting.user.service;
 
+import com.accounting.accounting.auth.service.JwtService;
+import com.accounting.accounting.auth.service.RefreshTokenService;
 import com.accounting.accounting.common.enums.UserForgetPwsStatusEnum;
 import com.accounting.accounting.common.enums.UserPwsStatusEnum;
+import com.accounting.accounting.common.enums.UserRefreshTokenStatusEnum;
 import com.accounting.accounting.common.exception.AuthenticationFailedException;
 import com.accounting.accounting.common.exception.BadRequestException;
 import com.accounting.accounting.common.exception.ResourceNotFoundException;
 import com.accounting.accounting.user.dto.UserCreateRequest;
 import com.accounting.accounting.user.dto.UserLoginRequest;
+import com.accounting.accounting.user.dto.UserLoginResponse;
 import com.accounting.accounting.user.dto.UserResetPswRequest;
+import com.accounting.accounting.user.entity.CstUserDetails;
 import com.accounting.accounting.user.entity.User;
 import com.accounting.accounting.user.entity.UserForgetPsw;
 import com.accounting.accounting.user.entity.UserPsw;
+import com.accounting.accounting.user.entity.UserRefreshToken;
 import com.accounting.accounting.user.repository.UserForgetPswRepository;
 import com.accounting.accounting.user.repository.UserPswRepository;
+import com.accounting.accounting.user.repository.UserRefreshTokenRepository;
 import com.accounting.accounting.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
+@NullMarked
 @Service
 @AllArgsConstructor
-public class UserService {
+public class UserService implements UserDetailsService {
   private UserRepository userRepository;
   private UserPswRepository userPswRepository;
   private UserForgetPswRepository userForgetPswRepository;
+  private UserRefreshTokenRepository userRefreshTokenRepository;
   private final PasswordEncoder encoder;
+  private final JwtService jwtService;
 
   @Transactional
   public void create(UserCreateRequest req){
@@ -48,7 +69,7 @@ public class UserService {
   }
 
   @Transactional
-  public Optional<String> login(UserLoginRequest req){
+  public UserLoginResponse login(UserLoginRequest req){
     User user = userRepository.findByEmailIgnoreCaseAndIsActiveTrue(req.getEmail()).orElse(null);
 
     if(user == null){
@@ -65,6 +86,7 @@ public class UserService {
       throw new AuthenticationFailedException("Email or password is incorrect.");
     }
 
+    UserLoginResponse userLoginResponse = new UserLoginResponse();
     boolean hadPwsExp = userPsw.getStatus().equals(UserPwsStatusEnum.EXPIRED.getCode());
     boolean isPswExp = userPsw.getExpiredAt().isBefore(LocalDateTime.now());
 
@@ -75,10 +97,11 @@ public class UserService {
       }
 
       updateOldPswTokenStatus(user);
-      return Optional.of(genResetPswToken(user).getToken());
+      userLoginResponse.setResetPswToken(genResetPswToken(user).getToken());
+      return userLoginResponse;
     }
 
-    return Optional.empty();
+    return genAccessAndRefreshToken(userLoginResponse, user);
   }
 
   public void resetPassword (String token, UserResetPswRequest req){
@@ -92,6 +115,58 @@ public class UserService {
 
     userForgetPsw.setStatus(UserForgetPwsStatusEnum.INACTIVE.getCode());
     userForgetPswRepository.save(userForgetPsw);
+  }
+
+  public UserLoginResponse refreshToken(@Nullable String refreshTokenCookies){
+    if(refreshTokenCookies == null) {
+      throw new AuthenticationFailedException("Token invalid");
+    }
+
+    UserRefreshToken userRefreshToken = userRefreshTokenRepository
+        .findByToken(refreshTokenCookies)
+        .filter(token -> token.getStatus()
+            .equals(UserRefreshTokenStatusEnum.ACTIVE.getCode()))
+        .orElseThrow(() -> new AuthenticationFailedException("Token invalid"));
+
+    userRefreshToken.setStatus(UserRefreshTokenStatusEnum.USED.getCode());
+    userRefreshTokenRepository.save(userRefreshToken);
+    return genAccessAndRefreshToken(new UserLoginResponse(), userRefreshToken.getUser());
+  }
+
+  @Transactional
+  public void logout(@Nullable Long userId, @Nullable String refreshToken){
+    if(userId == null && refreshToken == null){
+      return;
+    }
+
+    List<UserRefreshToken> tokens = userId != null
+        ? userRefreshTokenRepository.findByUserId(userId).orElseGet(List::of)
+        : userRefreshTokenRepository.findByToken(refreshToken)
+            .map(List::of)
+            .orElseGet(List::of);
+
+    tokens.forEach(token ->
+        token.setStatus(UserRefreshTokenStatusEnum.INACTIVE.getCode())
+    );
+
+    userRefreshTokenRepository.saveAll(tokens);
+  }
+
+  @Override
+  public UserDetails loadUserByUsername(String email)
+      throws UsernameNotFoundException {
+
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() ->
+            new UsernameNotFoundException("User not found"));
+
+    UserPsw userPsw = userPswRepository.findByUserId(user.getId()).orElseThrow(() -> new UsernameNotFoundException("User password not found"));
+
+    return new org.springframework.security.core.userdetails.User(
+        user.getEmail(),
+        userPsw.getHashedPassword(),
+        Collections.emptyList()
+    );
   }
 
   private void setUserHashedPassword(User user, String password){
@@ -128,5 +203,26 @@ public class UserService {
         UserForgetPwsStatusEnum.ACTIVE.getCode());
     return userForgetPswRepository.save(userForgetPsw);
   }
+
+  // Generate and save hashed refresh token into DB
+  private UserLoginResponse genAccessAndRefreshToken(UserLoginResponse userLoginResponse, User user){
+    String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
+    String refreshToken = RefreshTokenService.genRefreshToken();
+
+    userLoginResponse.setAccessToken(accessToken);
+
+
+    // Save hashed refresh token into DB
+    String hashedRefreshToken = encoder.encode(refreshToken);
+
+    if(hashedRefreshToken == null)  throw new IllegalArgumentException("Refresh token hash get null");
+    UserRefreshToken userRefreshToken = new UserRefreshToken(hashedRefreshToken, user,
+        UserRefreshTokenStatusEnum.ACTIVE.getCode());
+
+    userRefreshTokenRepository.save(userRefreshToken);
+    userLoginResponse.setRefreshToken(hashedRefreshToken);
+    return userLoginResponse;
+  }
+
 
 }

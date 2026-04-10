@@ -9,4 +9,7 @@ public interface UserRepository extends JpaRepository<@NotNull User, @NotNull Lo
   boolean existsByEmailIgnoreCaseAndIsActiveTrue(String email);
 
   Optional<User> findByEmailIgnoreCaseAndIsActiveTrue(String email);
+
+  Optional<User> findByEmail(String email);
+
 }
