@@ -1,22 +1,19 @@
 package com.accounting.accounting.common.response;
 
 import java.time.Instant;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@RequiredArgsConstructor
 public class ApiResponse<T> {
-    private T data;
-    private int code;
-    private boolean success;
-    private String message;
-    private Instant timestamp;
-
-    public ApiResponse(T data, int code, boolean success, String message){
-        this.data = data;
-        this.code = code;
-        this.success = success;
-        this.message = message;
-        this.timestamp = Instant.now();
-    }
-
+    private final T data;
+    private final int code;
+    private final boolean success;
+    private final String message;
+    private final Instant timestamp = Instant.now();
 
     public static <T> ApiResponse<T> success(T data){
         return new ApiResponse<>(data,  200, true, null);
@@ -29,10 +26,4 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> fail(T data, int code, String message){
         return new ApiResponse<>(data,code, false, message);
     }
-
-    public T getData() { return data; }
-    public boolean isSuccess() { return success; }
-    public String getMessage() { return message; }
-    public Instant getTimestamp() { return timestamp; }
-    public int getCode() { return code; }
 }

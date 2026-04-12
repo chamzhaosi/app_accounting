@@ -72,4 +72,10 @@ public class GlobalExceptionHandler {
     public ApiResponse<?> handleBadRequest(BadRequestException ex) {
         return new ApiResponse<>(ex.getMessage(), 400, false, "EXISTS_IN_DB");
     }
+
+    @ExceptionHandler(AuthenticationFailedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse<?> handleAuthFailed(AuthenticationFailedException ex) {
+        return new ApiResponse<>(ex.getMessage(), 401, false, null);
+    }
 }

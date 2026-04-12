@@ -1,77 +1,38 @@
 package com.accounting.accounting.category.entity;
 
-import com.accounting.accounting.transactionType.entity.TransactionType;
+import com.accounting.accounting.common.entity.EntityBase;
+import com.accounting.accounting.transaction.entity.TransactionType;
+import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
 @Entity
-@Table(
-    name = "categories",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"label", "type_id"}) // user_Id
-)
-public class Category {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String label;
-
-    private String description;
+@Table(name = "categories", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_ctgr_user_label",
+        columnNames = {"user_id", "txn_type_id", "label"})
+})
+public class Category extends EntityBase {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id", referencedColumnName = "id")
+    @JoinColumn(name = "txn_type_id", referencedColumnName = "id")
     private TransactionType type;
+
+    @Column(nullable = false, length = 50)
+    private String label;
+
+    @Column(nullable = false, length = 100)
+    private String description;
 
     @Column(name="is_active", nullable = false)
     private Boolean isActive = true;
-
-    @CreationTimestamp
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getType() {
-        return type.getId().toString();
-    }
-
-    public Boolean getActive() {
-        return isActive;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    public void setDescription(String description){
-        this.description = description;
-    }
-
-    public void setType(TransactionType type) {
-        this.type = type;
-    }
-
-    public void setActive(Boolean active) {
-        isActive = active;
-    }
 }
