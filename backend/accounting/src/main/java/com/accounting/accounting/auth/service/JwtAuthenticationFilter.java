@@ -40,6 +40,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    String path = request.getServletPath();
+    return path.startsWith("/api/users/create") ||
+            path.startsWith("/api/users/login") ||
+            path.startsWith("/api/users/reset-password") ||
+            path.startsWith("/api/users/refresh-token") ||
+            path.startsWith("/api/users/logout");
+  }
+
+  @Override
   protected void doFilterInternal(
       HttpServletRequest request,
       HttpServletResponse response,
@@ -57,6 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       Long userId = jwtService.extractUserId(token);
 
       UserDetails userDetails = userService.loadUserByUsername(email);
+
       CstUserDetails cstUserDetails = new CstUserDetails(
           userId, userDetails.getUsername(), userDetails.getPassword()
       );

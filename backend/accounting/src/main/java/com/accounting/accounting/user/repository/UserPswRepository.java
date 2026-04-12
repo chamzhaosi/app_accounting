@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserPswRepository extends JpaRepository<@NotNull UserPsw, @NotNull Long> {
   Optional<UserPsw> findTopByUserIdOrderByCreatedAtDesc(Long id);
-  Optional<UserPsw> findByUserId(Long userId);
+  Optional<UserPsw> findByUserIdAndStatus(Long userId, String status);
 }

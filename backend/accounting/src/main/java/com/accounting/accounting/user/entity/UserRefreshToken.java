@@ -13,6 +13,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Entity
@@ -21,13 +23,17 @@ import lombok.Setter;
 @NoArgsConstructor
 public class UserRefreshToken extends EntityBase {
   @NonNull
-  @Column( nullable = false)
+  @Column(nullable = false)
   private String token;
 
   @NonNull
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", referencedColumnName = "id")
   private User user;
+
+  @NonNull
+  @Column(name = "expired_at", nullable = false)
+  private LocalDateTime expiredAt;
 
   @NonNull
   @Column(nullable = false)

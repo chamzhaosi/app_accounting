@@ -24,4 +24,17 @@ public class User extends EntityBase {
 
   @Column(name = "is_active", nullable = false)
   private Boolean isActive = true;
+
+  {
+    super.setCreatedBy("system");
+    super.setModifiedBy("system");
+  }
+
+  public void setCreatedBy(String email){
+    super.setCreatedBy(email);
+  }
+
+  public void setModifiedBy(String email){
+    super.setModifiedBy(email);
+  }
 }

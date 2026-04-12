@@ -17,6 +17,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +36,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
   private final UserService service;
 
-
   @PostMapping("/create")
   public ApiResponse<String> create(@Valid @RequestBody UserCreateRequest req){
     service.create(req);
@@ -41,7 +43,7 @@ public class UserController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<ApiResponse<String>> login(@Valid @RequestBody UserLoginRequest req){
+  public ResponseEntity<@NonNull ApiResponse<String>> login(@Valid @RequestBody UserLoginRequest req){
     UserLoginResponse result = service.login(req);
 
     if(result.getResetPswToken() != null){
@@ -61,7 +63,7 @@ public class UserController {
   }
 
   @PostMapping("/refresh-token")
-  public ResponseEntity<ApiResponse<String>> refreshToken(HttpServletRequest request){
+  public ResponseEntity<@NonNull ApiResponse<String>> refreshToken(HttpServletRequest request){
     String refreshTokenCookies = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("refresh_token")).map(
         Cookie::getValue).findFirst().orElse(null);
 
@@ -74,16 +76,11 @@ public class UserController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request, Authentication authentication){
-    String refreshTokenCookies = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("refresh_token")).map(
-        Cookie::getValue).findFirst().orElse(null);
-
+  public ResponseEntity<@NonNull ApiResponse<String>> logout(HttpServletRequest request, Authentication authentication){
     if(authentication != null && authentication.getPrincipal() != null){
       if(authentication.getPrincipal() instanceof CstUserDetails userDetails) {
-        service.logout(userDetails.getUserId(), null);
+        service.logout(userDetails.getUserId());
       }
-    }else if(refreshTokenCookies != null){
-      service.logout(null, refreshTokenCookies);
     }
 
     HttpHeaders headers = clearAccessAndRefreshCookies();

@@ -1,4 +1,6 @@
 package com.accounting.accounting.auth.config;
+import com.accounting.accounting.auth.service.CustomAccessDeniedHandler;
+import com.accounting.accounting.auth.service.CustomAuthenticationEntryPoint;
 import com.accounting.accounting.auth.service.JwtAuthenticationFilter;
 import com.accounting.accounting.common.config.AppConfig;
 import com.accounting.accounting.user.service.UserService;
@@ -20,6 +22,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
   private final UserService userService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+  private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -31,7 +35,10 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/users/*").permitAll()
             .anyRequest().authenticated()
-        )
+        ).exceptionHandling(ex -> ex
+                    .authenticationEntryPoint(customAuthenticationEntryPoint)
+                    .accessDeniedHandler(customAccessDeniedHandler)
+            )
         .authenticationProvider(authenticationProvider())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

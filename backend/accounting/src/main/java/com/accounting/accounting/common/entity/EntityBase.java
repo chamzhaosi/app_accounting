@@ -1,5 +1,6 @@
 package com.accounting.accounting.common.entity;
 
+import com.accounting.accounting.common.helper.Common;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,6 +9,9 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -43,6 +47,7 @@ public abstract class EntityBase {
     LocalDateTime now = LocalDateTime.now();
     this.createdAt = now;
     this.modifiedAt = now;
+    this.vrs = 0L;
   }
 
   @PreUpdate

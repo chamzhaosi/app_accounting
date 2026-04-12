@@ -61,6 +61,7 @@ CREATE TABLE users_forget_psw(
 CREATE TABLE users_refresh_token(
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id       BIGINT NOT NULL,
+  expired_at    DATETIME NOT NULL,
   token         VARCHAR(255) NOT NULL,
   -- 'U' = Used, 'A' = Active, 'I' = Inactive, 'E' = Expired
   status        VARCHAR(50) NOT NULL,
@@ -73,7 +74,7 @@ CREATE TABLE users_refresh_token(
   CONSTRAINT fk_user_refresh_token_users
       FOREIGN KEY (user_id)
       REFERENCES users(id)
-)
+);
 
 CREATE TABLE transaction_types (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -93,12 +94,6 @@ CREATE TABLE transaction_types (
   CONSTRAINT uq_txn_types_user_label
     UNIQUE (user_id, label)
 );
-
-INSERT INTO transaction_types (label, created_by, modified_by) VALUES
-('Expense', 'system', 'system'),
-('Income', 'system', 'system'),
-('Adjust', 'system', 'system'),
-('Transfer', 'system', 'system');
 
 CREATE TABLE categories (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -143,12 +138,6 @@ CREATE TABLE account_types (
   CONSTRAINT uq_acc_types_user_label
     UNIQUE (user_id, label)
 );
-
-INSERT INTO account_types (label, created_by, modified_by) VALUES
-('Cash', 'system', 'system'),
-('E-wallet', 'system', 'system'),
-('Bank', 'system', 'system'),
-('Card', 'system', 'system');
 
 CREATE TABLE accounts (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
