@@ -11,15 +11,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.NullUnmarked;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -72,7 +65,7 @@ public class UserController {
 
     return ResponseEntity.ok()
         .headers(headers)
-        .body(ApiResponse.success("User login successfully"));
+        .body(ApiResponse.success("refresh-token successfully"));
   }
 
   @PostMapping("/logout")

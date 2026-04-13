@@ -14,12 +14,12 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.NullMarked;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "users_psw")
-@RequiredArgsConstructor
 @NoArgsConstructor
 public class UserPsw extends EntityBase {
   @NonNull
@@ -33,7 +33,15 @@ public class UserPsw extends EntityBase {
 
   @NonNull
   @Column(name = "expired_at", nullable = false)
-  private LocalDateTime expiredAt;
+  private LocalDateTime expiredAt ;
 
   private String status = UserPwsStatusEnum.ACTIVE.getCode();
+
+  @NullMarked
+  public UserPsw( String hashedPassword, User user){
+    super(user.getEmail(), user.getEmail());
+    this.hashedPassword =hashedPassword;
+    this.user = user;
+    this.expiredAt = LocalDateTime.now().plusMonths(3);
+  }
 }

@@ -1,6 +1,7 @@
 package com.accounting.accounting.user.entity;
 
 import com.accounting.accounting.common.entity.EntityBase;
+import com.accounting.accounting.common.enums.UserRefreshTokenStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.NullMarked;
 
 import java.time.LocalDateTime;
 
@@ -37,5 +39,13 @@ public class UserRefreshToken extends EntityBase {
 
   @NonNull
   @Column(nullable = false)
-  private String status;
+  private String status = UserRefreshTokenStatusEnum.ACTIVE.getCode();
+
+  @NullMarked
+  public UserRefreshToken(User user, String token){
+    super(user.getEmail(), user.getEmail());
+    this.user = user;
+    this.token = token;
+    this.expiredAt = LocalDateTime.now().plusDays(7);
+  }
 }

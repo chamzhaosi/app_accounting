@@ -1,7 +1,21 @@
 package com.accounting.accounting.common.exception;
 
+import com.accounting.accounting.common.enums.ExceptionEnum;
+import lombok.Getter;
+
+@Getter
 public class AuthenticationFailedException extends RuntimeException {
-  public AuthenticationFailedException(String message) {
+  private static final String DEFAULT_MESSAGE = ExceptionEnum.INVALID_LOGIN_CREDENTIAL.getMessage();
+  private static final String DEFAULT_ERROR_CODE = ExceptionEnum.INVALID_LOGIN_CREDENTIAL.name();
+  private final String errorCode;
+
+  public AuthenticationFailedException() {
+    super(DEFAULT_MESSAGE);
+    this.errorCode = DEFAULT_ERROR_CODE;
+  }
+
+  public AuthenticationFailedException(String message, String errorCode) {
     super(message);
+    this.errorCode = errorCode;
   }
 }

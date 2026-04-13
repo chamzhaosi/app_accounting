@@ -1,6 +1,7 @@
 package com.accounting.accounting.user.entity;
 
 import com.accounting.accounting.common.entity.EntityBase;
+import com.accounting.accounting.common.enums.UserForgetPwsStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.NullMarked;
 
 @Getter
 @Setter
@@ -35,5 +37,13 @@ public class UserForgetPsw extends EntityBase {
   private LocalDateTime expiredAt;
 
   @NonNull
-  private String status;
+  private String status = UserForgetPwsStatusEnum.ACTIVE.getCode();
+
+  @NullMarked
+  public UserForgetPsw (User user, String token){
+    super(user.getEmail(), user.getEmail());
+    this.user = user;
+    this.token = token;
+    this.expiredAt = LocalDateTime.now().plusMinutes(3);
+  }
 }

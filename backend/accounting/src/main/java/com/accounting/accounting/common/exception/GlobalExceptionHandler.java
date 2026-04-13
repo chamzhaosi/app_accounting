@@ -1,9 +1,12 @@
 package com.accounting.accounting.common.exception;
 
+import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -13,6 +16,7 @@ import tools.jackson.databind.exc.InvalidFormatException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -76,6 +80,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationFailedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiResponse<?> handleAuthFailed(AuthenticationFailedException ex) {
-        return new ApiResponse<>(ex.getMessage(), 401, false, null);
+        log.error("[AuthenticationFailedException]: {}, {}", ex.getErrorCode(), ex.getMessage());
+        return new ApiResponse<>(ex.getMessage(), 401, false, ex.getErrorCode());
+    }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<?> handleEmailExistsRequest(EmailAlreadyExistsException ex) {
+        return new ApiResponse<>(ex.getMessage(), 409, false, ExceptionEnum.EMAIL_EXIST_IN_DB.name());
+    }
+
+    @ExceptionHandler(InvalidArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<?> handleInvalidArgumentException(InvalidArgumentException ex) {
+        log.error("[InvalidArgumentException]: {}, {}", ex.getErrorCode(), ex.getMessage());
+        return new ApiResponse<>(ex.getMessage(), 400, false, ex.getErrorCode());
     }
 }

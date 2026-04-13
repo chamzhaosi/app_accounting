@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -20,6 +21,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Getter
 @Setter
 @MappedSuperclass
+@NoArgsConstructor
 public abstract class EntityBase {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,5 +55,10 @@ public abstract class EntityBase {
   @PreUpdate
   public void preUpdate() {
     this.modifiedAt = LocalDateTime.now();
+  }
+
+  protected EntityBase(String createdBy, String modifiedBy) {
+    this.createdBy = createdBy;
+    this.modifiedBy = modifiedBy;
   }
 }
