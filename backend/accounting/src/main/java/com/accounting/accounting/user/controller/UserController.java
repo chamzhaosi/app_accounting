@@ -2,6 +2,7 @@ package com.accounting.accounting.user.controller;
 
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.exception.AuthenticationFailedException;
+import com.accounting.accounting.common.helper.Common;
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.user.dto.UserCreateRequest;
 import com.accounting.accounting.user.dto.UserLoginRequest;
@@ -63,9 +64,7 @@ public class UserController {
 
   @PostMapping("/reset-password")
   public ApiResponse<String> resetPasswordWithAccessToken(@Valid @RequestBody UserResetPswRequest req, Authentication authentication){
-    Long userId = Optional.ofNullable(((CstUserDetails) authentication.getPrincipal())).map(CstUserDetails::getUserId)
-            .orElseThrow(() -> new AuthenticationFailedException(ExceptionEnum.INVALID_ACCESS_TOKEN));
-
+    Long userId = Common.getAuthenticateUser(ExceptionEnum.INVALID_ACCESS_TOKEN).getId();
     service.resetPasswordWithAccessToken(userId, req);
     return ApiResponse.success("Password reset successfully");
   }
@@ -85,13 +84,8 @@ public class UserController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<@NonNull ApiResponse<String>> logout(HttpServletRequest request, Authentication authentication){
-    if(authentication != null && authentication.getPrincipal() != null){
-      if(authentication.getPrincipal() instanceof CstUserDetails userDetails) {
-        service.logout(userDetails.getUserId());
-      }
-    }
-
+  public ResponseEntity<@NonNull ApiResponse<String>> logout(HttpServletRequest request){
+    service.logout();
     HttpHeaders headers = UserServiceUtils.clearAccessAndRefreshCookies();
     return ResponseEntity.ok().headers(headers).body(ApiResponse.success("User logout successfully"));
   }

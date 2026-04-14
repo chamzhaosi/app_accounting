@@ -5,18 +5,17 @@ import com.accounting.accounting.transaction.entity.Transaction;
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.transaction.service.TransactionService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/transactions")
 public class TransactionController {
     private final TransactionService service;
-
-    public TransactionController(TransactionService service){
-        this.service = service;
-    }
 
     @PostMapping
     public ApiResponse<Transaction> create(@Valid @RequestBody TransactionRequest req){

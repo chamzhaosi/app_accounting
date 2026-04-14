@@ -9,6 +9,7 @@ import com.accounting.accounting.common.enums.UserStatusEnum;
 import com.accounting.accounting.common.exception.AuthenticationFailedException;
 import com.accounting.accounting.common.exception.EmailAlreadyExistsException;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
+import com.accounting.accounting.common.helper.Common;
 import com.accounting.accounting.user.dto.UserCreateRequest;
 import com.accounting.accounting.user.dto.UserLoginRequest;
 import com.accounting.accounting.user.dto.UserLoginResponse;
@@ -23,6 +24,7 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -188,9 +190,11 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public void logout(Long userId){
+  public void logout(){
     log.info("[UserService][Logout] - User logout");
-    updateRefreshTokenToInactive(userId);
+
+    Optional<User> user = Common.getAuthenticateUserSkipError();
+    user.ifPresent(u -> updateRefreshTokenToInactive(u.getId()));
   }
 
   @Override

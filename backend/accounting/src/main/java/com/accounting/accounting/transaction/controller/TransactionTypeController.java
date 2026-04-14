@@ -3,6 +3,7 @@ package com.accounting.accounting.transaction.controller;
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.transaction.entity.TransactionType;
 import com.accounting.accounting.transaction.service.TransactionTypeService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,16 +11,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/transaction_types")
+@RequiredArgsConstructor
 public class TransactionTypeController {
     private final TransactionTypeService service;
 
-    public TransactionTypeController(TransactionTypeService service) {
-        this.service = service;
-    }
-
     @GetMapping("/list")
-    public ApiResponse<List<TransactionType>> getAll(Authentication authentication){
-        System.out.println(authentication.getName());
+    public ApiResponse<List<TransactionType>> getAll(){
         return ApiResponse.success(service.findAll());
     }
 

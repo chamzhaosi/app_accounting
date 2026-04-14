@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ExceptionEnum {
+    // User authenticate exception
     EMAIL_EXIST_IN_DB("The email address is already registered in our system."),
     ENCODE_USER_PASSWORD_BUT_GET_NULL_VALUE("Encoding user password but get null."),
     ENCODE_REFRESH_TOKEN_BUT_GET_NULL_VALUE("Encoding user password but get null."),
@@ -15,6 +16,11 @@ public enum ExceptionEnum {
     INVALID_ACCESS_TOKEN("Access token is invalid"),
     INCORRECT_JWT_USERINFO("User or password not found."),
     INVALID_AUTHENTICATION("Unauthorized"),
+
+    // Transaction
+
+    // Common exception
+    DUPLICATE_DATA_FOUND("Data has been exist in our system"),
     UNKNOWN_ERROR("Unknown error");
 
     private final String message;

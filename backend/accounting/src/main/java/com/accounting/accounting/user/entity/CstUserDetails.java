@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @AllArgsConstructor
 public class CstUserDetails implements UserDetails {
   @Getter
-  private Long userId;
+  private User user;
   private String username;
   private String password;
 
