@@ -1,7 +1,6 @@
 package com.accounting.accounting.user.service;
 
 import com.accounting.accounting.auth.service.JwtService;
-import com.accounting.accounting.auth.service.RefreshTokenService;
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.enums.UserForgetPwsStatusEnum;
 import com.accounting.accounting.common.enums.UserPwsStatusEnum;
@@ -21,9 +20,7 @@ import com.accounting.accounting.user.repository.UserRefreshTokenRepository;
 import com.accounting.accounting.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -247,13 +244,7 @@ public class UserService implements UserDetailsService {
   // Generate new token and return it
   private UserForgetPsw genResetPswToken(User user){
     log.info("[UserService] - Generate new reset password token and save into DB");
-    SecureRandom secureRandom = new SecureRandom();
-    byte[] bytes = new byte[32];   // 256-bit token
-    secureRandom.nextBytes(bytes);
-
-    String token = Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(bytes);
+    String token = UserServiceUtils.genRefreshOrResetPasswordToken();
 
     UserForgetPsw userForgetPsw = new UserForgetPsw(user, token);
     return userForgetPswRepository.save(userForgetPsw);
@@ -263,7 +254,7 @@ public class UserService implements UserDetailsService {
   private UserLoginResponse genAccessAndRefreshToken(UserLoginResponse userLoginResponse, User user){
     log.info("[UserService] - Generate JWT access and refresh token, and save refresh token into DB");
     String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
-    String refreshToken = RefreshTokenService.genRefreshToken();
+    String refreshToken = UserServiceUtils.genRefreshOrResetPasswordToken();
 
     userLoginResponse.setAccessToken(accessToken);
 

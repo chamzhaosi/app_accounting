@@ -13,7 +13,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Base64;
 
 @Slf4j
 @Component
@@ -22,6 +24,8 @@ public class UserServiceUtils {
     private final UserLgnRepository userLgnRepository;
     private final UserForgetPswRepository userForgetPswRepository;
     private final UserRefreshTokenRepository userRefreshTokenRepository;
+    private static final SecureRandom secureRandom = new SecureRandom();
+    private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder().withoutPadding();
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void updateUserWrongPasswordCount(User user) {
@@ -50,6 +54,12 @@ public class UserServiceUtils {
     public void updateResetTokenExpired(UserRefreshToken userRefreshToken){
         userRefreshToken.setStatus(UserRefreshTokenStatusEnum.EXPIRED.getCode());
         userRefreshTokenRepository.save(userRefreshToken);
+    }
+
+    public static String genRefreshOrResetPasswordToken() {
+        byte[] randomBytes = new byte[32]; // 256 bits
+        secureRandom.nextBytes(randomBytes);
+        return base64Encoder.encodeToString(randomBytes);
     }
 
     public static HttpHeaders genAccessAndRefreshCookies(String accessToken, String refreshToken){

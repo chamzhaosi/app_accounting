@@ -1,6 +1,5 @@
 package com.accounting.accounting.auth.service;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+public class JwtAccessDeniedHandler implements AccessDeniedHandler {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
