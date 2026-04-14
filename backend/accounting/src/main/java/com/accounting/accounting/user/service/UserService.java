@@ -14,15 +14,13 @@ import com.accounting.accounting.user.dto.UserCreateRequest;
 import com.accounting.accounting.user.dto.UserLoginRequest;
 import com.accounting.accounting.user.dto.UserLoginResponse;
 import com.accounting.accounting.user.dto.UserResetPswRequest;
-import com.accounting.accounting.user.entity.User;
-import com.accounting.accounting.user.entity.UserForgetPsw;
-import com.accounting.accounting.user.entity.UserPsw;
-import com.accounting.accounting.user.entity.UserRefreshToken;
+import com.accounting.accounting.user.entity.*;
 import com.accounting.accounting.user.repository.UserForgetPswRepository;
 import com.accounting.accounting.user.repository.UserPswRepository;
 import com.accounting.accounting.user.repository.UserRefreshTokenRepository;
 import com.accounting.accounting.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
+
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -97,6 +95,8 @@ public class UserService implements UserDetailsService {
       log.error("[UserService][Login] - User password not match");
       userServiceUtils.updateUserWrongPasswordCount(user);
       throw authException;
+    }else{
+      userServiceUtils.resetUserWrongPasswordCount(user);
     }
 
     UserLoginResponse userLoginResponse = new UserLoginResponse();
@@ -121,12 +121,24 @@ public class UserService implements UserDetailsService {
     return genAccessAndRefreshToken(userLoginResponse, user);
   }
 
-  public void resetPassword (String token, UserResetPswRequest req){
-    log.info("[UserService][ResetPassword] - Reset user password by {}, and update toke to inactive", token);
+  @Transactional
+  public void resetPasswordWithToken (String token, UserResetPswRequest req){
+    log.info("[UserService][ResetPassword] - Reset user password by {}, and update token to inactive", token);
+    InvalidArgumentException invalidArgumentException = new InvalidArgumentException(ExceptionEnum.INVALID_RESET_PASSWORD_TOKEN);
 
     UserForgetPsw userForgetPsw = userForgetPswRepository.findByToken(token)
-        .filter(t -> t.getStatus().equals(UserForgetPwsStatusEnum.ACTIVE.getCode()))
-        .orElseThrow( () -> new InvalidArgumentException(ExceptionEnum.INVALID_RESET_PASSWORD_TOKEN));
+            .orElseThrow(() -> invalidArgumentException);
+
+    // check status
+    if (!userForgetPsw.getStatus().equals(UserForgetPwsStatusEnum.ACTIVE.getCode())) {
+      throw invalidArgumentException;
+    }
+
+    // check expired
+    if (userForgetPsw.getExpiredAt().isBefore(LocalDateTime.now())) {
+      userServiceUtils.updateResetTokenExpired(userForgetPsw);
+      throw invalidArgumentException;
+    }
 
     setUserHashedPassword(userForgetPsw.getUser(), req.getPassword());
 
@@ -134,28 +146,44 @@ public class UserService implements UserDetailsService {
     userForgetPswRepository.save(userForgetPsw);
   }
 
+  @Transactional
+  public void resetPasswordWithAccessToken (Long userId, UserResetPswRequest req){
+    log.info("[UserService][ResetPassword] - Reset user password by userId ({})", userId);
+
+    UserPsw userPsw = userPswRepository.findByUserIdAndStatus(userId, UserPwsStatusEnum.ACTIVE.getCode())
+            .filter(psw -> encoder.matches(req.getCurPassword(), psw.getHashedPassword()))
+            .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.INVALID_RESET_CURRENT_PASSWORD));
+
+    setUserHashedPassword(userPsw.getUser(), req.getPassword());
+
+    userPsw.setStatus(UserPwsStatusEnum.INACTIVE.getCode());
+    userPswRepository.save(userPsw);
+  }
+
+  @Transactional
   public UserLoginResponse refreshToken(@Nullable String refreshTokenCookies){
     log.info("[UserService][RefreshToken] - Checking the validation of refresh token and generate new access and refresh token");
 
-    InvalidArgumentException ivlArgException = new InvalidArgumentException(ExceptionEnum.INVALID_RESET_PASSWORD_TOKEN);
+    InvalidArgumentException ivlArgException = new InvalidArgumentException(ExceptionEnum.INVALID_REFRESH_TOKEN);
 
     if(refreshTokenCookies == null) {
       throw ivlArgException;
     }
 
     UserRefreshToken userRefreshToken = userRefreshTokenRepository
-        .findByToken(refreshTokenCookies)
-        .filter(token -> token.getStatus()
-            .equals(UserRefreshTokenStatusEnum.ACTIVE.getCode()))
-        .filter(token -> {
-          if(token.getExpiredAt().isBefore(LocalDateTime.now())){
-            token.setStatus(UserRefreshTokenStatusEnum.EXPIRED.getCode());
-            userRefreshTokenRepository.save(token);
-            return false;
-          }
-          return true;
-        })
-        .orElseThrow(() -> ivlArgException);
+            .findByToken(refreshTokenCookies)
+            .orElseThrow(() -> ivlArgException);
+
+    // check status
+    if (!UserRefreshTokenStatusEnum.ACTIVE.getCode().equals(userRefreshToken.getStatus())) {
+      throw ivlArgException;
+    }
+
+    // check expired
+    if (userRefreshToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+      userServiceUtils.updateResetTokenExpired(userRefreshToken);
+      throw ivlArgException;
+    }
 
     userRefreshToken.setStatus(UserRefreshTokenStatusEnum.USED.getCode());
     userRefreshTokenRepository.save(userRefreshToken);
@@ -173,10 +201,8 @@ public class UserService implements UserDetailsService {
       throws AuthenticationFailedException {
     log.info("[UserService] - Load user info by email ({}) for JWT use", email);
 
-    AuthenticationFailedException authenticationFailedException = new AuthenticationFailedException(
-        ExceptionEnum.INCORRECT_JWT_USERINFO.name(),
-        ExceptionEnum.INCORRECT_JWT_USERINFO.getMessage()
-    );
+    AuthenticationFailedException authenticationFailedException =
+            new AuthenticationFailedException(ExceptionEnum.INCORRECT_JWT_USERINFO);
 
     User user = userRepository.findByEmail(email)
         .orElseThrow(() ->
@@ -253,7 +279,9 @@ public class UserService implements UserDetailsService {
 
   private void updateRefreshTokenToInactive(Long userId) {
     log.info("[UserService] - Update those refresh token to inactive status if any");
-    List<UserRefreshToken> tokens = userRefreshTokenRepository.findByUserId(userId).orElseGet(List::of);
+    List<UserRefreshToken> tokens = userRefreshTokenRepository
+            .findByUserIdAndStatus(userId, UserRefreshTokenStatusEnum.ACTIVE.getCode())
+            .orElseGet(List::of);
     if (tokens.isEmpty()) return;
 
     tokens.forEach(token ->

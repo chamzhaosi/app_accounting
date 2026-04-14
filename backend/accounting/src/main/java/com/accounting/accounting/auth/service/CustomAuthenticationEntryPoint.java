@@ -1,5 +1,7 @@
 package com.accounting.accounting.auth.service;
 
+import com.accounting.accounting.common.enums.ExceptionEnum;
+import com.accounting.accounting.common.response.ApiResponse;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,13 +25,13 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     response.setContentType("application/json;charset=UTF-8");
 
-    Map<String, Object> body = new HashMap<>();
-    body.put("success", false);
-    body.put("code", 401);
-    body.put("message", "Unauthorized");
-    body.put("path", request.getRequestURI());
-    body.put("timestamp", Instant.now());
+    ApiResponse<?> apiResponse = new ApiResponse<String>(
+            ExceptionEnum.INVALID_AUTHENTICATION.getMessage(),
+            401,
+            false,
+            ExceptionEnum.INVALID_AUTHENTICATION.name()
+    );
 
-    response.getWriter().write(objectMapper.writeValueAsString(body));
+    response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
   }
 }

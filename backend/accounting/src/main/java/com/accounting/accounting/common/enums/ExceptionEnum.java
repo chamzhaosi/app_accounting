@@ -8,9 +8,13 @@ public enum ExceptionEnum {
     ENCODE_USER_PASSWORD_BUT_GET_NULL_VALUE("Encoding user password but get null."),
     ENCODE_REFRESH_TOKEN_BUT_GET_NULL_VALUE("Encoding user password but get null."),
     INVALID_LOGIN_CREDENTIAL("Email or password is incorrect."),
-    INVALID_RESET_PASSWORD_TOKEN("Reset password token is invalid"),
-    INVALID_REFRESH_TOKEN("Refresh token is invalid"),
-    INCORRECT_JWT_USERINFO("User or password not found"),
+    INVALID_RESET_PASSWORD_TOKEN("Reset password token is invalid."),
+    INVALID_RESET_CURRENT_PASSWORD("Current password is incorrect."),
+    NOT_FOUND_CURRENT_PASSWORD("Not found current password"),
+    INVALID_REFRESH_TOKEN("Refresh token is invalid."),
+    INVALID_ACCESS_TOKEN("Access token is invalid"),
+    INCORRECT_JWT_USERINFO("User or password not found."),
+    INVALID_AUTHENTICATION("Unauthorized"),
     UNKNOWN_ERROR("Unknown error");
 
     private final String message;

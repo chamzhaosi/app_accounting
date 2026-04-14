@@ -4,6 +4,7 @@ import com.accounting.accounting.common.entity.EntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -13,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @NoArgsConstructor
-@Table(name="users")
+@Table(name="users", uniqueConstraints = @UniqueConstraint(name="uq_email_is_active", columnNames = {"email", "is_active"}))
 public class User extends EntityBase {
   @NonNull
   @Column(nullable = false, length = 100)

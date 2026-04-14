@@ -33,7 +33,10 @@ public class SecurityConfig {
             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/users/*").permitAll()
+            .requestMatchers("/api/users/reset-password").authenticated()
+            .requestMatchers("/api/users/reset-password/*").permitAll()
+            .requestMatchers("/api/users/**").permitAll()
+            .requestMatchers("/error").permitAll()
             .anyRequest().authenticated()
         ).exceptionHandling(ex -> ex
                     .authenticationEntryPoint(customAuthenticationEntryPoint)

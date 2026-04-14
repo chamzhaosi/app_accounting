@@ -11,5 +11,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRefreshTokenRepository extends JpaRepository<@NotNull UserRefreshToken, @NotNull Long> {
   Optional<UserRefreshToken> findByToken(String Token);
-  Optional<List<UserRefreshToken>> findByUserId(Long userId);
+  Optional<List<UserRefreshToken>> findByUserIdAndStatus(Long userId, String Status);
 }

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 @Getter
 @Setter
@@ -14,4 +15,7 @@ public class UserResetPswRequest {
       message = "Password must be at least 8 characters, include uppercase, lowercase, number and special character"
   )
   private String password;
+
+  @Nullable
+  private String curPassword;
 }

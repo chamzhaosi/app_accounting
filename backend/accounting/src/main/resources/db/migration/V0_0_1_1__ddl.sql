@@ -1,12 +1,15 @@
 CREATE TABLE users(
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-  email         VARCHAR(100) NOT NULL UNIQUE,
+  email         VARCHAR(100) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by    VARCHAR(100),
   modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   modified_by   VARCHAR(100),
-  vrs           BIGINT DEFAULT 0
+  vrs           BIGINT DEFAULT 0,
+
+  CONSTRAINT uq_email_is_active
+      UNIQUE (email, is_active)
 );
 
 CREATE TABLE users_psw(

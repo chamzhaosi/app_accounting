@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface UserLgnRepository extends JpaRepository<@NotNull UserLgn, @NotNull Long> {
-    Optional<UserLgn> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+    Optional<UserLgn> findTopByUserId(Long userId);
 }

@@ -14,8 +14,8 @@ public class AuthenticationFailedException extends RuntimeException {
     this.errorCode = DEFAULT_ERROR_CODE;
   }
 
-  public AuthenticationFailedException(String message, String errorCode) {
-    super(message);
-    this.errorCode = errorCode;
+  public AuthenticationFailedException(ExceptionEnum exceptionEnum) {
+    super(exceptionEnum.getMessage());
+    this.errorCode = exceptionEnum.name();
   }
 }

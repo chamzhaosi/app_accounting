@@ -2,9 +2,12 @@ package com.accounting.accounting.common.exception;
 
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.response.ApiResponse;
+import com.accounting.accounting.user.service.UserServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -92,8 +95,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<?> handleInvalidArgumentException(InvalidArgumentException ex) {
+    public ResponseEntity<ApiResponse<?>> handleInvalidArgumentException(InvalidArgumentException ex) {
         log.error("[InvalidArgumentException]: {}, {}", ex.getErrorCode(), ex.getMessage());
-        return new ApiResponse<>(ex.getMessage(), 400, false, ex.getErrorCode());
+
+        return ResponseEntity.ok()
+                .headers(ex.getErrorCode().equals(ExceptionEnum.INVALID_REFRESH_TOKEN.name()) ?
+                        UserServiceUtils.clearAccessAndRefreshCookies() :
+                        null)
+                .body(new ApiResponse<>(ex.getMessage(), 400, false, ex.getErrorCode()));
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<?> handle(Exception ex) {
+        ExceptionEnum exceptionEnum = ExceptionEnum.UNKNOWN_ERROR;
+        return new ApiResponse<>(exceptionEnum.getMessage(), 500, false, exceptionEnum.name());
     }
 }
