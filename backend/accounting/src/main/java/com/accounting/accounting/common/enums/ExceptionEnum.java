@@ -20,7 +20,9 @@ public enum ExceptionEnum {
     // Transaction
 
     // Common exception
-    DUPLICATE_DATA_FOUND("Data has been exist in our system"),
+    DUPLICATE_DATA_FOUND("Data has been exist in our system."),
+    DATA_NOT_FOUND("Data not found."),
+    DATA_NOT_ALLOWED_TO_BE_MODIFIED("Data is not allowed to be modified by the user."),
     UNKNOWN_ERROR("Unknown error");
 
     private final String message;

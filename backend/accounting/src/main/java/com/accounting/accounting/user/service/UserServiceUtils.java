@@ -6,12 +6,13 @@ import com.accounting.accounting.user.entity.*;
 import com.accounting.accounting.user.repository.UserForgetPswRepository;
 import com.accounting.accounting.user.repository.UserLgnRepository;
 import com.accounting.accounting.user.repository.UserRefreshTokenRepository;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -27,7 +28,7 @@ public class UserServiceUtils {
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder().withoutPadding();
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateUserWrongPasswordCount(User user) {
         log.info("[UserService] - Update user wrong password failed count");
         UserLgn userLgn = userLgnRepository.findTopByUserId(user.getId())
@@ -44,13 +45,13 @@ public class UserServiceUtils {
         } );
     }
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateResetTokenExpired(UserForgetPsw userForgetPsw){
         userForgetPsw.setStatus(UserForgetPwsStatusEnum.EXPIRED.getCode());
         userForgetPswRepository.save(userForgetPsw);
     }
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateResetTokenExpired(UserRefreshToken userRefreshToken){
         userRefreshToken.setStatus(UserRefreshTokenStatusEnum.EXPIRED.getCode());
         userRefreshTokenRepository.save(userRefreshToken);

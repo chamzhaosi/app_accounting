@@ -27,6 +27,13 @@ public interface TransactionTypeRepository extends JpaRepository<TransactionType
     boolean existsLabel(@Param("userId") Long userId,
                         @Param("label") String label);
 
-    List<TransactionType> findByIsActiveTrue();
+    @Query("""
+    SELECT t
+    FROM TransactionType t
+    WHERE (t.user.id = :userId OR t.user IS NULL)
+    """)
+    Optional<List<TransactionType>> findAllByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT t FROM TransactionType t WHERE t.id IN :ids")
+    Optional<List<TransactionType>> findByIds(@Param("ids") List<Long> ids);
 }

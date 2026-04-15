@@ -84,6 +84,7 @@ CREATE TABLE transaction_types (
   user_id       BIGINT,
   label         VARCHAR(50) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  is_deleted    BOOLEAN NOT NULL DEFAULT FALSE,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by    VARCHAR(100),
   modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

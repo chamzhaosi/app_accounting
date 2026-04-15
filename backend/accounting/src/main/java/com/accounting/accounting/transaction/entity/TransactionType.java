@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 @Getter
 @Setter
@@ -16,7 +17,10 @@ import lombok.Setter;
         columnNames = {"user_id", "label"})
 })
 public class TransactionType extends EntityBase {
-    @NonNull
+    @Nullable
+    private Long id;
+
+    @Nullable
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
@@ -27,6 +31,9 @@ public class TransactionType extends EntityBase {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "is_delete", nullable = false)
+    private Boolean isDelete = false;
 
     public TransactionType(@NonNull User user,@NonNull String label){
         super(user.getEmail(), user.getEmail());

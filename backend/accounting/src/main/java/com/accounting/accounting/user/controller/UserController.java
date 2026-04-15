@@ -1,27 +1,23 @@
 package com.accounting.accounting.user.controller;
 
 import com.accounting.accounting.common.enums.ExceptionEnum;
-import com.accounting.accounting.common.exception.AuthenticationFailedException;
 import com.accounting.accounting.common.helper.Common;
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.user.dto.UserCreateRequest;
 import com.accounting.accounting.user.dto.UserLoginRequest;
 import com.accounting.accounting.user.dto.UserLoginResponse;
 import com.accounting.accounting.user.dto.UserResetPswRequest;
-import com.accounting.accounting.user.entity.CstUserDetails;
 import com.accounting.accounting.user.service.UserService;
 import com.accounting.accounting.user.service.UserServiceUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,7 +60,7 @@ public class UserController {
 
   @PostMapping("/reset-password")
   public ApiResponse<String> resetPasswordWithAccessToken(@Valid @RequestBody UserResetPswRequest req, Authentication authentication){
-    Long userId = Common.getAuthenticateUser(ExceptionEnum.INVALID_ACCESS_TOKEN).getId();
+    Long userId = Common.getAuthenticateUserNThrowException(ExceptionEnum.INVALID_ACCESS_TOKEN).getId();
     service.resetPasswordWithAccessToken(userId, req);
     return ApiResponse.success("Password reset successfully");
   }

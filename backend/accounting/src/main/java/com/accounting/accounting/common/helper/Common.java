@@ -1,11 +1,11 @@
 package com.accounting.accounting.common.helper;
 
-import com.accounting.accounting.category.dto.CategoryResponse;
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.exception.AuthenticationFailedException;
 import com.accounting.accounting.common.response.ApiResponsePagination;
 import com.accounting.accounting.user.entity.CstUserDetails;
 import com.accounting.accounting.user.entity.User;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+@Slf4j
 public class Common {
     private static final ZoneId MY_ZONE = ZoneId.of("Asia/Kuala_Lumpur");
 
@@ -71,28 +72,14 @@ public class Common {
               .toLocalDateTime();
     }
 
-    public static User getAuthenticateUser(@Nullable ExceptionEnum exceptionEnum) {
+    public static User getAuthenticateUserNThrowException(@Nullable ExceptionEnum exceptionEnum) {
         final ExceptionEnum DEFAULT_ERROR = ExceptionEnum.INVALID_AUTHENTICATION;
         ExceptionEnum errorEnum = exceptionEnum == null ? DEFAULT_ERROR : exceptionEnum;
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null ||
-                !authentication.isAuthenticated() ||
-                "anonymousUser".equals(authentication.getPrincipal())) {
-            throw new AuthenticationFailedException(errorEnum);
-        }
-
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof CstUserDetails userDetails) {
-            return userDetails.getUser();
-        }
-
-        throw new AuthenticationFailedException(errorEnum);
+        return getAuthenticateUserInfo().orElseThrow(() -> new AuthenticationFailedException(errorEnum));
     }
 
-    public static Optional<User> getAuthenticateUserSkipError() {
+    public static Optional<User> getAuthenticateUserInfo() {
+        log.info("[Common] - Get authenticate user info");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null ||

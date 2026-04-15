@@ -19,7 +19,6 @@ import com.accounting.accounting.user.repository.UserForgetPswRepository;
 import com.accounting.accounting.user.repository.UserPswRepository;
 import com.accounting.accounting.user.repository.UserRefreshTokenRepository;
 import com.accounting.accounting.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -34,6 +33,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @NullMarked
@@ -193,7 +193,7 @@ public class UserService implements UserDetailsService {
   public void logout(){
     log.info("[UserService][Logout] - User logout");
 
-    Optional<User> user = Common.getAuthenticateUserSkipError();
+    Optional<User> user = Common.getAuthenticateUserInfo();
     user.ifPresent(u -> updateRefreshTokenToInactive(u.getId()));
   }
 
