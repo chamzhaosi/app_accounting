@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    List<Transaction> findByDeletedFalse();
+//    List<Transaction> findByDeletedFalse();
 
-    Optional<Transaction> findByIdAndDeletedFalse(Long id);
+//    Optional<Transaction> findByIdAndDeletedFalse(Long id);
 }

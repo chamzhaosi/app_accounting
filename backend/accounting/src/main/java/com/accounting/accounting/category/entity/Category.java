@@ -1,15 +1,11 @@
 package com.accounting.accounting.category.entity;
 
 import com.accounting.accounting.common.entity.EntityBase;
-import com.accounting.accounting.transaction.entity.TransactionType;
+import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter

@@ -1,7 +1,7 @@
 package com.accounting.accounting.transaction.mapper;
 
-import com.accounting.accounting.transaction.dto.TransactionTypeResponse;
-import com.accounting.accounting.transaction.entity.TransactionType;
+import com.accounting.accounting.transaction.dto.txntype.TransactionTypeResponse;
+import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

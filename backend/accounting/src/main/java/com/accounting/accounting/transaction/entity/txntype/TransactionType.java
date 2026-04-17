@@ -1,23 +1,23 @@
-package com.accounting.accounting.transaction.entity;
+package com.accounting.accounting.transaction.entity.txntype;
 
 import com.accounting.accounting.common.entity.EntityBase;
 import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.jspecify.annotations.Nullable;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "transaction_types", uniqueConstraints = {
-    @UniqueConstraint(name="uq_txn_types_user_label",
-        columnNames = {"user_id", "label"})
+    @UniqueConstraint(name="uq_txn_types_user_active_label",
+        columnNames = {"user_id", "active_label"})
 })
+@NoArgsConstructor
 public class TransactionType extends EntityBase {
-    @Nullable
+    @NonNull
     private Long id;
 
     @Nullable
@@ -32,8 +32,11 @@ public class TransactionType extends EntityBase {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @Column(name = "is_delete", nullable = false)
-    private Boolean isDelete = false;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private String deletedBy;
 
     public TransactionType(@NonNull User user,@NonNull String label){
         super(user.getEmail(), user.getEmail());

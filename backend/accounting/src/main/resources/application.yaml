@@ -22,6 +22,13 @@ spring:
   application:
     name: accounting
 
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
+        one-indexed-parameters: true
+
 app:
   jwt:
     secret: test-secret-key-at-least-32-bytes-long-123456  # $env:JWT_SECRET="your-super-secret-key" / echo $env:JWT_SECRET

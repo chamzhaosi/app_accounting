@@ -1,19 +1,22 @@
 package com.accounting.accounting.transaction.entity;
 
-import com.accounting.accounting.account.entity.AccountType;
+import com.accounting.accounting.account.entity.acctype.AccountType;
 import com.accounting.accounting.category.entity.Category;
 import com.accounting.accounting.common.entity.EntityBase;
+import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "transactions")
+@NoArgsConstructor
 public class Transaction extends EntityBase {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
@@ -37,6 +40,9 @@ public class Transaction extends EntityBase {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private String deletedBy;
 }

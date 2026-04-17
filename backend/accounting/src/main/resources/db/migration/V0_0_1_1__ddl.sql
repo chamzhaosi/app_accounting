@@ -84,7 +84,15 @@ CREATE TABLE transaction_types (
   user_id       BIGINT,
   label         VARCHAR(50) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-  is_deleted    BOOLEAN NOT NULL DEFAULT FALSE,
+  active_label VARCHAR(50)
+    GENERATED ALWAYS AS (
+        CASE
+            WHEN deleted_at IS NULL THEN label
+            ELSE NULL
+        END
+    ) STORED,
+  deleted_at    DATETIME NULL,
+  deleted_by    VARCHAR(100) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by    VARCHAR(100),
   modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -95,8 +103,8 @@ CREATE TABLE transaction_types (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_txn_types_user_label
-    UNIQUE (user_id, label)
+  CONSTRAINT uq_txn_types_user_active_label
+    UNIQUE (user_id, active_label)
 );
 
 CREATE TABLE categories (
@@ -106,6 +114,15 @@ CREATE TABLE categories (
   label         VARCHAR(50) NOT NULL,
   description   VARCHAR(100) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  active_label VARCHAR(50)
+    GENERATED ALWAYS AS (
+        CASE
+            WHEN deleted_at IS NULL THEN label
+            ELSE NULL
+        END
+    ) STORED,
+  deleted_at    DATETIME NULL,
+  deleted_by    VARCHAR(100) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by    VARCHAR(100),
   modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -121,7 +138,7 @@ CREATE TABLE categories (
     REFERENCES users(id),
 
   CONSTRAINT uq_ctgr_user_label
-    UNIQUE (user_id, label)
+    UNIQUE (user_id, active_label)
 );
 
 CREATE TABLE account_types (
@@ -129,6 +146,15 @@ CREATE TABLE account_types (
   user_id       BIGINT,
   label         VARCHAR(50) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  active_label VARCHAR(50)
+    GENERATED ALWAYS AS (
+        CASE
+            WHEN deleted_at IS NULL THEN label
+            ELSE NULL
+        END
+    ) STORED,
+  deleted_at    DATETIME NULL,
+  deleted_by    VARCHAR(100) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by    VARCHAR(100),
   modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -140,7 +166,7 @@ CREATE TABLE account_types (
     REFERENCES users(id),
 
   CONSTRAINT uq_acc_types_user_label
-    UNIQUE (user_id, label)
+    UNIQUE (user_id, active_label)
 );
 
 CREATE TABLE accounts (
@@ -150,6 +176,15 @@ CREATE TABLE accounts (
   label         VARCHAR(50) NOT NULL,
   description   VARCHAR(100) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  active_label VARCHAR(50)
+    GENERATED ALWAYS AS (
+        CASE
+            WHEN deleted_at IS NULL THEN label
+            ELSE NULL
+        END
+    ) STORED,
+  deleted_at    DATETIME NULL,
+  deleted_by    VARCHAR(100) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by    VARCHAR(100),
   modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -162,7 +197,10 @@ CREATE TABLE accounts (
 
   CONSTRAINT fk_acc_users
     FOREIGN KEY (user_id)
-    REFERENCES users(id)
+    REFERENCES users(id),
+
+  CONSTRAINT uq_acc_types_user_acc_type_label
+    UNIQUE (user_id, acc_type_id, active_label)
 );
 
 CREATE TABLE transactions (
@@ -173,7 +211,8 @@ CREATE TABLE transactions (
   acc_type_id   BIGINT NOT NULL,
   description   VARCHAR(255) NOT NULL,
   amount        DECIMAL(10,2) NOT NULL,
-  is_deleted    BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted_at    DATETIME NULL,
+  deleted_by    VARCHAR(100) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by    VARCHAR(100),
   modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -1,5 +1,6 @@
 package com.accounting.accounting.auth.service;
 
+import com.accounting.accounting.user.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -27,12 +28,12 @@ public class JwtService {
     this.expirationMs = expirationMs;
   }
 
-  public String generateToken(Long userId, String email) {
+  public String generateToken(User user) {
     Instant now = Instant.now();
 
     return Jwts.builder()
-        .subject(email)
-        .claim("userId", userId)
+        .subject(user.getEmail())
+        .claim("userId", user.getId())
         .issuedAt(Date.from(now))
         .expiration(Date.from(now.plusMillis(expirationMs)))
         .signWith(key)

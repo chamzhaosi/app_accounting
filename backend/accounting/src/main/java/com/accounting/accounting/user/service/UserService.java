@@ -198,7 +198,7 @@ public class UserService implements UserDetailsService {
   }
 
   @Override
-  public UserDetails loadUserByUsername(String email)
+  public CstUserDetails loadUserByUsername(String email)
       throws AuthenticationFailedException {
     log.info("[UserService] - Load user info by email ({}) for JWT use", email);
 
@@ -212,11 +212,7 @@ public class UserService implements UserDetailsService {
     UserPsw userPsw = userPswRepository.findByUserIdAndStatus(user.getId(), UserStatusEnum.ACTIVE.getCode())
             .orElseThrow(() -> authenticationFailedException);
 
-    return new org.springframework.security.core.userdetails.User(
-        user.getEmail(),
-        userPsw.getHashedPassword(),
-        Collections.emptyList()
-    );
+    return new CstUserDetails(user, user.getEmail(), userPsw.getHashedPassword());
   }
 
   private void setUserHashedPassword(User user, String password){
@@ -257,7 +253,7 @@ public class UserService implements UserDetailsService {
   // Generate and save hashed refresh token into DB
   private UserLoginResponse genAccessAndRefreshToken(UserLoginResponse userLoginResponse, User user){
     log.info("[UserService] - Generate JWT access and refresh token, and save refresh token into DB");
-    String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
+    String accessToken = jwtService.generateToken(user);
     String refreshToken = UserServiceUtils.genRefreshOrResetPasswordToken();
 
     userLoginResponse.setAccessToken(accessToken);

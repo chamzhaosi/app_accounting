@@ -17,5 +17,5 @@ public class TransactionRequest {
     @Positive(message = "amount must be greater than zero")
     @Digits(integer = 8, fraction = 2, message = "amount must have at most 8 digits and 2 decimals")
     private BigDecimal amount;
-    private boolean deleted;
+//    private boolean deleted;
 }

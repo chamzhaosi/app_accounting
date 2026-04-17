@@ -1,5 +1,6 @@
 package com.accounting.accounting.account.entity;
 
+import com.accounting.accounting.account.entity.acctype.AccountType;
 import com.accounting.accounting.common.entity.EntityBase;
 import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.Column;

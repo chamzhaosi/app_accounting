@@ -1,11 +1,10 @@
-package com.accounting.accounting.transaction.dto;
+package com.accounting.accounting.transaction.dto.txntype;
 
-import com.accounting.accounting.transaction.entity.TransactionType;
+import com.accounting.accounting.transaction.entity.txntype.TransactionType;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.List;
 
 @Getter
 @Setter
@@ -13,7 +12,11 @@ import java.util.List;
 public class TransactionTypeResponse {
     private Long id;
     private String label;
+
+    @JsonProperty("isActive")
     private boolean isActive;
+
+    @JsonProperty("isCreatedBySystem")
     private boolean isCreatedBySystem;
 
     public TransactionTypeResponse(TransactionType transactionType){

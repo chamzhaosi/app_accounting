@@ -1,64 +1,46 @@
 package com.accounting.accounting.common.response;
 
-import org.jspecify.annotations.Nullable;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.domain.Page;
 
 import java.time.Instant;
 import java.util.List;
 
+@Getter
+@Setter
 public class ApiResponsePagination<T> {
     private List<T> data;
     private int code;
     private boolean success;
     private String message;
-
-    @Nullable
+    private Integer pageSize;
+    private Long total;
     private Integer totalPage;
-
-    @Nullable
     private Integer page;
-
-    @Nullable
-    private Integer size;
     private Instant timestamp;
 
-    public ApiResponsePagination(List<T> data, int code, boolean success, String message, @Nullable Integer totalPage, @Nullable Integer page, @Nullable Integer size){
-        this.data = data;
+    public ApiResponsePagination(Page<T> data, int code, boolean success, String message){
+        this.data = data.getContent();
         this.code = code;
         this.success = success;
         this.message = message;
-        this.totalPage = totalPage;
-        this.page = page;
-        this.size = size;
+        this.pageSize = data.getSize();
+        this.total = data.getTotalElements();
+        this.totalPage = data.getTotalPages();
+        this.page = data.getNumber() + 1;
         this.timestamp = Instant.now();
     }
 
-    public static <T> ApiResponsePagination<T> success(List<T> data, @Nullable Integer totalPage, @Nullable Integer page, @Nullable Integer size){
-        return new ApiResponsePagination<>(data, 200,true, null, totalPage, page, size);
+    public static <T> ApiResponsePagination<T> success(Page<T> data){
+        return new ApiResponsePagination<>(data, 200,true, null);
     }
 
-    public static <T> ApiResponsePagination<T> success(List<T> data, @Nullable String message, @Nullable Integer totalPage, @Nullable Integer page, @Nullable Integer size){
-        return new ApiResponsePagination<>(data, 200,true, message, totalPage, page, size);
+    public static <T> ApiResponsePagination<T> success(Page<T> data, String message){
+        return new ApiResponsePagination<>(data, 200,true, message);
     }
 
-    public static <T> ApiResponsePagination<T> fail(List<T> data, int code, String message, @Nullable Integer totalPage, @Nullable Integer page, @Nullable Integer size){
-        return new ApiResponsePagination<>(data,code, false, message, totalPage, page, size);
-    }
-
-    public List<T> getData() { return data; }
-    public boolean isSuccess() { return success; }
-    public String getMessage() { return message; }
-    public Instant getTimestamp() { return timestamp; }
-    public int getCode() { return code; }
-
-    public @Nullable Integer getPage() {
-        return page;
-    }
-
-    public @Nullable Integer getTotalPage() {
-        return totalPage;
-    }
-
-    public @Nullable Integer getSize() {
-        return size;
+    public static <T> ApiResponsePagination<T> fail(Page<T> data, int code, String message){
+        return new ApiResponsePagination<>(data, code, false, message);
     }
 }

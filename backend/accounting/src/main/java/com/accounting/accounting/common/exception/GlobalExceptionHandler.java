@@ -108,6 +108,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<?> handle(Exception ex) {
+        log.error(ex.getMessage(), ex);
         ExceptionEnum exceptionEnum = ExceptionEnum.UNKNOWN_ERROR;
         return new ApiResponse<>(exceptionEnum.getMessage(), 500, false, exceptionEnum.name());
     }

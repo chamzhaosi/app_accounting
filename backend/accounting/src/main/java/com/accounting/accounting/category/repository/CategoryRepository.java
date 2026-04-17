@@ -1,7 +1,7 @@
 package com.accounting.accounting.category.repository;
 
 import com.accounting.accounting.category.entity.Category;
-import com.accounting.accounting.transaction.entity.TransactionType;
+import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
