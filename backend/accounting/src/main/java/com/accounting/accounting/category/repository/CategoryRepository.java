@@ -15,34 +15,17 @@ import java.util.Optional;
 
 public interface CategoryRepository extends JpaRepository<Category, Long>{
 
-//    @Query("""
-//    SELECT c
-//    FROM Category c
-//    WHERE c.user.id = :userId
-//      AND c.isActive = true
-//      AND c.deletedAt IS NULL
-//    """)
-//    Page<Category> findAllActive(@Param("userId") Long userId,
-//                                                Pageable pageable);
-
     @Query("""
     SELECT COUNT(c)
     FROM Category c
     WHERE c.user.id = :userId
       AND c.label = :label
+      AND c.type.id = :txnTypeId
       AND c.deletedAt IS NULL
     """)
     int countByUserIdAndLabel(@Param("userId") Long userId,
+                              @Param("txnTypeId") Long txnTypeId,
                               @Param("label") String label);
-
-//    @Query("""
-//    SELECT c
-//    FROM Category c
-//    WHERE c.user.id = :userId
-//        AND c.deletedAt IS NULL
-//    """)
-//    Page<Category> findAllByUserId(@Param("userId") Long userId,
-//                                   Pageable pageable);
 
     @Query("""
     SELECT c
@@ -71,7 +54,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long>{
     SELECT c
     FROM Category c
     WHERE c.user.id = :userId
-        AND (c.label IS NULL or c.label = :label)
+        AND (:label IS NULL OR LOWER(c.label) LIKE LOWER(CONCAT('%', :label, '%')))
         AND c.type.id = :txnTypeId
         AND c.isActive = :isActive
         AND c.deletedAt IS NULL

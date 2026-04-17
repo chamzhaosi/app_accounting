@@ -52,7 +52,7 @@ public class CategoryService implements CategoryServiceItf {
         User user = Common.getAuthenticateUserNThrowException(null);
         log.info("[Category][Create] - User ({}) create new category", user.getEmail());
 
-        boolean exist = categoryRepository.countByUserIdAndLabel(user.getId(), request.getLabel()) > 0;
+        boolean exist = categoryRepository.countByUserIdAndLabel(user.getId(), request.getTxnTypeId(), request.getLabel()) > 0;
         if(exist){
             throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
         }
@@ -74,13 +74,18 @@ public class CategoryService implements CategoryServiceItf {
         Category category = categoryRepository.findById(user.getId(), request.getId())
                 .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
 
-        boolean exist = categoryRepository.countByUserIdAndLabel(user.getId(), request.getLabel()) > 0;
+        boolean exist = categoryRepository.countByUserIdAndLabel(user.getId(), request.getTxnTypeId(), request.getLabel()) > 0;
         if(exist){
             throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
         }
 
+        TransactionType transactionType = transactionTypeRepository
+                .findById(user.getId(), request.getTxnTypeId())
+                .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.TXN_TYPE_ID_NOT_FOUND_OR_INVALID));
+
         category.setLabel(request.getLabel());
         category.setDescription(request.getDescription());
+        category.setType(transactionType);
         category.setIsActive(request.isActive());
         categoryRepository.save(category);
 

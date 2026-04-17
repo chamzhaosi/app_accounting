@@ -23,7 +23,7 @@ public class CategoryController {
     }
 
     @GetMapping("/list")
-    public ApiResponsePagination<CategoryResponse> findAll (@Valid @RequestBody CategorySearchRequest request, Pageable pageable){
+    public ApiResponsePagination<CategoryResponse> findAll (@Valid CategorySearchRequest request, Pageable pageable){
         Page<CategoryResponse> data = service.findAll(request, pageable);
         return ApiResponsePagination.success(data);
     }

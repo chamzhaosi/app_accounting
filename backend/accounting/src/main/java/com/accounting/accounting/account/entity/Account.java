@@ -18,7 +18,7 @@ import lombok.Setter;
 @Entity
 @Table(name="accounts", uniqueConstraints = {
     @UniqueConstraint(name="uq_acc_user_acc_type_label",
-        columnNames = {"user_id", "acc_type_id", "label"})
+        columnNames = {"user_id", "acc_type_id", "active_label"})
 })
 public class Account extends EntityBase {
   @ManyToOne(fetch = FetchType.LAZY)
