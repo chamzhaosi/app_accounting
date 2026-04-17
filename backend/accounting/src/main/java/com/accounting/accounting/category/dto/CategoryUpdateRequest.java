@@ -4,13 +4,19 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class CategoryRequest {
+@RequiredArgsConstructor
+public class CategoryUpdateRequest {
+    @NotNull(message = "id is required")
+    private Long id;
+
     @NotBlank(message = "label is required")
-    @Size(max= 50, message = "labek must not exceed 50 characters")
+    @Size(max= 50, message = "label must not exceed 50 characters")
     private String label;
 
     @Size(max= 100, message = "description must not exceed 100 characters")
@@ -20,5 +26,5 @@ public class CategoryRequest {
     private Long txnTypeId;
 
     @NotNull(message = "isActive is required")
-    private Boolean isActive = true;
+    private boolean isActive;
 }

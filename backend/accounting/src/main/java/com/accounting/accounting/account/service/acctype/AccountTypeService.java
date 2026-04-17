@@ -2,6 +2,7 @@ package com.accounting.accounting.account.service.acctype;
 
 import com.accounting.accounting.account.dto.acctype.AccountTypeCreateRequest;
 import com.accounting.accounting.account.dto.acctype.AccountTypeResponse;
+import com.accounting.accounting.account.dto.acctype.AccountTypeSearchRequest;
 import com.accounting.accounting.account.dto.acctype.AccountTypeUpdateRequest;
 import com.accounting.accounting.account.entity.acctype.AccountType;
 import com.accounting.accounting.account.mapper.AccountTypeMapper;
@@ -31,18 +32,10 @@ public class AccountTypeService implements AccountTypeServiceItf {
     private final AccountTypeMapper accountTypeMapper;
 
     @Override
-    public Page<AccountTypeResponse> findAll(Pageable pageable) {
+    public Page<AccountTypeResponse> findAll(AccountTypeSearchRequest request, Pageable pageable) {
         User user = Common.getAuthenticateUserNThrowException(null);
-        log.info("[Account Type][Find all] - User ({}) fetch all status of account type including system created", user.getEmail());
-        return accountTypeRepository.findAllByUserId(user.getId(), pageable)
-                .map(accountTypeMapper::toResponse);
-    }
-
-    @Override
-    public Page<AccountTypeResponse> findAllActive(Pageable pageable) {
-        User user = Common.getAuthenticateUserNThrowException(null);
-        log.info("[Account Type][Find all active type] - User ({}) fetch all active account type including system created", user.getEmail());
-        return accountTypeRepository.findActiveUserAndSystemTypes(user.getId(), pageable)
+        log.info("[Account Type][Find all] - User ({}) fetch all account type including system created with params ({})", user.getEmail(), request.toString());
+        return accountTypeRepository.findAll(user.getId(), request.getIsActive(), pageable)
                 .map(accountTypeMapper::toResponse);
     }
 

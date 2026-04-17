@@ -18,6 +18,7 @@ public enum ExceptionEnum {
     INVALID_AUTHENTICATION("Unauthorized"),
 
     // Transaction
+    TXN_TYPE_ID_NOT_FOUND_OR_INVALID("Transaction type not found or invalid"),
 
     // Common exception
     DUPLICATE_DATA_FOUND("Data has been exist in our system."),

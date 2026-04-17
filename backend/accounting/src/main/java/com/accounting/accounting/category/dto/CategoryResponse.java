@@ -1,25 +1,27 @@
 package com.accounting.accounting.category.dto;
 
 import com.accounting.accounting.category.entity.Category;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class CategoryResponse {
     private Long id;
     private String label;
     private String description;
-    private Long typeId;
-    private Boolean active;
+    private Long txnTypeId;
+    @JsonProperty("isActive")
+    private Boolean isActive;
 
-    public static CategoryResponse from(Category category){
-        CategoryResponse dto = new CategoryResponse();
-        dto.setId(category.getId());
-        dto.setLabel(category.getLabel());
-        dto.setDescription(category.getDescription());
-        dto.setTypeId((category.getType().getId()));
-        dto.setActive(category.getIsActive());
-        return dto;
+    public CategoryResponse(Category category){
+        this.id = category.getId();
+        this.label = category.getLabel();
+        this.description = category.getDescription();
+        this.txnTypeId = category.getType().getId();
+        this.isActive =  category.getIsActive();
     }
 }

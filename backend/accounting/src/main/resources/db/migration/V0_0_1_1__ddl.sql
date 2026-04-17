@@ -83,6 +83,7 @@ CREATE TABLE transaction_types (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id       BIGINT,
   label         VARCHAR(50) NOT NULL,
+  nature        BIGINT,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   active_label VARCHAR(50)
     GENERATED ALWAYS AS (
@@ -112,7 +113,7 @@ CREATE TABLE categories (
   user_id       BIGINT NOT NULL,
   txn_type_id   BIGINT NOT NULL,
   label         VARCHAR(50) NOT NULL,
-  description   VARCHAR(100) NOT NULL,
+  description   VARCHAR(100) NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   active_label VARCHAR(50)
     GENERATED ALWAYS AS (
@@ -137,8 +138,8 @@ CREATE TABLE categories (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_ctgr_user_label
-    UNIQUE (user_id, active_label)
+  CONSTRAINT uq_ctgr_user_type_id_label
+    UNIQUE (user_id, txn_type_id, active_label)
 );
 
 CREATE TABLE account_types (

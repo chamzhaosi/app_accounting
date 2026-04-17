@@ -1,9 +1,6 @@
 package com.accounting.accounting.account.controller.acctype;
 
-import com.accounting.accounting.account.dto.acctype.AccountTypeCreateRequest;
-import com.accounting.accounting.account.dto.acctype.AccountTypeDeleteRequest;
-import com.accounting.accounting.account.dto.acctype.AccountTypeResponse;
-import com.accounting.accounting.account.dto.acctype.AccountTypeUpdateRequest;
+import com.accounting.accounting.account.dto.acctype.*;
 import com.accounting.accounting.account.service.acctype.AccountTypeService;
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.common.response.ApiResponsePagination;
@@ -25,16 +22,11 @@ public class AccountTypeController {
         return ApiResponse.success(accountTypeResponse);
     }
 
-    @GetMapping("/list-all")
-    public ApiResponsePagination<AccountTypeResponse> listAll (Pageable pageable){
+    @GetMapping("/list")
+    public ApiResponsePagination<AccountTypeResponse> list(@Valid AccountTypeSearchRequest request,
+                                                           Pageable pageable){
         System.out.println(pageable.toString());
-        Page<AccountTypeResponse> accountTypeResponse = service.findAll(pageable);
-        return ApiResponsePagination.success(accountTypeResponse);
-    }
-
-    @GetMapping("/list-all-active")
-    public ApiResponsePagination<AccountTypeResponse> listAllActive (Pageable pageable){
-        Page<AccountTypeResponse> accountTypeResponse = service.findAllActive(pageable);
+        Page<AccountTypeResponse> accountTypeResponse = service.findAll(request, pageable);
         return ApiResponsePagination.success(accountTypeResponse);
     }
 

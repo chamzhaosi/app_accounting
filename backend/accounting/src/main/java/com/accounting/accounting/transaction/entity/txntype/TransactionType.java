@@ -1,6 +1,7 @@
 package com.accounting.accounting.transaction.entity.txntype;
 
 import com.accounting.accounting.common.entity.EntityBase;
+import com.accounting.accounting.common.enums.TransactionNatureEnum;
 import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,6 +22,9 @@ public class TransactionType extends EntityBase {
     private Long id;
 
     @Nullable
+    private Long nature;
+
+    @Nullable
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
@@ -38,9 +42,10 @@ public class TransactionType extends EntityBase {
     @Column(name = "deleted_by")
     private String deletedBy;
 
-    public TransactionType(@NonNull User user,@NonNull String label){
+    public TransactionType(User user, String label, @Nullable TransactionNatureEnum nature){
         super(user.getEmail(), user.getEmail());
         this.user = user;
         this.label = label;
+        this.nature = nature != null ? nature.getCode(): null;
     }
 }

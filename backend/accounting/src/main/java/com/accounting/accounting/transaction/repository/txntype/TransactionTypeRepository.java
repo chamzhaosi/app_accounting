@@ -18,44 +18,22 @@ public interface TransactionTypeRepository extends JpaRepository<TransactionType
     SELECT t
     FROM TransactionType t
     WHERE (t.user.id = :userId OR t.user IS NULL)
-      AND t.isActive = true AND t.deletedAt IS NULL
-    """)
-    Page<TransactionType> findActiveUserAndSystemTypes(@Param("userId") Long userId, Pageable pageable);
-
-    @Query("""
-    SELECT COUNT(t)
-    FROM TransactionType t
-    WHERE (t.user.id = :userId OR t.user IS NULL)
-      AND t.label = :label AND t.deletedAt IS NULL
-    """)
-    int countByUserIdAndLabel(@Param("userId") Long userId,
-                              @Param("label") String label);
-
-    @Query("""
-    SELECT t
-    FROM TransactionType t
-    WHERE (t.user.id = :userId OR t.user IS NULL)
+        AND t.isActive = :isActive
         AND t.deletedAt IS NULL
     """)
-    Page<TransactionType> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+    Page<TransactionType> findAll(@Param("userId") Long userId,
+                                  @Param("isActive") Boolean isActive,
+                                  Pageable pageable
+                                  );
 
     @Query("""
-    SELECT t
-    FROM TransactionType t
-    WHERE (t.user.id = :userId OR t.user IS NULL)
-        AND t.id IN (:ids)
-        AND t.deletedAt IS NULL
-    """)
-    List<TransactionType> findByIds(@Param("userId") Long userId,
-                                    @Param("ids") List<Long> ids);
-
-    @Query("""
-    SELECT t
-    FROM TransactionType t
-    WHERE (t.user.id = :userId OR t.user IS NULL)
-        AND t.id = :id
-        AND t.deletedAt IS NULL
-    """)
+            SELECT t
+            FROM TransactionType t
+            WHERE (t.user.id = :userId OR t.user IS NULL)
+                AND t.id = :txnTypeId
+                AND t.deletedAt IS NULL
+            """)
     Optional<TransactionType> findById(@Param("userId") Long userId,
-                                       @Param("id") Long id);
+                             @Param("txnTypeId") Long txnTypeId);
 }
+

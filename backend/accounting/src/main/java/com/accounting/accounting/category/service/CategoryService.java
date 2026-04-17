@@ -1,81 +1,113 @@
-//package com.accounting.accounting.category.service;
-//
-//import com.accounting.accounting.category.dto.CategoryRequest;
-//import com.accounting.accounting.category.entity.Category;
-//import com.accounting.accounting.category.repository.CategoryRepository;
-//import com.accounting.accounting.category.specification.CategorySpecification;
-//import com.accounting.accounting.common.exception.BadRequestException;
-//import com.accounting.accounting.common.exception.ResourceNotFoundException;
-//import com.accounting.accounting.common.helper.Common;
-//import com.accounting.accounting.transaction.entity.txntype.TransactionType;
-//import com.accounting.accounting.transaction.repository.txntype.TransactionTypeRepository;
-//import jakarta.transaction.Transactional;
-//import org.jspecify.annotations.NonNull;
-//import org.springframework.data.domain.Page;
-//import org.springframework.data.jpa.domain.Specification;
-//import org.springframework.stereotype.Service;
-//
-//@Service
-//public class CategoryService {
-//    private final CategoryRepository categoryRepository;
-//    private final TransactionTypeRepository transactionTypeRepository;
-//
-//    private TransactionType getTxnTypeById(Long txnTypeId) {
-//        return transactionTypeRepository.findById(txnTypeId).orElseThrow(() -> new ResourceNotFoundException(("Invalid transaction type id")));
-//    }
-//
-//    public CategoryService(CategoryRepository categoryRepository, TransactionTypeRepository transactionTypeRepository){
-//        this.categoryRepository = categoryRepository;
-//        this.transactionTypeRepository = transactionTypeRepository;
-//    }
-//
-//    public Category create(CategoryRequest req){
-//        TransactionType type = getTxnTypeById(req.getTxnTypeId());
-//
-//        boolean exists = categoryRepository
-//                .existsByLabelIgnoreCaseAndType_Id(req.getLabel().trim(), req.getTxnTypeId());
-//
-//        if (exists) {
-//            throw new BadRequestException("Category label already exists under this transaction type");
-//        }
-//
-//        Category ctr = new Category();
-//        ctr.setLabel(req.getLabel());
-//        ctr.setDescription(req.getDescription());
-//        ctr.setType(type);
-//
-//        return categoryRepository.save(ctr);
-//    }
-//
-////    public Page<@NonNull Category> find(Long typeId, String param, Boolean active, int page, int size, String sort){
-////
-////        TransactionType type = getTxnTypeById(typeId);
-////        Specification<@NonNull Category> spec =
-////                CategorySpecification.filterBy(type.getId(), param, active);
-////
-////        return categoryRepository.findAll(spec, Common.genPageable(page, size, sort));
-////    }
-//
-//    @Transactional
-//    public Category update(Long id, CategoryRequest request){
-//        TransactionType type = getTxnTypeById(request.getTxnTypeId());
-//
-//        Category category = categoryRepository.findById(id).orElseThrow(
-//                () -> new ResourceNotFoundException("Category not found")
-//        );
-//
-//        boolean exists = categoryRepository
-//                .existsByLabelIgnoreCaseAndType_IdAndIdNot(request.getLabel().trim(), request.getTxnTypeId(), id);
-//
-//        if (exists) {
-//            throw new BadRequestException("Category label already exists under this transaction type");
-//        }
-//
-//        category.setType(type);
-//        category.setLabel(request.getLabel());
-//        category.setDescription(request.getDescription());
-//        category.setIsActive(request.getIsActive());
-//
-//        return category;
-//    }
-//}
+package com.accounting.accounting.category.service;
+
+import com.accounting.accounting.category.dto.CategoryCreateRequest;
+import com.accounting.accounting.category.dto.CategoryResponse;
+import com.accounting.accounting.category.dto.CategorySearchRequest;
+import com.accounting.accounting.category.dto.CategoryUpdateRequest;
+import com.accounting.accounting.category.entity.Category;
+import com.accounting.accounting.category.mapper.CategoryMapper;
+import com.accounting.accounting.category.repository.CategoryRepository;
+import com.accounting.accounting.category.service.itf.CategoryServiceItf;
+import com.accounting.accounting.common.enums.ExceptionEnum;
+import com.accounting.accounting.common.exception.InvalidArgumentException;
+import com.accounting.accounting.common.helper.Common;
+import com.accounting.accounting.transaction.entity.txntype.TransactionType;
+import com.accounting.accounting.transaction.repository.txntype.TransactionTypeRepository;
+import com.accounting.accounting.user.entity.User;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class CategoryService implements CategoryServiceItf {
+    private final CategoryRepository categoryRepository;
+    private final TransactionTypeRepository transactionTypeRepository;
+    private final CategoryMapper categoryMapper;
+
+    @Override
+    public Page<CategoryResponse> findAll(CategorySearchRequest request, Pageable pageable) {
+        User user = Common.getAuthenticateUserNThrowException(null);
+        log.info("[Category][Find All]  - User ({}) all fetch of categories with params ({})", user.getEmail(), request.toString());
+        return categoryRepository.findAll(user.getId(),
+                        request.getLabel(),
+                        request.getTxnTypeId(),
+                        request.getIsActive(),
+                        pageable)
+                .map(categoryMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public CategoryResponse create(CategoryCreateRequest request) {
+        User user = Common.getAuthenticateUserNThrowException(null);
+        log.info("[Category][Create] - User ({}) create new category", user.getEmail());
+
+        boolean exist = categoryRepository.countByUserIdAndLabel(user.getId(), request.getLabel()) > 0;
+        if(exist){
+            throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
+        }
+
+        TransactionType transactionType = transactionTypeRepository
+                .findById(user.getId(), request.getTxnTypeId())
+                .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.TXN_TYPE_ID_NOT_FOUND_OR_INVALID));
+
+        Category category = new Category(user, transactionType, request.getLabel(), request.getDescription());
+        return categoryMapper.toResponse(categoryRepository.save(category));
+    }
+
+    @Override
+    @Transactional
+    public CategoryResponse update(CategoryUpdateRequest request) {
+        User user = Common.getAuthenticateUserNThrowException(null);
+        log.info("[Category][Update] - User ({}) update category", user.getEmail());
+
+        Category category = categoryRepository.findById(user.getId(), request.getId())
+                .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
+
+        boolean exist = categoryRepository.countByUserIdAndLabel(user.getId(), request.getLabel()) > 0;
+        if(exist){
+            throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
+        }
+
+        category.setLabel(request.getLabel());
+        category.setDescription(request.getDescription());
+        category.setIsActive(request.isActive());
+        categoryRepository.save(category);
+
+        return categoryMapper.toResponse(category);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByIds(List<Long> ids) {
+        User user = Common.getAuthenticateUserNThrowException(null);
+        log.info(
+                "[Category][Delete] - User ({}) delete category: [{}]",
+                user.getEmail(),
+                ids.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(", "))
+        );
+
+        List<Category> categories = categoryRepository.findByIds(user.getId(), ids);
+        if(categories.isEmpty()){
+            throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND);
+        }
+
+        categories.forEach(c -> {
+            c.setDeletedAt(LocalDateTime.now());
+            c.setDeletedBy(user.getEmail());
+        });
+        categoryRepository.saveAll(categories);
+    }
+}

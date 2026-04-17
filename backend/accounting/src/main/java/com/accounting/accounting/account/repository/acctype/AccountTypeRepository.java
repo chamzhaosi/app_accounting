@@ -14,14 +14,6 @@ import java.util.Optional;
 @NullMarked
 public interface AccountTypeRepository extends JpaRepository<AccountType, Long> {
     @Query("""
-    SELECT t
-    FROM AccountType t
-    WHERE (t.user.id = :userId OR t.user IS NULL)
-      AND t.isActive = true AND t.deletedAt IS NULL
-    """)
-    Page<AccountType> findActiveUserAndSystemTypes(@Param("userId") Long userId, Pageable pageable);
-
-    @Query("""
     SELECT COUNT(t)
     FROM AccountType t
     WHERE (t.user.id = :userId OR t.user IS NULL)
@@ -34,9 +26,12 @@ public interface AccountTypeRepository extends JpaRepository<AccountType, Long> 
     SELECT t
     FROM AccountType t
     WHERE (t.user.id = :userId OR t.user IS NULL)
+        AND t.isActive = :isActive
         AND t.deletedAt IS NULL
     """)
-    Page<AccountType> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+    Page<AccountType> findAll(@Param("userId") Long userId,
+                              @Param("isActive") Boolean isActive,
+                              Pageable pageable);
 
     @Query("""
     SELECT t
