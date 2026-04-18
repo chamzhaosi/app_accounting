@@ -38,7 +38,7 @@ public class AccountTypeController {
 
     @DeleteMapping("/delete")
     public ApiResponse<String> delete (@Valid @RequestBody AccountTypeDeleteRequest req){
-        service.deleteByIds(req.getIds());
+        service.deleteByIds(req);
         return ApiResponse.success("Account type(s) deleted successfully" );
     }
 }

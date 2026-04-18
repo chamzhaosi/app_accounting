@@ -36,7 +36,7 @@ public class CategoryController {
 
     @DeleteMapping("/delete")
     public ApiResponse<String> delete(@Valid @RequestBody CategoryDeleteRequest request){
-        service.deleteByIds(request.getIds());
+        service.deleteByIds(request);
         return ApiResponse.success("Category(s) deleted successfully");
     }
 }

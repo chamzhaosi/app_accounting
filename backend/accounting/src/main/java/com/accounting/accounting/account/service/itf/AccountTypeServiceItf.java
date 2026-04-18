@@ -1,14 +1,13 @@
 package com.accounting.accounting.account.service.itf;
 
-import com.accounting.accounting.account.dto.acctype.AccountTypeCreateRequest;
-import com.accounting.accounting.account.dto.acctype.AccountTypeResponse;
-import com.accounting.accounting.account.dto.acctype.AccountTypeSearchRequest;
-import com.accounting.accounting.account.dto.acctype.AccountTypeUpdateRequest;
-import com.accounting.accounting.common.service.CrudTypeService;
+import com.accounting.accounting.account.dto.acctype.*;
+import com.accounting.accounting.common.service.CrudServiceItf;
 
 public interface AccountTypeServiceItf
-        extends CrudTypeService<AccountTypeResponse,
-                AccountTypeSearchRequest,
-                AccountTypeCreateRequest,
-                AccountTypeUpdateRequest> {
+        extends CrudServiceItf<AccountTypeResponse,
+                        AccountTypeSearchRequest,
+                        AccountTypeCreateRequest,
+                        AccountTypeUpdateRequest,
+                        AccountTypeDeleteRequest
+                > {
 }

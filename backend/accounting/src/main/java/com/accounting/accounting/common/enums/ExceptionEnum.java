@@ -20,6 +20,13 @@ public enum ExceptionEnum {
     // Transaction
     TXN_TYPE_ID_NOT_FOUND_OR_INVALID("Transaction type not found or invalid"),
 
+    // CATEGORY
+    CTGR_ID_NOT_FOUND_OR_INVALID("Category type not found or invalid"),
+
+    // Account
+    ACC_TYPE_ID_NOT_FOUND_OR_INVALID("Account type not found or invalid"),
+    ACC_ID_NOT_FOUND_OR_INVALID("Account not found or invalid"),
+
     // Common exception
     DUPLICATE_DATA_FOUND("Data has been exist in our system."),
     DATA_NOT_FOUND("Data not found."),

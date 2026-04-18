@@ -8,12 +8,6 @@ import java.util.List;
 
 @Component
 public class CategoryMapper {
-    public List<CategoryResponse> toResponseList(List<Category> entities){
-        return entities.stream()
-                .map(CategoryResponse::new)
-                .toList();
-    }
-
     public CategoryResponse toResponse(Category entity){
         return new CategoryResponse(entity);
     }

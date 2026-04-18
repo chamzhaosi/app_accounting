@@ -1,11 +1,8 @@
 package com.accounting.accounting.account.service.acctype;
 
-import com.accounting.accounting.account.dto.acctype.AccountTypeCreateRequest;
-import com.accounting.accounting.account.dto.acctype.AccountTypeResponse;
-import com.accounting.accounting.account.dto.acctype.AccountTypeSearchRequest;
-import com.accounting.accounting.account.dto.acctype.AccountTypeUpdateRequest;
+import com.accounting.accounting.account.dto.acctype.*;
 import com.accounting.accounting.account.entity.acctype.AccountType;
-import com.accounting.accounting.account.mapper.AccountTypeMapper;
+import com.accounting.accounting.account.mapper.acctype.AccountTypeMapper;
 import com.accounting.accounting.account.repository.acctype.AccountTypeRepository;
 import com.accounting.accounting.account.service.itf.AccountTypeServiceItf;
 import com.accounting.accounting.common.enums.ExceptionEnum;
@@ -35,7 +32,7 @@ public class AccountTypeService implements AccountTypeServiceItf {
     public Page<AccountTypeResponse> findAll(AccountTypeSearchRequest request, Pageable pageable) {
         User user = Common.getAuthenticateUserNThrowException(null);
         log.info("[Account Type][Find all] - User ({}) fetch all account type including system created with params ({})", user.getEmail(), request.toString());
-        return accountTypeRepository.findAll(user.getId(), request.getIsActive(), pageable)
+        return accountTypeRepository.search(user.getId(), request.getIsActive(), pageable)
                 .map(accountTypeMapper::toResponse);
     }
 
@@ -77,17 +74,17 @@ public class AccountTypeService implements AccountTypeServiceItf {
 
     @Override
     @Transactional
-    public void deleteByIds(List<Long> ids) {
+    public void deleteByIds(AccountTypeDeleteRequest request) {
         User user = Common.getAuthenticateUserNThrowException(null);
         log.info(
                 "[Account Type][Delete] - User ({}) delete account type: [{}]",
                 user.getEmail(),
-                ids.stream()
+                request.getIds().stream()
                         .map(String::valueOf)
                         .collect(Collectors.joining(", "))
         );
 
-        List<AccountType> accountTypes =  accountTypeRepository.findByIds(user.getId(), ids);
+        List<AccountType> accountTypes =  accountTypeRepository.findByIds(user.getId(), request.getIds());
         if(accountTypes.isEmpty()){
             throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND);
         }
@@ -101,10 +98,16 @@ public class AccountTypeService implements AccountTypeServiceItf {
         accountTypeRepository.saveAll(accountTypes);
     }
 
+    public AccountType getAccountTypeByIds(Long userId, Long typeId){
+      return accountTypeRepository
+              .findById(userId, typeId)
+              .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.ACC_TYPE_ID_NOT_FOUND_OR_INVALID));
+    }
+
     private void checkTxnTypIsNotCrtBySystem(AccountType accountType){
-        log.info("[Account Type] - Check whether the account type ({}) created by system", accountType.getId());
-        if(accountType.getUser() == null){
-            throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_ALLOWED_TO_BE_MODIFIED);
-        }
+      log.info("[Account Type] - Check whether the account type ({}) created by system", accountType.getId());
+      if(accountType.getUser() == null){
+        throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_ALLOWED_TO_BE_MODIFIED);
+      }
     }
 }

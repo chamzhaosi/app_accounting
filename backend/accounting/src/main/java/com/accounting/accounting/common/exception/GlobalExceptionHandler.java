@@ -3,6 +3,7 @@ package com.accounting.accounting.common.exception;
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.user.service.UserServiceUtils;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
@@ -10,10 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
 import java.util.HashMap;
@@ -50,11 +53,11 @@ public class GlobalExceptionHandler {
         return new ApiResponse<>(message, 400, false, "INVALID_FORMAT");
            }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiResponse<String> handleNotFound(ResourceNotFoundException ex) {
-        return ApiResponse.fail(ex.getMessage(),404, "NOT_FOUND" );
-    }
+//    @ExceptionHandler(ResourceNotFoundException.class)
+//    @ResponseStatus(HttpStatus.NOT_FOUND)
+//    public ApiResponse<String> handleNotFound(ResourceNotFoundException ex) {
+//        return ApiResponse.fail(ex.getMessage(),404, "NOT_FOUND" );
+//    }
 
     // This is DB level exception. Eg: If there are two users save same label and type under same account
 //    @ExceptionHandler(DataIntegrityViolationException.class)
@@ -73,12 +76,23 @@ public class GlobalExceptionHandler {
 //
 //        return new ApiResponse<>(msg, 400, false, null);
 //    }
-
-    @ExceptionHandler(BadRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<?> handleBadRequest(BadRequestException ex) {
-        return new ApiResponse<>(ex.getMessage(), 400, false, "EXISTS_IN_DB");
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<?> handleNoResourceFound(NoResourceFoundException ex){
+      return new ApiResponse<>(ex.getMessage(), 500, false, null);
     }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<?> handleMethodNotSupport(HttpRequestMethodNotSupportedException ex){
+      return new ApiResponse<>(ex.getMessage(), 500, false, null);
+    }
+
+//    @ExceptionHandler(BadRequestException.class)
+//    @ResponseStatus(HttpStatus.BAD_REQUEST)
+//    public ApiResponse<?> handleBadRequest(BadRequestException ex) {
+//        return new ApiResponse<>(ex.getMessage(), 400, false, "EXISTS_IN_DB");
+//    }
 
     @ExceptionHandler(AuthenticationFailedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
@@ -95,7 +109,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ApiResponse<?>> handleInvalidArgumentException(InvalidArgumentException ex) {
+    public ResponseEntity<@NonNull ApiResponse<?>> handleInvalidArgumentException(InvalidArgumentException ex) {
         log.error("[InvalidArgumentException]: {}, {}", ex.getErrorCode(), ex.getMessage());
 
         return ResponseEntity.ok()

@@ -2,6 +2,7 @@ package com.accounting.accounting.account.entity;
 
 import com.accounting.accounting.account.entity.acctype.AccountType;
 import com.accounting.accounting.common.entity.EntityBase;
+import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import com.accounting.accounting.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,8 +11,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -20,6 +25,7 @@ import lombok.Setter;
     @UniqueConstraint(name="uq_acc_user_acc_type_label",
         columnNames = {"user_id", "acc_type_id", "active_label"})
 })
+@NoArgsConstructor
 public class Account extends EntityBase {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", referencedColumnName = "id")
@@ -27,14 +33,31 @@ public class Account extends EntityBase {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "acc_type_id", referencedColumnName = "id")
-  private AccountType accountType;
+  private AccountType type;
 
   @Column(nullable = false, length = 50)
+  @Size(message = "Label must not over 50 characters")
   private String label;
 
   @Column(nullable = false, length = 100)
+  @Size(message = "Description must not over 100 characters")
   private String description;
 
   @Column(name = "is_active", nullable = false)
   private Boolean isActive = true;
+
+  @Column(name="deleted_at")
+  private LocalDateTime deletedAt;
+
+  @Column(name="deleted_by")
+  private String deletedBy;
+
+  public Account(User user, AccountType txnTyp, String label, String description){
+    super(user.getEmail(), user.getEmail());
+    this.user = user;
+    this.type = txnTyp;
+    this.label = label;
+    this.description = description;
+  }
+
 }

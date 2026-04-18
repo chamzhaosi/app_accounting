@@ -1,18 +1,17 @@
 package com.accounting.accounting.account.repository.acctype;
 
 import com.accounting.accounting.account.entity.acctype.AccountType;
+import com.accounting.accounting.common.repository.BaseRepositoryItf;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Optional;
-
 @NullMarked
-public interface AccountTypeRepository extends JpaRepository<AccountType, Long> {
+public interface AccountTypeRepository
+        extends BaseRepositoryItf<AccountType, Long> {
+
     @Query("""
     SELECT COUNT(t)
     FROM AccountType t
@@ -29,27 +28,7 @@ public interface AccountTypeRepository extends JpaRepository<AccountType, Long> 
         AND t.isActive = :isActive
         AND t.deletedAt IS NULL
     """)
-    Page<AccountType> findAll(@Param("userId") Long userId,
-                              @Param("isActive") Boolean isActive,
-                              Pageable pageable);
-
-    @Query("""
-    SELECT t
-    FROM AccountType t
-    WHERE (t.user.id = :userId OR t.user IS NULL)
-        AND t.id IN (:ids)
-        AND t.deletedAt IS NULL
-    """)
-    List<AccountType> findByIds(@Param("userId") Long userId,
-                                @Param("ids") List<Long> ids);
-
-    @Query("""
-    SELECT t
-    FROM AccountType t
-    WHERE (t.user.id = :userId OR t.user IS NULL)
-        AND t.id = :id
-        AND t.deletedAt IS NULL
-    """)
-    Optional<AccountType> findById(@Param("userId") Long userId,
-                                   @Param("id") Long id);
+    Page<AccountType> search(@Param("userId") Long userId,
+                             @Param("isActive") Boolean isActive,
+                             Pageable pageable);
 }

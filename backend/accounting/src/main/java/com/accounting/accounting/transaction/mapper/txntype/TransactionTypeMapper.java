@@ -1,4 +1,4 @@
-package com.accounting.accounting.transaction.mapper;
+package com.accounting.accounting.transaction.mapper.txntype;
 
 import com.accounting.accounting.transaction.dto.txntype.TransactionTypeResponse;
 import com.accounting.accounting.transaction.entity.txntype.TransactionType;

@@ -209,9 +209,10 @@ CREATE TABLE transactions (
   user_id       BIGINT NOT NULL,
   txn_type_id   BIGINT NOT NULL,
   ctgr_id       BIGINT NOT NULL,
-  acc_type_id   BIGINT NOT NULL,
+  acc_id        BIGINT NOT NULL,
   description   VARCHAR(255) NOT NULL,
   amount        DECIMAL(10,2) NOT NULL,
+  txn_date      DATE NOT NULL,
   deleted_at    DATETIME NULL,
   deleted_by    VARCHAR(100) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -233,6 +234,6 @@ CREATE TABLE transactions (
     REFERENCES categories(id),
 
   CONSTRAINT fk_txn_accs
-    FOREIGN KEY (acc_type_id)
-    REFERENCES account_types(id)
+    FOREIGN KEY (acc_id)
+    REFERENCES accounts(id)
 );

@@ -4,6 +4,7 @@ import com.accounting.accounting.common.response.ApiResponsePagination;
 import com.accounting.accounting.transaction.dto.txntype.*;
 import com.accounting.accounting.transaction.service.txntype.TransactionTypeService;
 import jakarta.validation.Valid;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -19,7 +20,7 @@ public class TransactionTypeController {
     @GetMapping("/list")
     public ApiResponsePagination<TransactionTypeResponse> list(@Valid TransactionTypeSearchRequest request,
                                                                Pageable pageable){
-        Page<TransactionTypeResponse> transactionTypeResponse = service.findAll(request, pageable);
+        Page<@NonNull TransactionTypeResponse> transactionTypeResponse = service.findAll(request, pageable);
         return ApiResponsePagination.success(transactionTypeResponse);
     }
 }

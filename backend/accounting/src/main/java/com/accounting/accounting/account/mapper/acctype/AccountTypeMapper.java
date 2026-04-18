@@ -1,4 +1,4 @@
-package com.accounting.accounting.account.mapper;
+package com.accounting.accounting.account.mapper.acctype;
 
 import com.accounting.accounting.account.dto.acctype.AccountTypeResponse;
 import com.accounting.accounting.account.entity.acctype.AccountType;
