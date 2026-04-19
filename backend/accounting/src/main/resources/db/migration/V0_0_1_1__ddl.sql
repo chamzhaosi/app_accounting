@@ -171,13 +171,15 @@ CREATE TABLE account_types (
 );
 
 CREATE TABLE accounts (
-  id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id       BIGINT NOT NULL,
-  acc_type_id   BIGINT NOT NULL,
-  label         VARCHAR(50) NOT NULL,
-  description   VARCHAR(100) NOT NULL,
-  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-  active_label VARCHAR(50)
+  id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id            BIGINT NOT NULL,
+  acc_type_id        BIGINT NOT NULL,
+  label              VARCHAR(50) NOT NULL,
+  description        VARCHAR(100) NOT NULL,
+  amount             DECIMAL(10,2) NOT NULL,
+  is_main_account    BOOLEAN NOT NULL DEFAULT TRUE,
+  is_active          BOOLEAN NOT NULL DEFAULT TRUE,
+  active_label       VARCHAR(50)
     GENERATED ALWAYS AS (
         CASE
             WHEN deleted_at IS NULL THEN label
