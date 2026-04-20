@@ -83,7 +83,7 @@ CREATE TABLE transaction_types (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id       BIGINT,
   label         VARCHAR(50) NOT NULL,
-  nature        BIGINT,
+  nature        VARCHAR(10) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   active_label VARCHAR(50)
     GENERATED ALWAYS AS (
@@ -176,7 +176,8 @@ CREATE TABLE accounts (
   acc_type_id        BIGINT NOT NULL,
   label              VARCHAR(50) NOT NULL,
   description        VARCHAR(100) NOT NULL,
-  amount             DECIMAL(10,2) NOT NULL,
+  opening_balance    DECIMAL(10,2) DEFAULT 0.00,
+  current_balance    DECIMAL(10,2) DEFAULT 0.00,
   is_main_account    BOOLEAN NOT NULL DEFAULT TRUE,
   is_active          BOOLEAN NOT NULL DEFAULT TRUE,
   active_label       VARCHAR(50)
@@ -207,21 +208,22 @@ CREATE TABLE accounts (
 );
 
 CREATE TABLE transactions (
-  id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id       BIGINT NOT NULL,
-  txn_type_id   BIGINT NOT NULL,
-  ctgr_id       BIGINT NOT NULL,
-  acc_id        BIGINT NOT NULL,
-  description   VARCHAR(255) NOT NULL,
-  amount        DECIMAL(10,2) NOT NULL,
-  txn_date      DATE NOT NULL,
-  deleted_at    DATETIME NULL,
-  deleted_by    VARCHAR(100) NULL,
-  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by    VARCHAR(100),
-  modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  modified_by   VARCHAR(100),
-  vrs           BIGINT DEFAULT 0,
+  id                    BIGINT PRIMARY KEY AUTO_INCREMENT,
+  transfer_group_id     VARCHAR(50) NULL,
+  user_id               BIGINT NOT NULL,
+  txn_type_id           BIGINT NOT NULL,
+  ctgr_id               BIGINT NULL,
+  acc_id                BIGINT NOT NULL,
+  description           VARCHAR(255) NULL,
+  amount                DECIMAL(10,2) NOT NULL,
+  txn_date              DATE NOT NULL,
+  deleted_at            DATETIME NULL,
+  deleted_by            VARCHAR(100) NULL,
+  created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by            VARCHAR(100),
+  modified_at           DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  modified_by           VARCHAR(100),
+  vrs                   BIGINT DEFAULT 0,
 
   CONSTRAINT fk_txn_users
     FOREIGN KEY (user_id)

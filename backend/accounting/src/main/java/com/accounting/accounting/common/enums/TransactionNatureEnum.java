@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum TransactionNatureEnum {
-    IN(1L), OUT(2L);
+    INC("INC"), EXP("EXP"), ADJ("ADJ"), TSF("TSF");
 
-    private final Long code;
+    private final String code;
 
-    TransactionNatureEnum(Long code){
+    TransactionNatureEnum(String code){
         this.code = code;
     }
 }

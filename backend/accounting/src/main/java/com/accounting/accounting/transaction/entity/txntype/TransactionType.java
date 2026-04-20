@@ -21,8 +21,8 @@ public class TransactionType extends EntityBase {
     @NonNull
     private Long id;
 
-    @Nullable
-    private Long nature;
+    @NonNull
+    private String nature;
 
     @Nullable
     @ManyToOne(fetch = FetchType.LAZY)

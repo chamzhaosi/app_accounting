@@ -27,6 +27,8 @@ public class TransactionResponse {
     this.amount = transaction.getAmount();
     this.account = new AccountResponse(transaction.getAccount());
     this.txnDate = transaction.getTxnDate();
-    this.category = new CategoryResponse(transaction.getCategory());
+    this.category = transaction.getCategory() != null?
+                    new CategoryResponse(transaction.getCategory()):
+                    null;
   }
 }

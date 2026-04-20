@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/transactions")
@@ -23,10 +25,22 @@ public class TransactionController {
     return ApiResponse.success(data);
   }
 
+  @PostMapping("/transfer")
+  public ApiResponse<TransactionTransferResponse> transfer (@Valid @RequestBody TransactionTransferRequest request){
+    TransactionTransferResponse data = service.transfer(request);
+    return ApiResponse.success(data);
+  }
+
   @GetMapping("/list")
   public ApiResponsePagination<TransactionResponse> findAll (@Valid TransactionSearchRequest request, Pageable pageable){
     Page<@NonNull TransactionResponse> data = service.findAll(request, pageable);
     return ApiResponsePagination.success(data);
+  }
+
+  @GetMapping("/getTxnById/{id}")
+  public ApiResponse<Object> getTxnDtlById (@PathVariable Long id){
+    Object data = service.getTxnDtlById(id);
+    return ApiResponse.success(data);
   }
 
   @PutMapping("/update")
@@ -34,6 +48,13 @@ public class TransactionController {
     TransactionResponse data = service.update(request);
     return ApiResponse.success(data);
   }
+
+  @PutMapping("/update-transfer")
+  public ApiResponse<TransactionTransferResponse> updateTransfer(@Valid @RequestBody TransactionUpdateTransferRequest request){
+    TransactionTransferResponse data = service.updateTransfer(request);
+    return ApiResponse.success(data);
+  }
+
 
   @DeleteMapping("/delete")
   public ApiResponse<String> delete(@Valid @RequestBody TransactionDeleteRequest request){

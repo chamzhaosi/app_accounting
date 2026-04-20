@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 
@@ -12,18 +13,22 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class TransactionUpdateRequest{
-  @NotNull(message = "id is required")
-  private Long id;
+@NoArgsConstructor
+public class TransactionUpdateTransferRequest {
+  @NotNull(message = "fromId is required")
+  private Long fromId;
+
+  @NotNull(message = "toId is required")
+  private Long toId;
+
+  @NotNull(message = "fromAccId is required")
+  private Long fromAccId;
+
+  @NotNull(message = "toAccId is required")
+  private Long toAccId;
 
   @NotNull(message = "txnTypeId is required")
   private Long txnTypeId;
-
-  @NotNull(message = "ctgrId is required")
-  private Long ctgrId;
-
-  @NotNull(message = "accId is required")
-  private Long accId;
 
   @Nullable
   @Size(max = 100, message = "description must not exceed 100 characters")

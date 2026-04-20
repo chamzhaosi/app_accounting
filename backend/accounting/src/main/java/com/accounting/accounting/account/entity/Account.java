@@ -1,5 +1,7 @@
 package com.accounting.accounting.account.entity;
 
+import com.accounting.accounting.account.dto.AccountCreateRequest;
+import com.accounting.accounting.account.dto.AccountUpdateRequest;
 import com.accounting.accounting.account.entity.acctype.AccountType;
 import com.accounting.accounting.common.entity.EntityBase;
 import com.accounting.accounting.transaction.entity.txntype.TransactionType;
@@ -16,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -52,12 +55,23 @@ public class Account extends EntityBase {
   @Column(name="deleted_by")
   private String deletedBy;
 
-  public Account(User user, AccountType txnTyp, String label, String description){
+  @Column(name = "is_main_account", nullable = false)
+  private Boolean isMainAccount;
+
+  @Column(precision = 10, scale = 2)
+  private BigDecimal openingBalance = BigDecimal.valueOf(0.00);
+
+  @Column(precision = 10, scale = 2)
+  private BigDecimal currentBalance = BigDecimal.valueOf(0.00);
+
+  public Account(User user, AccountType accTyp, AccountCreateRequest request){
     super(user.getEmail(), user.getEmail());
     this.user = user;
-    this.type = txnTyp;
-    this.label = label;
-    this.description = description;
+    this.type = accTyp;
+    this.label = request.getLabel();
+    this.description = request.getDescription();
+    this.isMainAccount = request.getIsMainAccount();
+    this.openingBalance = request.getAmount();
+    this.currentBalance = request.getAmount();
   }
-
 }

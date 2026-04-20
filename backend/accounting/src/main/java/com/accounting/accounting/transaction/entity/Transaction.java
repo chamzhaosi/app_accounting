@@ -22,12 +22,15 @@ import lombok.Setter;
 @Table(name = "transactions")
 @NoArgsConstructor
 public class Transaction extends EntityBase {
+    @Column(name = "transfer_group_id")
+    private String transferGroupId;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "txn_type_id", referencedColumnName = "id")
+    @JoinColumn(name = "txn_type_id", referencedColumnName = "id", nullable = false)
     private TransactionType transactionType;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,7 +38,7 @@ public class Transaction extends EntityBase {
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "acc_id", referencedColumnName = "id")
+    @JoinColumn(name = "acc_id", referencedColumnName = "id", nullable = false)
     private Account account;
 
     @Column(nullable = false)
@@ -54,7 +57,8 @@ public class Transaction extends EntityBase {
     @Column(name = "deleted_by")
     private String deletedBy;
 
-  public Transaction(User user, TransactionType transactionType, Category category, Account account, String description, BigDecimal amount, LocalDate txnDate){
+  public Transaction(User user, TransactionType transactionType, Category category, Account account,
+                     String description, BigDecimal amount, LocalDate txnDate, String transferGroupId){
     super(user.getEmail(), user.getEmail());
     this.user = user;
     this.transactionType = transactionType;
@@ -63,5 +67,6 @@ public class Transaction extends EntityBase {
     this.description = description;
     this.amount = amount;
     this.txnDate = txnDate;
+    this.transferGroupId = transferGroupId;
   }
 }

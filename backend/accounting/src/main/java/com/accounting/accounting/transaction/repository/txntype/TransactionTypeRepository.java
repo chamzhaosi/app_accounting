@@ -35,5 +35,7 @@ public interface TransactionTypeRepository extends JpaRepository<TransactionType
             """)
     Optional<TransactionType> findById(@Param("userId") Long userId,
                              @Param("txnTypeId") Long txnTypeId);
+
+    Optional<TransactionType> findByLabel(String label);
 }
 

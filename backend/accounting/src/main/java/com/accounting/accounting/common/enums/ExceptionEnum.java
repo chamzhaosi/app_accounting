@@ -19,6 +19,8 @@ public enum ExceptionEnum {
 
     // Transaction
     TXN_TYPE_ID_NOT_FOUND_OR_INVALID("Transaction type not found or invalid"),
+    TXN_TYPE_NOT_SUPPORTED("Transaction type not supported"),
+    TSF_GROUP_TXN_ID_NOT_FOUND("Not found transfer transaction record"),
 
     // CATEGORY
     CTGR_ID_NOT_FOUND_OR_INVALID("Category type not found or invalid"),

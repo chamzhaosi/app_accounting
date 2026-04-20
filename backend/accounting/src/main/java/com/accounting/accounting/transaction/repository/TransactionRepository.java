@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 public interface TransactionRepository extends BaseRepositoryItf<Transaction, Long> {
 
@@ -38,4 +39,32 @@ public interface TransactionRepository extends BaseRepositoryItf<Transaction, Lo
                                     @Nullable @Param("sttTxnDate") LocalDate sttTxnDate,
                                     @Nullable @Param("endTxnDate") LocalDate endTxnDate,
                                     Pageable pageable);
+
+  @Query(
+    """
+    SELECT COUNT(t)
+    FROM #{#entityName} t
+    WHERE t.user.id = :userId
+      AND t.account.id = :accId
+      AND t.deletedAt IS NULL
+    """
+  )
+  int countTransactionByAccId(@Param("userId") Long userId,
+                                  @Param("accId") Long accId);
+
+
+  @Query(
+          """
+          SELECT t
+          FROM #{#entityName} t
+          WHERE t.user.id = :userId
+            AND t.id <> : txnId
+            AND t.transferGroupId = :transferGroupId
+            AND t.deletedAt IS NULL
+          """
+  )
+  Optional<Transaction> findByTransferGroupId(@Param("userId") Long userId,
+                                 @Param("txnId") Long txnId,
+                                 @Param("transferGroupId") String transferGroupId);
+
 }
