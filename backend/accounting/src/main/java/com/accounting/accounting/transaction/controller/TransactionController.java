@@ -2,7 +2,11 @@ package com.accounting.accounting.transaction.controller;
 
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.common.response.ApiResponsePagination;
-import com.accounting.accounting.transaction.dto.*;
+import com.accounting.accounting.transaction.dto.common.TransactionBasedResponse;
+import com.accounting.accounting.transaction.dto.transaction.*;
+import com.accounting.accounting.transaction.dto.transfer.TransactionTransferRequest;
+import com.accounting.accounting.transaction.dto.transfer.TransactionTransferResponse;
+import com.accounting.accounting.transaction.dto.transfer.TransactionUpdateTransferRequest;
 import com.accounting.accounting.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
@@ -10,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,8 +40,8 @@ public class TransactionController {
   }
 
   @GetMapping("/getTxnById/{id}")
-  public ApiResponse<Object> getTxnDtlById (@PathVariable Long id){
-    Object data = service.getTxnDtlById(id);
+  public ApiResponse<TransactionBasedResponse> getTxnDtlById (@PathVariable Long id){
+    TransactionBasedResponse data = service.getTxnDtlById(id);
     return ApiResponse.success(data);
   }
 
@@ -55,10 +57,9 @@ public class TransactionController {
     return ApiResponse.success(data);
   }
 
-
   @DeleteMapping("/delete")
   public ApiResponse<String> delete(@Valid @RequestBody TransactionDeleteRequest request){
     service.deleteByIds(request);
-    return ApiResponse.success("Category(s) deleted successfully");
+    return ApiResponse.success("Transaction(s) deleted successfully");
   }
 }

@@ -1,24 +1,22 @@
 package com.accounting.accounting.transaction.service;
 
 import com.accounting.accounting.account.entity.Account;
-import com.accounting.accounting.account.entity.acctype.AccountType;
-import com.accounting.accounting.account.repository.AccountRepository;
-import com.accounting.accounting.account.repository.acctype.AccountTypeRepository;
 import com.accounting.accounting.account.service.AccountService;
 import com.accounting.accounting.category.entity.Category;
-import com.accounting.accounting.category.repository.CategoryRepository;
 import com.accounting.accounting.category.service.CategoryService;
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.enums.TransactionNatureEnum;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.common.helper.Common;
-import com.accounting.accounting.transaction.dto.*;
-import com.accounting.accounting.transaction.dto.txntype.TransactionTypeResponse;
+import com.accounting.accounting.transaction.dto.common.TransactionBasedResponse;
+import com.accounting.accounting.transaction.dto.transaction.*;
+import com.accounting.accounting.transaction.dto.transfer.TransactionTransferRequest;
+import com.accounting.accounting.transaction.dto.transfer.TransactionTransferResponse;
+import com.accounting.accounting.transaction.dto.transfer.TransactionUpdateTransferRequest;
 import com.accounting.accounting.transaction.entity.Transaction;
 import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import com.accounting.accounting.transaction.mapper.TransactionMapper;
 import com.accounting.accounting.transaction.repository.TransactionRepository;
-import com.accounting.accounting.transaction.repository.txntype.TransactionTypeRepository;
 import com.accounting.accounting.transaction.service.itf.TransactionServiceItf;
 import com.accounting.accounting.transaction.service.txntype.TransactionTypeService;
 import com.accounting.accounting.user.entity.User;
@@ -32,11 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -65,7 +62,7 @@ public class TransactionService implements TransactionServiceItf {
             .map(transactionMapper::toResponse);
   }
 
-  public Object getTxnDtlById(Long id){
+  public TransactionBasedResponse getTxnDtlById(Long id){
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Update] - User ({}) get txn detail by id ({})", user.getEmail(), id);
     Transaction transaction = transactionRepository.findById(user.getId(), id)
@@ -99,12 +96,15 @@ public class TransactionService implements TransactionServiceItf {
     }
 
     Category category = categoryService.getCategoryById(user.getId(), request.getCtgrId());
-    Account account = accountService.getAccountById(user.getId(), request.getAccId());
+    if(!category.getType().equals(transactionType)){
+      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_AND_CTGR_NOT_MATCH);
+    }
 
+    Account account = accountService.getAccountById(user.getId(), request.getAccId());
     Transaction transaction = new Transaction(
             user, transactionType, category, account, request.getDescription(),
             request.getAmount(), request.getTxnDate(), null);
-    accountService.updateCurrentBalance(account, transaction);
+    accountService.updateCurrentBalance(transaction);
     return transactionMapper.toResponse(transactionRepository.save(transaction));
   }
 
@@ -119,23 +119,26 @@ public class TransactionService implements TransactionServiceItf {
     }
 
     String groupId = UUID.randomUUID().toString();
-    Account fromAccount =  accountService.getAccountById(user.getId(), request.getFromAccId());
+    Map<Long, Account> accountMap = getIdAccountMap(user.getId(), request.getFromAccId(), request.getToAccId());
+
+    if(accountMap.size() != 2){
+      throw new InvalidArgumentException(ExceptionEnum.ACC_ID_NOT_FOUND_OR_INVALID);
+    }
+
+    Account fromAccount = accountMap.get(request.getFromAccId());
     Transaction fromTransaction = new Transaction(
             user, transactionType, null, fromAccount, request.getDescription(),
             request.getAmount().negate(), request.getTxnDate(), groupId
     );
-    accountService.updateCurrentBalance(fromAccount, fromTransaction);
-
-    Account toAccount =  accountService.getAccountById(user.getId(), request.getToAccId());
+    Account toAccount = accountMap.get(request.getToAccId());
     Transaction toTransaction = new Transaction(
             user, transactionType, null, toAccount, request.getDescription(),
             request.getAmount(), request.getTxnDate(),groupId
     );
-    accountService.updateCurrentBalance(toAccount, toTransaction);
 
     List<Transaction> transactionList = List.of(fromTransaction, toTransaction);
+    accountService.updateCurrentBalance(transactionList);
     transactionRepository.saveAll(transactionList);
-
     return transactionMapper.toTransferResponse(fromTransaction, toTransaction);
   }
 
@@ -146,11 +149,21 @@ public class TransactionService implements TransactionServiceItf {
     log.info("[Transaction][Update] - User ({}) update transaction by id ({})", user.getEmail(), request.getId());
 
     TransactionType transactionType = transactionTypeService.getTransactionTypeByIds(user.getId(), request.getTxnTypeId());
+    if(!List.of(TransactionNatureEnum.INC.getCode(), TransactionNatureEnum.EXP.getCode())
+            .contains(transactionType.getNature())){
+      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_NOT_SUPPORTED);
+    }
+
     Transaction transaction = transactionRepository.findById(user.getId(), request.getId())
             .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
+    accountService.resetCurrentBalance(transaction);
+
     Category category = categoryService.getCategoryById(user.getId(), request.getCtgrId());
+    if(!category.getType().equals(transactionType)){
+      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_AND_CTGR_NOT_MATCH);
+    }
+
     Account account = accountService.getAccountById(user.getId(), request.getAccId());
-    accountService.resetCurrentBalance(account, transaction);
 
     transaction.setTransactionType(transactionType);
     transaction.setCategory(category);
@@ -159,42 +172,49 @@ public class TransactionService implements TransactionServiceItf {
     transaction.setDescription(request.getDescription());
     transaction.setTxnDate(request.getTxnDate());
 
-    accountService.updateCurrentBalance(account, transaction);
+    accountService.updateCurrentBalance(transaction);
     return transactionMapper.toResponse(transactionRepository.save(transaction));
   }
+
+  // TODO: add update auto adjustment txn
 
   @Transactional
   public TransactionTransferResponse updateTransfer(TransactionUpdateTransferRequest request){
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Update] - User ({}) update transfer transaction by fromId ({}) and toId ({})"
             , user.getEmail(), request.getFromId(), request.getToId());
-    List<Transaction> preTxnList = transactionRepository.findByIds(user.getId(), List.of(request.getFromId(), request.getToId()));
-    Transaction preFromTxn = preTxnList.getFirst();
-    Transaction preToTxn = preTxnList.getLast();
+    List<Transaction> preTxnList = transactionRepository
+            .findByIds(user.getId(), List.of(request.getFromId(), request.getToId()));
+    Map<Long, Transaction> transactionMap = preTxnList.stream()
+            .collect(Collectors.toMap(Transaction::getId, Function.identity()));
 
-    if(preTxnList.size() != 2 ||
+    Transaction preFromTxn = transactionMap.get(request.getFromId());
+    Transaction preToTxn = transactionMap.get(request.getToId());
+
+    if(transactionMap.size() != 2 ||
             !preFromTxn.getTransferGroupId().equals(preToTxn.getTransferGroupId())){
       throw new InvalidArgumentException(ExceptionEnum.TSF_GROUP_TXN_ID_NOT_FOUND);
     }
 
-    accountService.resetCurrentBalance(preFromTxn.getAccount(), preFromTxn);
-    accountService.resetCurrentBalance(preToTxn.getAccount(), preToTxn);
+    accountService.resetCurrentBalance(preTxnList);
 
-    Account fromAccount =  accountService.getAccountById(user.getId(), request.getFromAccId());
+    List<Account> accounts =  accountService.getAccountByIds(user.getId(), List.of(request.getFromAccId(), request.getToAccId()));
+    Map<Long, Account> accountMap = accounts.stream().collect(Collectors.toMap(Account::getId, Function.identity()));
+
+    Account fromAccount = accountMap.get(request.getFromAccId());
     preFromTxn.setAccount(fromAccount);
-    preFromTxn.setAmount(request.getAmount());
+    preFromTxn.setAmount(request.getAmount().negate());
     preFromTxn.setDescription(request.getDescription());
     preFromTxn.setTxnDate(request.getTxnDate());
-    accountService.updateCurrentBalance(fromAccount, preFromTxn);
 
-    Account toAccount =  accountService.getAccountById(user.getId(), request.getToAccId());
+    Account toAccount = accountMap.get(request.getToAccId());
     preToTxn.setAccount(toAccount);
     preToTxn.setAmount(request.getAmount());
     preToTxn.setDescription(request.getDescription());
     preToTxn.setTxnDate(request.getTxnDate());
-    accountService.updateCurrentBalance(toAccount, preToTxn);
 
     List<Transaction> transactionList = List.of(preFromTxn, preToTxn);
+    accountService.updateCurrentBalance(transactionList);
     transactionRepository.saveAll(transactionList);
     return transactionMapper.toTransferResponse(preFromTxn, preToTxn);
   }
@@ -211,23 +231,45 @@ public class TransactionService implements TransactionServiceItf {
                     .collect(Collectors.joining(", "))
     );
 
-    List<Transaction> transactions = transactionRepository.findByIds(user.getId(), request.getIds());
+    List<Transaction> transactions = new ArrayList<>(transactionRepository.findByIds(user.getId(), request.getIds()));
     if(transactions.isEmpty()){
       throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND);
     }
+    List<String> uniqueGroupIds = transactions.stream()
+            .map(Transaction::getTransferGroupId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+            .entrySet().stream()
+            .filter(m -> m.getValue() == 1)
+            .map(Map.Entry::getKey)
+            .toList();
 
+    List<Transaction> transferTransactions = new ArrayList<>(transactionRepository.findByTransferGroupIds(user.getId(), uniqueGroupIds));
+    Map<Long, Transaction> uniqueTransactions = Stream.concat(
+                    transactions.stream(),
+                    transferTransactions.stream()
+            )
+            .collect(Collectors.toMap(
+                    Transaction::getId,
+                    Function.identity(),
+                    (a, b) -> a,
+                    LinkedHashMap::new
+            ));
+    List<Transaction> finalTransactions = new ArrayList<>(uniqueTransactions.values());
+    LocalDateTime now = LocalDateTime.now();
 
-    Map<Account, BigDecimal> result = transactions.stream().collect(Collectors.groupingBy(
-            Transaction::getAccount, Collectors.reducing(BigDecimal.ZERO,
-                    Transaction::getAmount, BigDecimal::add))
-    );
-
-    transactions.forEach(t -> {
-      t.setDeletedAt(LocalDateTime.now());
+    accountService.resetCurrentBalance(finalTransactions);
+    finalTransactions.forEach(t -> {
+      t.setDeletedAt(now);
       t.setDeletedBy(user.getEmail());
-//      Account account = t.getAccount();
-//      accountService.updateCurrentBalance(account, t.getAmount().negate();
     });
-    transactionRepository.saveAll(transactions);
+    transactionRepository.saveAll(finalTransactions);
+  }
+
+  private Map<Long, Account> getIdAccountMap (Long userId, Long fromAccId, Long toAccId){
+    List<Account> accounts = accountService
+            .getAccountByIds(userId, List.of(fromAccId, toAccId));
+    return accounts.stream()
+            .collect(Collectors.toMap(Account::getId, Function.identity()));
   }
 }

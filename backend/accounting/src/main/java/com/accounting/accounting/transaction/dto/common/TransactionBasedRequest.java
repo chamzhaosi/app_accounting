@@ -1,9 +1,10 @@
-package com.accounting.accounting.transaction.dto;
+package com.accounting.accounting.transaction.dto.common;
 
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 
@@ -12,18 +13,10 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class TransactionUpdateRequest{
-  @NotNull(message = "id is required")
-  private Long id;
-
+@RequiredArgsConstructor
+public class TransactionBasedRequest {
   @NotNull(message = "txnTypeId is required")
   private Long txnTypeId;
-
-  @NotNull(message = "ctgrId is required")
-  private Long ctgrId;
-
-  @NotNull(message = "accId is required")
-  private Long accId;
 
   @Nullable
   @Size(max = 100, message = "description must not exceed 100 characters")

@@ -21,17 +21,19 @@ import com.accounting.accounting.user.entity.User;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -86,7 +88,7 @@ public class AccountService implements AccountServiceItf {
     if(exist){
       throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
     }
-    setAdjustedTxn(user, account, request.getAmount());
+    createAdjustedTxn(user, account, request.getAmount());
 
     account.setLabel(request.getLabel());
     account.setDescription(request.getDescription());
@@ -131,56 +133,91 @@ public class AccountService implements AccountServiceItf {
             .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.ACC_ID_NOT_FOUND_OR_INVALID));
   }
 
-  public void resetCurrentBalance(Account account, Transaction oldTransaction) {
-    log.info("[Account] - Reset current balance by reversing old transaction amount");
+  public List<Account> getAccountByIds(Long userId, List<Long> accIds){
+    return accountRepository.findByIds(userId, accIds);
+  }
 
+  public void resetCurrentBalance(Transaction oldTransaction) {
+    log.info("[Account] - Reset current balance by reversing old transaction amount");
+    Account account = oldTransaction.getAccount();
     BigDecimal currentBalance = account.getCurrentBalance() != null
             ? account.getCurrentBalance()
             : BigDecimal.ZERO;
-    BigDecimal amount = oldTransaction.getAmount();
-    String txnNature = oldTransaction.getTransactionType() != null
-            ? oldTransaction.getTransactionType().getNature()
-            : null;
 
-    if (TransactionNatureEnum.INC.getCode().equals(txnNature)) {
-      account.setCurrentBalance(currentBalance.subtract(amount));
-    } else if (TransactionNatureEnum.EXP.getCode().equals(txnNature)) {
-      account.setCurrentBalance(currentBalance.add(amount));
-    } else {
-      account.setCurrentBalance(currentBalance.subtract(amount));
-    }
-
+    BigDecimal amountToAdj = getTransactionAmount(oldTransaction);
+    account.setCurrentBalance(currentBalance.add(amountToAdj));
     accountRepository.save(account);
   }
 
-  public void updateCurrentBalance(Account account, Transaction transaction){
-    log.info("[Account] - Calculate current balance by transaction amount");
+  public void resetCurrentBalance(List<Transaction> transactionList){
+    log.info("[Account] - Reset current balance by reversing old transaction list amount");
+    Map<Long, Account> accountMap = transactionList.stream().map(Transaction::getAccount)
+            .collect(Collectors.toMap(Account::getId, Function.identity(), (a,b)-> a));
+
+    transactionList.forEach(txn -> {
+      Account account = accountMap.get(txn.getAccount().getId());
+      BigDecimal currentBalance = account.getCurrentBalance() != null
+              ? account.getCurrentBalance()
+              : BigDecimal.ZERO;
+
+      BigDecimal amountToAdj = getTransactionAmount(txn);
+      account.setCurrentBalance(currentBalance.add(amountToAdj));
+    });
+    accountRepository.saveAll(accountMap.values());
+  }
+
+  private BigDecimal getTransactionAmount(Transaction transaction) {
+    if (transaction == null) {
+      return BigDecimal.ZERO;
+    }
+
+    BigDecimal amount = transaction.getAmount();
+    String txnNature = transaction.getTransactionType().getNature();
+
+    if (TransactionNatureEnum.INC.getCode().equals(txnNature)) {
+      return amount.negate();
+    } else if (TransactionNatureEnum.EXP.getCode().equals(txnNature)) {
+      return amount;
+    } else {
+      return amount.negate();
+    }
+  }
+
+  public void updateCurrentBalance(Transaction transaction){
+    log.info("[Account] - Update current balance by transaction amount");
+    Account account = transaction.getAccount();
     BigDecimal currentBalance = account.getCurrentBalance() != null
             ? account.getCurrentBalance()
             : BigDecimal.ZERO;
-    BigDecimal amount = transaction.getAmount();
-    String txnNature = transaction.getTransactionType() != null
-            ? transaction.getTransactionType().getNature()
-            : null;
 
-    if (TransactionNatureEnum.INC.getCode().equals(txnNature)) {
-      account.setCurrentBalance(currentBalance.add(amount));
-    } else if (TransactionNatureEnum.EXP.getCode().equals(txnNature)) {
-      account.setCurrentBalance(currentBalance.subtract(amount));
-    } else {
-      account.setCurrentBalance(currentBalance.add(amount));
-    }
-
+    BigDecimal adjustedAmt = getTransactionAmount(transaction).negate();
+    account.setCurrentBalance(currentBalance.add(adjustedAmt));
+    accountRepository.save(account);
   }
 
-  private void setAdjustedTxn(User user, Account account, BigDecimal updatedAmount){
+  public void updateCurrentBalance(List<Transaction> transactions){
+    log.info("[Account] - Update multiple current balance by transaction amount");
+    List<Account> accounts = new ArrayList<>();
+    transactions.forEach(txn -> {
+      Account account = txn.getAccount();
+      BigDecimal currentBalance = account.getCurrentBalance() != null
+              ? account.getCurrentBalance()
+              : BigDecimal.ZERO;
+      BigDecimal adjustedAmt = getTransactionAmount(txn).negate();
+      account.setCurrentBalance(currentBalance.add(adjustedAmt));
+      accounts.add(account);
+    });
+    accountRepository.saveAll(accounts);
+  }
+
+  private void createAdjustedTxn(User user, Account account, BigDecimal updatedAmount){
     boolean hasTxnBfr = transactionRepository.countTransactionByAccId(user.getId(), account.getId()) > 0;
     if(hasTxnBfr){
       log.info("[Account] - Manually add an extra adjusted txn");
       TransactionType transactionType = transactionTypeRepository.findByLabel("Adjust")
               .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.TXN_TYPE_ID_NOT_FOUND_OR_INVALID));
 
-      BigDecimal diff = account.getCurrentBalance().subtract(updatedAmount);
+      BigDecimal diff = updatedAmount.subtract(account.getCurrentBalance());
       Transaction adjustedTransaction = new Transaction(user, transactionType, null, account,
               "Balance adjustment", diff, LocalDate.now(ZoneId.of("Asia/Kuala_Lumpur")),
               null);
