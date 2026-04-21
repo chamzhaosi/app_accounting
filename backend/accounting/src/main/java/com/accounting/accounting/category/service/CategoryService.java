@@ -9,7 +9,6 @@ import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.common.helper.Common;
 import com.accounting.accounting.transaction.entity.txntype.TransactionType;
-import com.accounting.accounting.transaction.repository.txntype.TransactionTypeRepository;
 import com.accounting.accounting.transaction.service.txntype.TransactionTypeService;
 import com.accounting.accounting.user.entity.User;
 import lombok.NonNull;
@@ -56,7 +55,7 @@ public class CategoryService implements CategoryServiceItfItf {
             throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
         }
 
-        TransactionType transactionType = transactionTypeService.getTransactionTypeByIds(user.getId(), request.getTxnTypeId());
+        TransactionType transactionType = transactionTypeService.getTransactionTypeById(user.getId(), request.getTxnTypeId());
         Category category = new Category(user, transactionType, request.getLabel(), request.getDescription());
         return categoryMapper.toResponse(categoryRepository.save(category));
     }

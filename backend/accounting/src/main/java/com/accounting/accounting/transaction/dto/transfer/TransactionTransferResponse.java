@@ -1,7 +1,6 @@
 package com.accounting.accounting.transaction.dto.transfer;
 
 import com.accounting.accounting.account.dto.AccountResponse;
-import com.accounting.accounting.category.dto.CategoryResponse;
 import com.accounting.accounting.transaction.dto.common.TransactionBasedResponse;
 import com.accounting.accounting.transaction.entity.Transaction;
 import lombok.Getter;
@@ -16,7 +15,6 @@ public class TransactionTransferResponse extends TransactionBasedResponse {
   private Long toId;
   private AccountResponse fromAccount;
   private AccountResponse toAccount;
-  private CategoryResponse category;
 
   public TransactionTransferResponse (Transaction formTransaction, Transaction toTransaction){
     super(toTransaction);

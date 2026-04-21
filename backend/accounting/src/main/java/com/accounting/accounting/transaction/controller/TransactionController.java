@@ -2,6 +2,8 @@ package com.accounting.accounting.transaction.controller;
 
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.common.response.ApiResponsePagination;
+import com.accounting.accounting.transaction.dto.adjustment.TransactionAdjustResponse;
+import com.accounting.accounting.transaction.dto.adjustment.TransactionUpdateAdjustRequest;
 import com.accounting.accounting.transaction.dto.common.TransactionBasedResponse;
 import com.accounting.accounting.transaction.dto.transaction.*;
 import com.accounting.accounting.transaction.dto.transfer.TransactionTransferRequest;
@@ -54,6 +56,12 @@ public class TransactionController {
   @PutMapping("/update-transfer")
   public ApiResponse<TransactionTransferResponse> updateTransfer(@Valid @RequestBody TransactionUpdateTransferRequest request){
     TransactionTransferResponse data = service.updateTransfer(request);
+    return ApiResponse.success(data);
+  }
+
+  @PutMapping("/update-adjust")
+  public ApiResponse<TransactionAdjustResponse> updateAdjust(@Valid @RequestBody TransactionUpdateAdjustRequest request){
+    TransactionAdjustResponse data = service.updateAdjust(request);
     return ApiResponse.success(data);
   }
 

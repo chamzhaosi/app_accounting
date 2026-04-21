@@ -1,5 +1,6 @@
 package com.accounting.accounting.transaction.dto.common;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

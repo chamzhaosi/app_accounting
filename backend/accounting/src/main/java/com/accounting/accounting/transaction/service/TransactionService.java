@@ -8,6 +8,8 @@ import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.enums.TransactionNatureEnum;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.common.helper.Common;
+import com.accounting.accounting.transaction.dto.adjustment.TransactionAdjustResponse;
+import com.accounting.accounting.transaction.dto.adjustment.TransactionUpdateAdjustRequest;
 import com.accounting.accounting.transaction.dto.common.TransactionBasedResponse;
 import com.accounting.accounting.transaction.dto.transaction.*;
 import com.accounting.accounting.transaction.dto.transfer.TransactionTransferRequest;
@@ -76,9 +78,9 @@ public class TransactionService implements TransactionServiceItf {
               .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.TSF_GROUP_TXN_ID_NOT_FOUND));
 
       if(transaction.getAmount().compareTo(BigDecimal.ZERO) < 0){
-        return transactionMapper.toTransferResponse(transaction, grpTransaction);
+        return transactionMapper.toAdjustResponse(transaction, grpTransaction);
       }else{
-        return transactionMapper.toTransferResponse(grpTransaction, transaction);
+        return transactionMapper.toAdjustResponse(grpTransaction, transaction);
       }
     }
   }
@@ -89,16 +91,9 @@ public class TransactionService implements TransactionServiceItf {
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Create] - User ({}) create new transaction", user.getEmail());
 
-    TransactionType transactionType = transactionTypeService.getTransactionTypeByIds(user.getId(), request.getTxnTypeId());
-    if(!List.of(TransactionNatureEnum.INC.getCode(), TransactionNatureEnum.EXP.getCode())
-            .contains(transactionType.getNature())){
-      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_NOT_SUPPORTED);
-    }
-
-    Category category = categoryService.getCategoryById(user.getId(), request.getCtgrId());
-    if(!category.getType().equals(transactionType)){
-      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_AND_CTGR_NOT_MATCH);
-    }
+    TransactionType transactionType = getAndCheckTransactionType(user.getId(), request.getTxnTypeId(),
+            List.of(TransactionNatureEnum.INC.getCode(), TransactionNatureEnum.EXP.getCode()));
+    Category category = getAndCheckCategory(user.getId(), request.getCtgrId(), transactionType);
 
     Account account = accountService.getAccountById(user.getId(), request.getAccId());
     Transaction transaction = new Transaction(
@@ -113,10 +108,8 @@ public class TransactionService implements TransactionServiceItf {
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Create] - User ({}) create a transfer transaction", user.getEmail());
 
-    TransactionType transactionType = transactionTypeService.getTransactionTypeByIds(user.getId(), request.getTxnTypeId());
-    if(!TransactionNatureEnum.TSF.getCode().equals(transactionType.getNature())){
-      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_NOT_SUPPORTED);
-    }
+    TransactionType transactionType = getAndCheckTransactionType(user.getId(), request.getTxnTypeId(),
+            List.of(TransactionNatureEnum.TSF.getCode()));
 
     String groupId = UUID.randomUUID().toString();
     Map<Long, Account> accountMap = getIdAccountMap(user.getId(), request.getFromAccId(), request.getToAccId());
@@ -139,7 +132,7 @@ public class TransactionService implements TransactionServiceItf {
     List<Transaction> transactionList = List.of(fromTransaction, toTransaction);
     accountService.updateCurrentBalance(transactionList);
     transactionRepository.saveAll(transactionList);
-    return transactionMapper.toTransferResponse(fromTransaction, toTransaction);
+    return transactionMapper.toAdjustResponse(fromTransaction, toTransaction);
   }
 
   @Override
@@ -148,21 +141,12 @@ public class TransactionService implements TransactionServiceItf {
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Update] - User ({}) update transaction by id ({})", user.getEmail(), request.getId());
 
-    TransactionType transactionType = transactionTypeService.getTransactionTypeByIds(user.getId(), request.getTxnTypeId());
-    if(!List.of(TransactionNatureEnum.INC.getCode(), TransactionNatureEnum.EXP.getCode())
-            .contains(transactionType.getNature())){
-      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_NOT_SUPPORTED);
-    }
-
-    Transaction transaction = transactionRepository.findById(user.getId(), request.getId())
-            .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
+    TransactionType transactionType = getAndCheckTransactionType(user.getId(), request.getTxnTypeId(),
+            List.of(TransactionNatureEnum.INC.getCode(), TransactionNatureEnum.EXP.getCode()));
+    Transaction transaction = getTransaction(user.getId(), request.getId());
     accountService.resetCurrentBalance(transaction);
 
-    Category category = categoryService.getCategoryById(user.getId(), request.getCtgrId());
-    if(!category.getType().equals(transactionType)){
-      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_AND_CTGR_NOT_MATCH);
-    }
-
+    Category category = getAndCheckCategory(user.getId(), request.getCtgrId(), transactionType);
     Account account = accountService.getAccountById(user.getId(), request.getAccId());
 
     transaction.setTransactionType(transactionType);
@@ -176,27 +160,50 @@ public class TransactionService implements TransactionServiceItf {
     return transactionMapper.toResponse(transactionRepository.save(transaction));
   }
 
-  // TODO: add update auto adjustment txn
+  @Transactional
+  public TransactionAdjustResponse updateAdjust(TransactionUpdateAdjustRequest request){
+    User user = Common.getAuthenticateUserNThrowException(null);
+    log.info("[Transaction][Update] - User ({}) update adjustment transaction by id ({})", user.getEmail(), request.getId());
+
+    getAndCheckTransactionType(user.getId(), request.getTxnTypeId(), List.of(TransactionNatureEnum.ADJ.getCode()));
+
+    Transaction transaction = getTransaction(user.getId(), request.getId());
+    accountService.resetCurrentBalance(transaction);
+
+    Account account = accountService.getAccountById(user.getId(), request.getAccId());
+
+    transaction.setDescription(request.getDescription());
+    transaction.setAccount(account);
+    transaction.setAmount(request.getAmount());
+    transaction.setDescription(request.getDescription());
+    transaction.setTxnDate(request.getTxnDate());
+    accountService.updateCurrentBalance(transaction);
+    return transactionMapper.toAdjustResponse(transaction);
+  }
 
   @Transactional
   public TransactionTransferResponse updateTransfer(TransactionUpdateTransferRequest request){
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Update] - User ({}) update transfer transaction by fromId ({}) and toId ({})"
             , user.getEmail(), request.getFromId(), request.getToId());
-    List<Transaction> preTxnList = transactionRepository
-            .findByIds(user.getId(), List.of(request.getFromId(), request.getToId()));
-    Map<Long, Transaction> transactionMap = preTxnList.stream()
-            .collect(Collectors.toMap(Transaction::getId, Function.identity()));
 
+    List<Transaction> prevTxnList = getTransactions(user.getId(), List.of(request.getFromId(), request.getToId()));
+    Map<Long, Transaction> transactionMap = prevTxnList.stream()
+            .collect(Collectors.toMap(Transaction::getId, Function.identity()));
     Transaction preFromTxn = transactionMap.get(request.getFromId());
     Transaction preToTxn = transactionMap.get(request.getToId());
 
-    if(transactionMap.size() != 2 ||
-            !preFromTxn.getTransferGroupId().equals(preToTxn.getTransferGroupId())){
+    boolean invalidTransferPair =
+            preFromTxn == null
+                    || preToTxn == null
+                    || preFromTxn.getTransferGroupId() == null
+                    || !Objects.equals(preFromTxn.getTransferGroupId(), preToTxn.getTransferGroupId());
+
+    if (invalidTransferPair) {
       throw new InvalidArgumentException(ExceptionEnum.TSF_GROUP_TXN_ID_NOT_FOUND);
     }
 
-    accountService.resetCurrentBalance(preTxnList);
+    accountService.resetCurrentBalance(prevTxnList);
 
     List<Account> accounts =  accountService.getAccountByIds(user.getId(), List.of(request.getFromAccId(), request.getToAccId()));
     Map<Long, Account> accountMap = accounts.stream().collect(Collectors.toMap(Account::getId, Function.identity()));
@@ -216,7 +223,7 @@ public class TransactionService implements TransactionServiceItf {
     List<Transaction> transactionList = List.of(preFromTxn, preToTxn);
     accountService.updateCurrentBalance(transactionList);
     transactionRepository.saveAll(transactionList);
-    return transactionMapper.toTransferResponse(preFromTxn, preToTxn);
+    return transactionMapper.toAdjustResponse(preFromTxn, preToTxn);
   }
 
   @Override
@@ -231,10 +238,7 @@ public class TransactionService implements TransactionServiceItf {
                     .collect(Collectors.joining(", "))
     );
 
-    List<Transaction> transactions = new ArrayList<>(transactionRepository.findByIds(user.getId(), request.getIds()));
-    if(transactions.isEmpty()){
-      throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND);
-    }
+    List<Transaction> transactions = getTransactions(user.getId(), request.getIds());
     List<String> uniqueGroupIds = transactions.stream()
             .map(Transaction::getTransferGroupId)
             .filter(Objects::nonNull)
@@ -271,5 +275,34 @@ public class TransactionService implements TransactionServiceItf {
             .getAccountByIds(userId, List.of(fromAccId, toAccId));
     return accounts.stream()
             .collect(Collectors.toMap(Account::getId, Function.identity()));
+  }
+
+  private TransactionType getAndCheckTransactionType (Long userId, Long txnTypeId, List<String> validTxnTypeList){
+    TransactionType transactionType = transactionTypeService.getTransactionTypeById(userId, txnTypeId);
+    if(!validTxnTypeList.contains(transactionType.getNature())){
+      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_NOT_SUPPORTED);
+    }
+    return transactionType;
+  }
+
+  private Category getAndCheckCategory(Long userId, Long ctgrId, TransactionType transactionType){
+    Category category = categoryService.getCategoryById(userId, ctgrId);
+    if(!category.getType().equals(transactionType)){
+      throw new InvalidArgumentException(ExceptionEnum.TXN_TYPE_AND_CTGR_NOT_MATCH);
+    }
+    return category;
+  }
+
+  private Transaction getTransaction(Long userId, Long txnId){
+    return transactionRepository.findById(userId, txnId)
+            .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
+  }
+
+  private List<Transaction> getTransactions(Long userId, List<Long> txnIds){
+    List<Transaction> transactions = new ArrayList<>(transactionRepository.findByIds(userId, txnIds));
+    if(transactions.isEmpty()){
+      throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND);
+    }
+    return transactions;
   }
 }

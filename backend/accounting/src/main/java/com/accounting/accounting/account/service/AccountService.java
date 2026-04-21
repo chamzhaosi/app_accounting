@@ -211,6 +211,10 @@ public class AccountService implements AccountServiceItf {
   }
 
   private void createAdjustedTxn(User user, Account account, BigDecimal updatedAmount){
+    if(account.getCurrentBalance().compareTo(updatedAmount) == 0){
+      return;
+    }
+
     boolean hasTxnBfr = transactionRepository.countTransactionByAccId(user.getId(), account.getId()) > 0;
     if(hasTxnBfr){
       log.info("[Account] - Manually add an extra adjusted txn");

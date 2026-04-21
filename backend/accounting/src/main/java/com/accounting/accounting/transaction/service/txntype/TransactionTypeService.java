@@ -32,7 +32,7 @@ public class TransactionTypeService {
                 .map(transactionTypeMapper::toResponse);
     }
 
-  public TransactionType getTransactionTypeByIds(Long userId, Long typeId){
+  public TransactionType getTransactionTypeById(Long userId, Long typeId){
     return transactionTypeRepository
             .findById(userId, typeId)
             .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.TXN_TYPE_ID_NOT_FOUND_OR_INVALID));
