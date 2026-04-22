@@ -91,10 +91,13 @@ public class GlobalExceptionHandler {
                 .body(new ApiResponse<>(ex.getMessage(), 400, false, ex.getErrorCode()));
     }
 
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<?> handleOptimisticLockFailure(ObjectOptimisticLockingFailureException ex){
-        return new ApiResponse<>(ex.getMessage(), 409, false, ExceptionEnum.DATA_STALE.name());
+    @ExceptionHandler({
+            ObjectOptimisticLockingFailureException.class,
+            DataStaleException.class
+    })
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<?> handleOptimisticLockFailure(){
+        return new ApiResponse<>(ExceptionEnum.DATA_STALE.getMessage(), 409, false, ExceptionEnum.DATA_STALE.name());
     }
 
     @ExceptionHandler(Exception.class)

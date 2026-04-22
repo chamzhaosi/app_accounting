@@ -4,6 +4,7 @@ import com.accounting.accounting.common.dto.BaseDto;
 import com.accounting.accounting.common.entity.EntityBase;
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.exception.AuthenticationFailedException;
+import com.accounting.accounting.common.exception.DataStaleException;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.user.entity.CstUserDetails;
 import com.accounting.accounting.user.entity.User;
@@ -63,7 +64,7 @@ public class Common {
         }
 
         if (!Objects.equals(requestDto.getVrs(), entityBase.getVrs())) {
-            throw new InvalidArgumentException(ExceptionEnum.DATA_STALE);
+            throw new DataStaleException();
         }
     }
 
