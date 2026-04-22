@@ -83,7 +83,8 @@ public class AccountService implements AccountServiceItf {
 
     Account account = accountRepository.findById(user.getId(), request.getId())
             .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
-
+    Common.validateVersionMatch(request, account);
+    
     boolean exist = accountRepository.countBySameData(user.getId(), account.getId(), request.getAccTypeId(), request.getLabel()) > 0;
     if(exist){
       throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);

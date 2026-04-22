@@ -1,5 +1,6 @@
 package com.accounting.accounting.transaction.dto.txntype;
 
+import com.accounting.accounting.common.dto.BaseResponseDto;
 import com.accounting.accounting.common.enums.TransactionNatureEnum;
 import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,8 +15,7 @@ import java.util.Optional;
 @Getter
 @Setter
 @NoArgsConstructor
-public class TransactionTypeResponse {
-    private Long id;
+public class TransactionTypeResponse extends BaseResponseDto {
     private String label;
     private String nature;
 
@@ -26,7 +26,7 @@ public class TransactionTypeResponse {
     private boolean isCreatedBySystem;
 
     public TransactionTypeResponse(TransactionType transactionType){
-        this.id = transactionType.getId();
+        super(transactionType.getId(), transactionType.getVrs());
         this.label = transactionType.getLabel();
         this.isActive = transactionType.getIsActive();
         this.isCreatedBySystem = transactionType.getUser() == null;

@@ -59,6 +59,7 @@ public class AccountTypeService implements AccountTypeServiceItf {
         log.info("[Account Type][Update] - User ({}) update Account type detail", user.getEmail());
         AccountType accountType = accountTypeRepository.findById(user.getId(), request.getId())
                 .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
+        Common.validateVersionMatch(request, accountType);
 
         checkTxnTypIsNotCrtBySystem(accountType);
         boolean exist = accountTypeRepository.countByUserIdAndLabel(user.getId(), request.getLabel()) > 0;

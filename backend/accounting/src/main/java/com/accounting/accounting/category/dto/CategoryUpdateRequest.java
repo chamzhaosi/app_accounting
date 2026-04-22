@@ -1,5 +1,6 @@
 package com.accounting.accounting.category.dto;
 
+import com.accounting.accounting.common.dto.BaseUpdateRequestDto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,10 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class CategoryUpdateRequest {
-    @NotNull(message = "id is required")
-    private Long id;
-
+public class CategoryUpdateRequest extends BaseUpdateRequestDto {
     @NotBlank(message = "label is required")
     @Size(max= 50, message = "label must not exceed 50 characters")
     private String label;

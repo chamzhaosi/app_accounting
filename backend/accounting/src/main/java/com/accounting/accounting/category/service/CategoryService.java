@@ -68,6 +68,7 @@ public class CategoryService implements CategoryServiceItfItf {
 
         Category category = categoryRepository.findById(user.getId(), request.getId())
                 .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
+        Common.validateVersionMatch(request, category);
 
         boolean exist = categoryRepository.countBySameData(user.getId(), request.getTxnTypeId(), request.getLabel()) > 0;
         if(exist){

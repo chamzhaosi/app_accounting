@@ -12,7 +12,6 @@ import java.util.List;
 @Setter
 @RequiredArgsConstructor
 public class AccountDeleteRequest {
-
   @NotEmpty(message = "Ids are required")
   private List<@NotNull(message = "Id must not be null") Long> ids;
 }

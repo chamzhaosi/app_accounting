@@ -1,6 +1,7 @@
 package com.accounting.accounting.category.dto;
 
 import com.accounting.accounting.category.entity.Category;
+import com.accounting.accounting.common.dto.BaseResponseDto;
 import com.accounting.accounting.transaction.dto.txntype.TransactionTypeResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -10,8 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class CategoryResponse {
-    private Long id;
+public class CategoryResponse extends BaseResponseDto {
     private String label;
     private String description;
     private TransactionTypeResponse txnType;
@@ -19,7 +19,7 @@ public class CategoryResponse {
     private Boolean isActive;
 
     public CategoryResponse(Category category){
-        this.id = category.getId();
+        super(category.getId(), category.getVrs());
         this.label = category.getLabel();
         this.description = category.getDescription();
         this.txnType = new TransactionTypeResponse(category.getType());
