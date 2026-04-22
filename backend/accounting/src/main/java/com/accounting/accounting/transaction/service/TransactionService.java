@@ -10,11 +10,8 @@ import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.common.helper.Common;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionAdjustResponse;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionUpdateAdjustRequest;
-import com.accounting.accounting.transaction.dto.common.TransactionBasedResponse;
 import com.accounting.accounting.transaction.dto.transaction.*;
-import com.accounting.accounting.transaction.dto.transfer.TransactionTransferRequest;
-import com.accounting.accounting.transaction.dto.transfer.TransactionTransferResponse;
-import com.accounting.accounting.transaction.dto.transfer.TransactionUpdateTransferRequest;
+import com.accounting.accounting.transaction.dto.transfer.*;
 import com.accounting.accounting.transaction.entity.Transaction;
 import com.accounting.accounting.transaction.entity.txntype.TransactionType;
 import com.accounting.accounting.transaction.mapper.TransactionMapper;
@@ -64,7 +61,7 @@ public class TransactionService implements TransactionServiceItf {
             .map(transactionMapper::toResponse);
   }
 
-  public TransactionBasedResponse getTxnDtlById(Long id){
+  public Object getTxnDtlById(Long id){
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Update] - User ({}) get txn detail by id ({})", user.getEmail(), id);
     Transaction transaction = transactionRepository.findById(user.getId(), id)
@@ -78,9 +75,9 @@ public class TransactionService implements TransactionServiceItf {
               .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.TSF_GROUP_TXN_ID_NOT_FOUND));
 
       if(transaction.getAmount().compareTo(BigDecimal.ZERO) < 0){
-        return transactionMapper.toAdjustResponse(transaction, grpTransaction);
+        return transactionMapper.toTransferResponse(transaction, grpTransaction);
       }else{
-        return transactionMapper.toAdjustResponse(grpTransaction, transaction);
+        return transactionMapper.toTransferResponse(grpTransaction, transaction);
       }
     }
   }
@@ -104,7 +101,7 @@ public class TransactionService implements TransactionServiceItf {
   }
 
   @Transactional
-  public TransactionTransferResponse transfer(TransactionTransferRequest request){
+  public TransactionsTransferResponse transfer(TransactionsCreateTransferRequest request){
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[Transaction][Create] - User ({}) create a transfer transaction", user.getEmail());
 
@@ -132,7 +129,7 @@ public class TransactionService implements TransactionServiceItf {
     List<Transaction> transactionList = List.of(fromTransaction, toTransaction);
     accountService.updateCurrentBalance(transactionList);
     transactionRepository.saveAll(transactionList);
-    return transactionMapper.toAdjustResponse(fromTransaction, toTransaction);
+    return transactionMapper.toTransferResponse(fromTransaction, toTransaction);
   }
 
   @Override
@@ -144,6 +141,7 @@ public class TransactionService implements TransactionServiceItf {
     TransactionType transactionType = getAndCheckTransactionType(user.getId(), request.getTxnTypeId(),
             List.of(TransactionNatureEnum.INC.getCode(), TransactionNatureEnum.EXP.getCode()));
     Transaction transaction = getTransaction(user.getId(), request.getId());
+    Common.validateVersionMatch(request, transaction);
     accountService.resetCurrentBalance(transaction);
 
     Category category = getAndCheckCategory(user.getId(), request.getCtgrId(), transactionType);
@@ -166,8 +164,8 @@ public class TransactionService implements TransactionServiceItf {
     log.info("[Transaction][Update] - User ({}) update adjustment transaction by id ({})", user.getEmail(), request.getId());
 
     getAndCheckTransactionType(user.getId(), request.getTxnTypeId(), List.of(TransactionNatureEnum.ADJ.getCode()));
-
     Transaction transaction = getTransaction(user.getId(), request.getId());
+    Common.validateVersionMatch(request, transaction);
     accountService.resetCurrentBalance(transaction);
 
     Account account = accountService.getAccountById(user.getId(), request.getAccId());
@@ -182,16 +180,23 @@ public class TransactionService implements TransactionServiceItf {
   }
 
   @Transactional
-  public TransactionTransferResponse updateTransfer(TransactionUpdateTransferRequest request){
+  public TransactionsTransferResponse updateTransfer(TransactionsUpdateTransferRequest request){
     User user = Common.getAuthenticateUserNThrowException(null);
-    log.info("[Transaction][Update] - User ({}) update transfer transaction by fromId ({}) and toId ({})"
-            , user.getEmail(), request.getFromId(), request.getToId());
+    checkUpdateTransferRequest(request);
 
-    List<Transaction> prevTxnList = getTransactions(user.getId(), List.of(request.getFromId(), request.getToId()));
+    Long formTxnId = request.getFromTransaction().getId();
+    Long toTxnId =  request.getToTransaction().getId();
+    log.info("[Transaction][Update] - User ({}) update transfer transaction by fromId ({}) and toId ({})"
+            , user.getEmail(), formTxnId, toTxnId);
+
+    List<Transaction> prevTxnList = getTransactions(user.getId(), List.of(formTxnId, toTxnId));
     Map<Long, Transaction> transactionMap = prevTxnList.stream()
             .collect(Collectors.toMap(Transaction::getId, Function.identity()));
-    Transaction preFromTxn = transactionMap.get(request.getFromId());
-    Transaction preToTxn = transactionMap.get(request.getToId());
+    Transaction preFromTxn = transactionMap.get(formTxnId);
+    Transaction preToTxn = transactionMap.get(toTxnId);
+    Common.validateListVersionMatch(List.of(
+            request.getFromTransaction(), request.getToTransaction()
+    ), prevTxnList);
 
     boolean invalidTransferPair =
             preFromTxn == null
@@ -205,25 +210,27 @@ public class TransactionService implements TransactionServiceItf {
 
     accountService.resetCurrentBalance(prevTxnList);
 
-    List<Account> accounts =  accountService.getAccountByIds(user.getId(), List.of(request.getFromAccId(), request.getToAccId()));
+    Long formAccId = request.getFromTransaction().getAccId();
+    Long toAccId =  request.getToTransaction().getAccId();
+    List<Account> accounts =  accountService.getAccountByIds(user.getId(), List.of(formAccId, toAccId));
     Map<Long, Account> accountMap = accounts.stream().collect(Collectors.toMap(Account::getId, Function.identity()));
 
-    Account fromAccount = accountMap.get(request.getFromAccId());
+    Account fromAccount = accountMap.get(formAccId);
     preFromTxn.setAccount(fromAccount);
-    preFromTxn.setAmount(request.getAmount().negate());
-    preFromTxn.setDescription(request.getDescription());
-    preFromTxn.setTxnDate(request.getTxnDate());
+    preFromTxn.setAmount(request.getFromTransaction().getAmount().abs().negate());
+    preFromTxn.setDescription(request.getFromTransaction().getDescription());
+    preFromTxn.setTxnDate(request.getFromTransaction().getTxnDate());
 
-    Account toAccount = accountMap.get(request.getToAccId());
+    Account toAccount = accountMap.get(toAccId);
     preToTxn.setAccount(toAccount);
-    preToTxn.setAmount(request.getAmount());
-    preToTxn.setDescription(request.getDescription());
-    preToTxn.setTxnDate(request.getTxnDate());
+    preToTxn.setAmount(request.getToTransaction().getAmount().abs());
+    preToTxn.setDescription(request.getToTransaction().getDescription());
+    preToTxn.setTxnDate(request.getToTransaction().getTxnDate());
 
     List<Transaction> transactionList = List.of(preFromTxn, preToTxn);
     accountService.updateCurrentBalance(transactionList);
     transactionRepository.saveAll(transactionList);
-    return transactionMapper.toAdjustResponse(preFromTxn, preToTxn);
+    return transactionMapper.toTransferResponse(preFromTxn, preToTxn);
   }
 
   @Override
@@ -304,5 +311,26 @@ public class TransactionService implements TransactionServiceItf {
       throw new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND);
     }
     return transactions;
+  }
+
+  private void checkUpdateTransferRequest(TransactionsUpdateTransferRequest request){
+    List<TransactionTransferRequest> transactionTransfers = Stream.of(
+                    request.getFromTransaction(),
+                    request.getToTransaction()
+            )
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(ArrayList::new));
+
+    TransactionTransferRequest t1 = transactionTransfers.get(0);
+    TransactionTransferRequest t2 = transactionTransfers.get(1);
+
+    boolean notEqual =
+            !Objects.equals(t1.getDescription(), t2.getDescription()) ||
+                    t1.getAmount().abs().compareTo(t2.getAmount().abs()) != 0 ||
+                    !Objects.equals(t1.getTxnDate(), t2.getTxnDate());
+
+    if(notEqual){
+      throw new InvalidArgumentException(ExceptionEnum.BOTH_TXN_DATA_MUST_BE_EQUAL);
+    }
   }
 }

@@ -1,13 +1,8 @@
 package com.accounting.accounting.common.entity;
 
 import com.accounting.accounting.common.helper.Common;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -41,6 +36,7 @@ public abstract class EntityBase {
   @Column(name="modified_by", nullable = false)
   private String modifiedBy;
 
+  @Version
   @Column(nullable = false)
   private Long vrs;
 

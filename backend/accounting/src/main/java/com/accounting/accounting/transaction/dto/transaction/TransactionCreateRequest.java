@@ -1,6 +1,6 @@
 package com.accounting.accounting.transaction.dto.transaction;
 
-import com.accounting.accounting.transaction.dto.common.TransactionBasedRequest;
+import com.accounting.accounting.transaction.dto.common.TransactionBaseRequest;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class TransactionCreateRequest extends TransactionBasedRequest {
+public class TransactionCreateRequest extends TransactionBaseRequest {
   @NotNull(message = "ctgrId is required")
   private Long ctgrId;
 

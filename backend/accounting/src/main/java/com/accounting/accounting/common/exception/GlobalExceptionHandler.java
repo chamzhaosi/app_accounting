@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -53,29 +54,6 @@ public class GlobalExceptionHandler {
         return new ApiResponse<>(message, 400, false, "INVALID_FORMAT");
            }
 
-//    @ExceptionHandler(ResourceNotFoundException.class)
-//    @ResponseStatus(HttpStatus.NOT_FOUND)
-//    public ApiResponse<String> handleNotFound(ResourceNotFoundException ex) {
-//        return ApiResponse.fail(ex.getMessage(),404, "NOT_FOUND" );
-//    }
-
-    // This is DB level exception. Eg: If there are two users save same label and type under same account
-//    @ExceptionHandler(DataIntegrityViolationException.class)
-//    @ResponseStatus(HttpStatus.BAD_REQUEST)
-//    public ApiResponse<String> handleDuplicateKey(DataIntegrityViolationException ex) {
-//
-//        String msg = "Data already exists";
-//
-//        if (ex.getRootCause() != null && ex.getRootCause().getMessage() != null) {
-//            String cause = ex.getRootCause().getMessage().toLowerCase();
-//
-//            if (cause.contains("category") && cause.contains("label")) {
-//                msg = "Category label already exists under this transaction type";
-//            }
-//        }
-//
-//        return new ApiResponse<>(msg, 400, false, null);
-//    }
     @ExceptionHandler(NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<?> handleNoResourceFound(NoResourceFoundException ex){
@@ -87,12 +65,6 @@ public class GlobalExceptionHandler {
     public ApiResponse<?> handleMethodNotSupport(HttpRequestMethodNotSupportedException ex){
       return new ApiResponse<>(ex.getMessage(), 500, false, null);
     }
-
-//    @ExceptionHandler(BadRequestException.class)
-//    @ResponseStatus(HttpStatus.BAD_REQUEST)
-//    public ApiResponse<?> handleBadRequest(BadRequestException ex) {
-//        return new ApiResponse<>(ex.getMessage(), 400, false, "EXISTS_IN_DB");
-//    }
 
     @ExceptionHandler(AuthenticationFailedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
@@ -117,6 +89,12 @@ public class GlobalExceptionHandler {
                         UserServiceUtils.clearAccessAndRefreshCookies() :
                         null)
                 .body(new ApiResponse<>(ex.getMessage(), 400, false, ex.getErrorCode()));
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<?> handleOptimisticLockFailure(ObjectOptimisticLockingFailureException ex){
+        return new ApiResponse<>(ex.getMessage(), 409, false, ExceptionEnum.DATA_STALE.name());
     }
 
     @ExceptionHandler(Exception.class)

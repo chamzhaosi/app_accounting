@@ -4,11 +4,10 @@ import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.common.response.ApiResponsePagination;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionAdjustResponse;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionUpdateAdjustRequest;
-import com.accounting.accounting.transaction.dto.common.TransactionBasedResponse;
 import com.accounting.accounting.transaction.dto.transaction.*;
-import com.accounting.accounting.transaction.dto.transfer.TransactionTransferRequest;
-import com.accounting.accounting.transaction.dto.transfer.TransactionTransferResponse;
-import com.accounting.accounting.transaction.dto.transfer.TransactionUpdateTransferRequest;
+import com.accounting.accounting.transaction.dto.transfer.TransactionsCreateTransferRequest;
+import com.accounting.accounting.transaction.dto.transfer.TransactionsTransferResponse;
+import com.accounting.accounting.transaction.dto.transfer.TransactionsUpdateTransferRequest;
 import com.accounting.accounting.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
@@ -30,8 +29,8 @@ public class TransactionController {
   }
 
   @PostMapping("/transfer")
-  public ApiResponse<TransactionTransferResponse> transfer (@Valid @RequestBody TransactionTransferRequest request){
-    TransactionTransferResponse data = service.transfer(request);
+  public ApiResponse<TransactionsTransferResponse> transfer (@Valid @RequestBody TransactionsCreateTransferRequest request){
+    TransactionsTransferResponse data = service.transfer(request);
     return ApiResponse.success(data);
   }
 
@@ -42,8 +41,8 @@ public class TransactionController {
   }
 
   @GetMapping("/getTxnById/{id}")
-  public ApiResponse<TransactionBasedResponse> getTxnDtlById (@PathVariable Long id){
-    TransactionBasedResponse data = service.getTxnDtlById(id);
+  public ApiResponse<Object> getTxnDtlById (@PathVariable Long id){
+    Object data = service.getTxnDtlById(id);
     return ApiResponse.success(data);
   }
 
@@ -54,8 +53,8 @@ public class TransactionController {
   }
 
   @PutMapping("/update-transfer")
-  public ApiResponse<TransactionTransferResponse> updateTransfer(@Valid @RequestBody TransactionUpdateTransferRequest request){
-    TransactionTransferResponse data = service.updateTransfer(request);
+  public ApiResponse<TransactionsTransferResponse> updateTransfer(@Valid @RequestBody TransactionsUpdateTransferRequest request){
+    TransactionsTransferResponse data = service.updateTransfer(request);
     return ApiResponse.success(data);
   }
 

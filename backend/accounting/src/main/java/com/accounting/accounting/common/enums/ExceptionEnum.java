@@ -16,12 +16,14 @@ public enum ExceptionEnum {
     INVALID_ACCESS_TOKEN("Access token is invalid"),
     INCORRECT_JWT_USERINFO("User or password not found."),
     INVALID_AUTHENTICATION("Unauthorized"),
+    DATA_STALE("The data is outdated. Please refresh and try again."),
 
     // Transaction
     TXN_TYPE_ID_NOT_FOUND_OR_INVALID("Transaction type not found or invalid"),
     TXN_TYPE_NOT_SUPPORTED("Transaction type not supported"),
     TSF_GROUP_TXN_ID_NOT_FOUND("Not found transfer transaction record"),
     TXN_TYPE_AND_CTGR_NOT_MATCH("Transaction type and category are not matched"),
+    BOTH_TXN_DATA_MUST_BE_EQUAL("The amount, description, and transaction date must be the same for both transfer records."),
 
     // CATEGORY
     CTGR_ID_NOT_FOUND_OR_INVALID("Category type not found or invalid"),
@@ -34,6 +36,7 @@ public enum ExceptionEnum {
     DUPLICATE_DATA_FOUND("Data has been exist in our system."),
     DATA_NOT_FOUND("Data not found."),
     DATA_NOT_ALLOWED_TO_BE_MODIFIED("Data is not allowed to be modified by the user."),
+    INVALID_ARGUMENT("Invalid required data"),
     UNKNOWN_ERROR("Unknown error");
 
     private final String message;

@@ -1,6 +1,5 @@
 package com.accounting.accounting.transaction.dto.common;
 
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,7 +14,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class TransactionBasedRequest {
+public class TransactionBaseRequest {
   @NotNull(message = "txnTypeId is required")
   private Long txnTypeId;
 
