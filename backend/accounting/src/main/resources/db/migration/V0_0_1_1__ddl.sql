@@ -85,10 +85,10 @@ CREATE TABLE transaction_types (
   label         VARCHAR(50) NOT NULL,
   nature        VARCHAR(10) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-  active_label VARCHAR(50)
+  active_flag   TINYINT
     GENERATED ALWAYS AS (
         CASE
-            WHEN deleted_at IS NULL THEN label
+            WHEN deleted_at IS NULL THEN 1
             ELSE NULL
         END
     ) STORED,
@@ -104,8 +104,8 @@ CREATE TABLE transaction_types (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_txn_types_user_active_label
-    UNIQUE (user_id, active_label)
+  CONSTRAINT uq_txn_types_user_active_flag
+    UNIQUE (user_id, active_flag)
 );
 
 CREATE TABLE categories (
@@ -115,10 +115,10 @@ CREATE TABLE categories (
   label         VARCHAR(50) NOT NULL,
   description   VARCHAR(100) NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-  active_label VARCHAR(50)
+  active_flag   TINYINT
     GENERATED ALWAYS AS (
         CASE
-            WHEN deleted_at IS NULL THEN label
+            WHEN deleted_at IS NULL THEN 1
             ELSE NULL
         END
     ) STORED,
@@ -138,8 +138,8 @@ CREATE TABLE categories (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_ctgr_user_type_id_label
-    UNIQUE (user_id, txn_type_id, active_label)
+  CONSTRAINT uq_ctgr_user_type_id_active_flag
+    UNIQUE (user_id, txn_type_id, active_flag)
 );
 
 CREATE TABLE account_types (
@@ -147,10 +147,10 @@ CREATE TABLE account_types (
   user_id       BIGINT,
   label         VARCHAR(50) NOT NULL,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-  active_label VARCHAR(50)
+  active_flag   TINYINT
     GENERATED ALWAYS AS (
         CASE
-            WHEN deleted_at IS NULL THEN label
+            WHEN deleted_at IS NULL THEN 1
             ELSE NULL
         END
     ) STORED,
@@ -166,8 +166,8 @@ CREATE TABLE account_types (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_acc_types_user_label
-    UNIQUE (user_id, active_label)
+  CONSTRAINT uq_acc_types_user_active_flag
+    UNIQUE (user_id, active_flag)
 );
 
 CREATE TABLE accounts (
@@ -180,10 +180,10 @@ CREATE TABLE accounts (
   current_balance    DECIMAL(10,2) DEFAULT 0.00,
   is_main_account    BOOLEAN NOT NULL DEFAULT TRUE,
   is_active          BOOLEAN NOT NULL DEFAULT TRUE,
-  active_label       VARCHAR(50)
+  active_flag   TINYINT
     GENERATED ALWAYS AS (
         CASE
-            WHEN deleted_at IS NULL THEN label
+            WHEN deleted_at IS NULL THEN 1
             ELSE NULL
         END
     ) STORED,
@@ -203,8 +203,8 @@ CREATE TABLE accounts (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_acc_types_user_acc_type_label
-    UNIQUE (user_id, acc_type_id, active_label)
+  CONSTRAINT uq_acc_types_user_acc_type_active_flag
+    UNIQUE (user_id, acc_type_id, active_flag)
 );
 
 CREATE TABLE transactions (
@@ -241,3 +241,30 @@ CREATE TABLE transactions (
     FOREIGN KEY (acc_id)
     REFERENCES accounts(id)
 );
+
+CREATE TABLE budget {
+  id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id       BIGINT NOT NULL,
+  month         BIGINT NOT NULL,
+  total_budget  DECIMAL(10,2) NOT NULL,
+}
+
+CREATE TABLE budget_categories{
+  id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+  budget_id     BIGINT NOT NULL,
+  ctgr_id       BIGINT NOT NULL,
+  amount        DECIMAL(10,2) NOT NULL,
+  active_flag   TINYINT
+    GENERATED ALWAYS AS (
+      CASE
+        WHEN deleted_at IS NULL THEN 1
+        ELSE NULL
+    )
+  deleted_at            DATETIME NULL,
+  deleted_by            VARCHAR(100) NULL,
+  created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by            VARCHAR(100),
+  modified_at           DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  modified_by           VARCHAR(100),
+  vrs                   BIGINT DEFAULT 0,
+}
