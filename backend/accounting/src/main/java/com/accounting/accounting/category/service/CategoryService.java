@@ -1,10 +1,13 @@
 package com.accounting.accounting.category.service;
 
+import com.accounting.accounting.budget.entity.Budget;
+import com.accounting.accounting.budget.service.BudgetCategoryService;
+import com.accounting.accounting.budget.service.BudgetService;
 import com.accounting.accounting.category.dto.*;
 import com.accounting.accounting.category.entity.Category;
 import com.accounting.accounting.category.mapper.CategoryMapper;
 import com.accounting.accounting.category.repository.CategoryRepository;
-import com.accounting.accounting.category.service.itf.CategoryServiceItfItf;
+import com.accounting.accounting.category.service.itf.CategoryServiceItf;
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.common.helper.Common;
@@ -19,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,10 +29,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CategoryService implements CategoryServiceItfItf {
-    private final CategoryRepository categoryRepository;
+public class CategoryService implements CategoryServiceItf {
     private final TransactionTypeService transactionTypeService;
+    private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final BudgetCategoryService budgetCategoryService;
 
     @Override
     public Page<@NonNull CategoryResponse> findAll(CategorySearchRequest request, Pageable pageable) {
@@ -79,6 +82,7 @@ public class CategoryService implements CategoryServiceItfItf {
         category.setDescription(request.getDescription());
         category.setIsActive(request.isActive());
         categoryRepository.save(category);
+        budgetCategoryService.updateBudgetCategoryByCtgrId(user, List.of(request.getId()), !request.isActive());
 
         return categoryMapper.toResponse(category);
     }
@@ -101,14 +105,22 @@ public class CategoryService implements CategoryServiceItfItf {
         }
 
         categories.forEach(c -> {
-            c.setDeletedAt(LocalDateTime.now());
+            c.setDeletedAt(Common.getLocalDateTime(null));
             c.setDeletedBy(user.getEmail());
         });
         categoryRepository.saveAll(categories);
+        budgetCategoryService.updateBudgetCategoryByCtgrId(user, request.getIds(), true);
     }
 
     public Category getCategoryById (Long userID, Long ctgrId){
       return categoryRepository.findById(userID, ctgrId)
               .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.CTGR_ID_NOT_FOUND_OR_INVALID));
+    }
+
+    public List<Category> getCategoriesByIds (Long userID, List<Long> ctgrIds){
+        List<Category> categories =  categoryRepository.findByIds(userID, ctgrIds);
+        if(categories.isEmpty()) throw new InvalidArgumentException(ExceptionEnum.CTGR_ID_NOT_FOUND_OR_INVALID);
+
+        return categories;
     }
 }

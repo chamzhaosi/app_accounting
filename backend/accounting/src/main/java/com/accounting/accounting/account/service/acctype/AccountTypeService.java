@@ -92,7 +92,7 @@ public class AccountTypeService implements AccountTypeServiceItf {
 
         accountTypes.forEach(accountType -> {
                     checkTxnTypIsNotCrtBySystem(accountType);
-                    accountType.setDeletedAt(LocalDateTime.now());
+                    accountType.setDeletedAt(Common.getLocalDateTime(null));
                     accountType.setDeletedBy(user.getEmail());
                 }
         );

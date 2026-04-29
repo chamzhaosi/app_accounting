@@ -32,6 +32,9 @@ public enum ExceptionEnum {
     ACC_TYPE_ID_NOT_FOUND_OR_INVALID("Account type not found or invalid"),
     ACC_ID_NOT_FOUND_OR_INVALID("Account not found or invalid"),
 
+    // Budget
+    BUDGET_IS_EXISTING("Budget has been created, please use '/update' api to update details"),
+
     // Common exception
     DUPLICATE_DATA_FOUND("Data has been exist in our system."),
     DATA_NOT_FOUND("Data not found."),

@@ -13,6 +13,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -30,6 +31,10 @@ public class Common {
       return ZonedDateTime
               .now(targetZone)
               .toLocalDateTime();
+    }
+
+    public static LocalDate getCurrentMonthYear(){
+        return LocalDate.now(ZoneId.of("Asia/Kuala_Lumpur")).withDayOfMonth(1);
     }
 
     public static User getAuthenticateUserNThrowException(@Nullable ExceptionEnum exceptionEnum) {

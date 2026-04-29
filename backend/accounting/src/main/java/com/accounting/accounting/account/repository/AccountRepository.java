@@ -2,7 +2,6 @@ package com.accounting.accounting.account.repository;
 
 import com.accounting.accounting.account.entity.Account;
 import com.accounting.accounting.common.repository.BaseRepositoryItf;
-import jakarta.validation.constraints.Null;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
