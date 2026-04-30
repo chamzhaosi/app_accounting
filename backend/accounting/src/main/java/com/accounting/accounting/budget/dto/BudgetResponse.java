@@ -2,7 +2,7 @@ package com.accounting.accounting.budget.dto;
 
 import com.accounting.accounting.budget.dto.common.BudgetCategoryResponse;
 import com.accounting.accounting.budget.entity.Budget;
-import com.accounting.accounting.common.dto.BaseResponseDto;
+import com.accounting.accounting.common.dto.BaseDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,7 +11,9 @@ import java.util.List;
 
 @Getter
 @NoArgsConstructor
-public class BudgetResponse extends BaseResponseDto {
+public class BudgetResponse implements BaseDto {
+  private Long id;
+  private Long vrs;
   private List<BudgetCategoryResponse> budgetCategoriesList;
   private BigDecimal totalBudget;
   private Boolean isActive;
@@ -19,7 +21,8 @@ public class BudgetResponse extends BaseResponseDto {
   private BigDecimal overallocatedBudget;
 
   public BudgetResponse(Budget budget, List<BudgetCategoryResponse> budgetCategoryResponseList){
-    super(budget.getId(), budget.getVrs());
+    this.id = budget.getId();
+    this.vrs = budget.getVrs();
     this.budgetCategoriesList = budgetCategoryResponseList;
     this.totalBudget = budget.getTotalBudget();
     this.isActive = budget.getIsActive();

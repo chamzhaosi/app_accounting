@@ -1,6 +1,6 @@
 package com.accounting.accounting.transaction.dto.common;
 
-import com.accounting.accounting.common.dto.BaseUpdateRequestDto;
+import com.accounting.accounting.common.dto.BaseDto;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,7 +15,10 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class TransactionBaseUpdateRequest extends BaseUpdateRequestDto {
+public class TransactionBaseUpdateRequest implements BaseDto {
+  private Long id;
+  private Long vrs;
+
   @NotNull(message = "txnTypeId is required")
   private Long txnTypeId;
 
