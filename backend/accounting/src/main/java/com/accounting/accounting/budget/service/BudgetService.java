@@ -3,7 +3,7 @@ package com.accounting.accounting.budget.service;
 import com.accounting.accounting.budget.dto.BudgetCreateRequest;
 import com.accounting.accounting.budget.dto.BudgetResponse;
 import com.accounting.accounting.budget.dto.BudgetUpdateRequest;
-import com.accounting.accounting.budget.dto.common.BudgetCategoryRequest;
+import com.accounting.accounting.budget.dto.common.BudgetCategoryCreateRequest;
 import com.accounting.accounting.budget.entity.Budget;
 import com.accounting.accounting.budget.entity.BudgetCategory;
 import com.accounting.accounting.budget.mapper.BudgetMapper;
@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -84,13 +85,15 @@ public class BudgetService implements
 
     List<BudgetCategory> budgetCategoryListInDB = budgetCategoriesRepository
             .findAllByBudgetId(budget.getId());
-    Map<Long, BigDecimal> ctgrIdAmountReqMap = getCtrgIdAmountMap(request.getBudgetCategoryRequestList());
+    Map<Long, BigDecimal> ctgrIdAmountReqMap = getCtrgIdAmountMap(request.getBudgetCategoriesList());
     LocalDateTime now = Common.getLocalDateTime(null);
 
+    List<BudgetCategory> activeBudgetCategoryList = new ArrayList<>();
     for (BudgetCategory budgetCategory : budgetCategoryListInDB){
-        BigDecimal reqAmount = ctgrIdAmountReqMap.get(budgetCategory.getId());
+        BigDecimal reqAmount = ctgrIdAmountReqMap.get(budgetCategory.getCategory().getId());
         if(reqAmount != null){
           budgetCategory.setAmount(reqAmount);
+          activeBudgetCategoryList.add(budgetCategory);
         }else{
           budgetCategory.setDeletedAt(now);
           budgetCategory.setDeletedBy(user.getEmail());
@@ -110,28 +113,29 @@ public class BudgetService implements
     budget.setIsActive(request.getIsActive());
     budgetRepository.save(budget);
 
-    return budgetMapper.toResponse(budget, budgetCategoryListInDB);
+    activeBudgetCategoryList.addAll(budgetCategories);
+    return budgetMapper.toResponse(budget, activeBudgetCategoryList);
   }
 
   private void checkBudgetExisting(User user){
     log.info("[BudgetService] - Check whether budget has been existing");
-     budgetRepository.findAllByYearMonth(user.getId(), Common.getCurrentMonthYear()).ifPresent((b) -> {
-       throw new InvalidArgumentException(ExceptionEnum.BUDGET_IS_EXISTING);
-     });
+    budgetRepository.findAllByYearMonth(user.getId(), Common.getCurrentMonthYear()).ifPresent((b) -> {
+     throw new InvalidArgumentException(ExceptionEnum.BUDGET_IS_EXISTING);
+    });
   }
 
-  private Map<Long, BigDecimal> getCtrgIdAmountMap (List<BudgetCategoryRequest> budgetCategoryRequestList){
+  private Map<Long, BigDecimal> getCtrgIdAmountMap (List<BudgetCategoryCreateRequest> budgetCategoryRequestList){
     return budgetCategoryRequestList.stream()
-            .collect(Collectors.toMap(BudgetCategoryRequest::getCtgr_id, BudgetCategoryRequest::getAmount, (oldVal, newVal) -> oldVal));
+            .collect(Collectors.toMap(BudgetCategoryCreateRequest::getCtgrId, BudgetCategoryCreateRequest::getAmount, (oldVal, newVal) -> oldVal));
   }
 
   private BigDecimal getTotalBudgetFromRequest(@NotNull BudgetCreateRequest request){
     return request.getBudgetCategoriesList().stream()
-            .map(BudgetCategoryRequest::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            .map(BudgetCategoryCreateRequest::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   private List<Category> getCategoriesFromRequest(@NotNull User user, @NotNull BudgetCreateRequest request){
-    List<Long> ctgtIds = request.getBudgetCategoriesList().stream().map(BudgetCategoryRequest::getCtgr_id).toList();
+    List<Long> ctgtIds = request.getBudgetCategoriesList().stream().map(BudgetCategoryCreateRequest::getCtgrId).toList();
    return categoryService.getCategoriesByIds(user.getId(), ctgtIds);
   }
 

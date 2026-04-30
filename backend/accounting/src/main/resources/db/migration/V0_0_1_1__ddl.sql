@@ -104,8 +104,8 @@ CREATE TABLE transaction_types (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_txn_types_user_active_flag
-    UNIQUE (user_id, active_flag)
+  CONSTRAINT uq_txn_types_user_label_active_flag
+    UNIQUE (user_id, label, active_flag)
 );
 
 CREATE TABLE categories (
@@ -138,8 +138,8 @@ CREATE TABLE categories (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_ctgr_user_type_id_active_flag
-    UNIQUE (user_id, txn_type_id, active_flag)
+  CONSTRAINT uq_ctgr_user_type_id_label_active_flag
+    UNIQUE (user_id, txn_type_id, label, active_flag)
 );
 
 CREATE TABLE account_types (
@@ -166,8 +166,8 @@ CREATE TABLE account_types (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_acc_types_user_active_flag
-    UNIQUE (user_id, active_flag)
+  CONSTRAINT uq_acc_types_user_label_active_flag
+    UNIQUE (user_id, label, active_flag)
 );
 
 CREATE TABLE accounts (
@@ -203,8 +203,8 @@ CREATE TABLE accounts (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_acc_types_user_acc_type_active_flag
-    UNIQUE (user_id, acc_type_id, active_flag)
+  CONSTRAINT uq_acc_types_user_acc_type_label_active_flag
+    UNIQUE (user_id, acc_type_id, label, active_flag)
 );
 
 CREATE TABLE transactions (

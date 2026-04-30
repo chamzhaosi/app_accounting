@@ -3,14 +3,16 @@ package com.accounting.accounting.budget.dto;
 import com.accounting.accounting.budget.dto.common.BudgetCategoryResponse;
 import com.accounting.accounting.budget.entity.Budget;
 import com.accounting.accounting.common.dto.BaseResponseDto;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+@Getter
 @NoArgsConstructor
 public class BudgetResponse extends BaseResponseDto {
-  private List<BudgetCategoryResponse> budgetCategoryResponseList;
+  private List<BudgetCategoryResponse> budgetCategoriesList;
   private BigDecimal totalBudget;
   private Boolean isActive;
   private BigDecimal unallocatedBudget;
@@ -18,7 +20,7 @@ public class BudgetResponse extends BaseResponseDto {
 
   public BudgetResponse(Budget budget, List<BudgetCategoryResponse> budgetCategoryResponseList){
     super(budget.getId(), budget.getVrs());
-    this.budgetCategoryResponseList = budgetCategoryResponseList;
+    this.budgetCategoriesList = budgetCategoryResponseList;
     this.totalBudget = budget.getTotalBudget();
     this.isActive = budget.getIsActive();
 

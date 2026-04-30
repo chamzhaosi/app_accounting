@@ -25,7 +25,6 @@ public class Budget extends EntityBase {
   private User user;
 
   @Column(nullable = false)
-  @Size(max = 12, min = 1, message = "Month should be the range 1 to 12 only")
   private LocalDate month;
 
   @Column(name = "total_budget", precision = 10, scale = 2, nullable = false)

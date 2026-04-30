@@ -1,6 +1,6 @@
 package com.accounting.accounting.budget.dto;
 
-import com.accounting.accounting.budget.dto.common.BudgetCategoryRequest;
+import com.accounting.accounting.budget.dto.common.BudgetCategoryCreateRequest;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -14,5 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 public class BudgetCreateRequest {
   @NotEmpty(message = "budgetCategoriesList is required")
-  private List<@NotNull(message = "item of budgetCategoriesList cannot be null") BudgetCategoryRequest> budgetCategoriesList;
+  private List<@NotNull(message = "item of budgetCategoriesList cannot be null")
+          BudgetCategoryCreateRequest> budgetCategoriesList;
 }

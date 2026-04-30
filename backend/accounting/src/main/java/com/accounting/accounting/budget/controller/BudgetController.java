@@ -5,21 +5,18 @@ import com.accounting.accounting.budget.dto.BudgetResponse;
 import com.accounting.accounting.budget.dto.BudgetUpdateRequest;
 import com.accounting.accounting.budget.service.BudgetService;
 import com.accounting.accounting.common.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
 @RequestMapping("/api/budget")
 @RequiredArgsConstructor
 public class BudgetController {
   private final BudgetService budgetService;
 
   @PostMapping("/create")
-  public ApiResponse<BudgetResponse> create (BudgetCreateRequest request){
+  public ApiResponse<BudgetResponse> create (@Valid @RequestBody BudgetCreateRequest request){
     BudgetResponse budgetResponse = budgetService.create(request);
     return ApiResponse.success(budgetResponse);
   }
@@ -31,7 +28,7 @@ public class BudgetController {
   }
 
   @PutMapping("/update")
-  public ApiResponse<BudgetResponse> update(BudgetUpdateRequest request){
+  public ApiResponse<BudgetResponse> update(@Valid @RequestBody BudgetUpdateRequest request){
     BudgetResponse budgetResponse = budgetService.update(request);
     return ApiResponse.success(budgetResponse);
   }

@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "transaction_types", uniqueConstraints = {
-    @UniqueConstraint(name="uq_txn_types_user_active_label",
-        columnNames = {"user_id", "active_label"})
+    @UniqueConstraint(name="uq_txn_types_user_label_active_flag",
+        columnNames = {"user_id", "label", "active_label"})
 })
 @NoArgsConstructor
 public class TransactionType extends EntityBase {
