@@ -19,11 +19,13 @@ public interface CategoryRepository extends JpaRepository<Category, Long>{
     SELECT COUNT(c)
     FROM Category c
     WHERE c.user.id = :userId
+      AND (:ctgrId IS NULL or c.id <> :ctgrId)
       AND c.label = :label
       AND c.type.id = :txnTypeId
       AND c.deletedAt IS NULL
     """)
     int countBySameData(@Param("userId") Long userId,
+                        @Nullable @Param("ctgrId") Long ctgrId,
                         @Param("txnTypeId") Long txnTypeId,
                         @Param("label") String label);
 

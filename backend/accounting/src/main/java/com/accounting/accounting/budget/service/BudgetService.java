@@ -26,11 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -102,11 +100,74 @@ public class BudgetService implements
     return budgetMapper.toResponse(budget, activeBudgetCategoryList);
   }
 
+  @Transactional
+  public void createBudgetForCurrentMonthIfNotExists() {
+    LocalDate month = Common.getCurrentMonthYear();
+    log.info("[BudgetService] - Automatically create current month ({}) budget.", month);
+
+    List<Budget> latestBudgets = budgetRepository.findAllLatestBudgetPerUser()
+            .stream()
+            .filter(b -> b.getMonth().isBefore(month))
+            .toList();
+
+    if (latestBudgets.isEmpty()) {
+      return;
+    }
+
+    List<Long> budgetIds = latestBudgets.stream()
+            .map(Budget::getId)
+            .toList();
+
+    List<BudgetCategory> oldBudgetCategories =
+            budgetCategoriesRepository.findAllByListBudgetId(budgetIds);
+
+    Map<Long, List<BudgetCategory>> categoriesByBudgetId =
+            oldBudgetCategories.stream()
+                    .collect(Collectors.groupingBy(bc -> bc.getBudget().getId()));
+
+    List<Budget> newBudgets = latestBudgets.stream()
+            .map(b -> new Budget(b.getUser(), month, b.getTotalBudget()))
+            .toList();
+
+    List<Budget> savedBudgets = budgetRepository.saveAll(newBudgets);
+
+    Map<Long, Budget> oldBudgetByUserId = latestBudgets.stream()
+            .collect(Collectors.toMap(
+                    b -> b.getUser().getId(),
+                    Function.identity()
+            ));
+
+    List<BudgetCategory> newBudgetCategories = new ArrayList<>();
+
+    for (Budget newBudget : savedBudgets) {
+      Budget oldBudget = oldBudgetByUserId.get(newBudget.getUser().getId());
+
+      List<BudgetCategory> oldCategories =
+              categoriesByBudgetId.getOrDefault(oldBudget.getId(), List.of());
+
+      for (BudgetCategory oldCategory : oldCategories) {
+        newBudgetCategories.add(
+                new BudgetCategory(
+                        newBudget.getUser(),
+                        newBudget,
+                        oldCategory.getCategory(),
+                        oldCategory.getAmount()
+                )
+        );
+      }
+    }
+
+    if (!newBudgetCategories.isEmpty()) {
+      budgetCategoriesRepository.saveAll(newBudgetCategories);
+    }
+  }
+
   @NotNull
   private List<BudgetCategory> updateExistBudgetCategory(User user, List<BudgetCategory> budgetCategoryListInDB,
                                                          List<BudgetCategoryUpdateRequest> existBudgetCategoriesList){
     if(existBudgetCategoriesList == null || existBudgetCategoriesList.isEmpty()) return new ArrayList<>();
 
+    LocalDateTime now = Common.getLocalDateTime(null);
     List<BudgetCategory> activeBudgetCategoryList = new ArrayList<>();
     Map<Long, BudgetCategoryUpdateRequest> longBudgetCategoryUpdateRequestMap = existBudgetCategoriesList.stream().collect(Collectors.toMap(
             BaseDto::getId, Function.identity()
@@ -114,17 +175,15 @@ public class BudgetService implements
 
     for (BudgetCategory budgetCategory: budgetCategoryListInDB){
       BudgetCategoryUpdateRequest budgetCategoryUpdateRequest = longBudgetCategoryUpdateRequestMap.get(budgetCategory.getId());
-      Common.validateVersionMatch(budgetCategoryUpdateRequest, budgetCategory);
-
-      BigDecimal reqAmount = budgetCategoryUpdateRequest.getAmount();
-      LocalDateTime now = Common.getLocalDateTime(null);
-        if(reqAmount != null){
-          budgetCategory.setAmount(reqAmount);
-          activeBudgetCategoryList.add(budgetCategory);
-        }else{
-          budgetCategory.setDeletedAt(now);
-          budgetCategory.setDeletedBy(user.getEmail());
-        }
+      BigDecimal reqAmount = budgetCategoryUpdateRequest != null ? budgetCategoryUpdateRequest.getAmount() : null;
+      if(reqAmount != null){
+        Common.validateVersionMatch(budgetCategoryUpdateRequest, budgetCategory);
+        budgetCategory.setAmount(reqAmount);
+        activeBudgetCategoryList.add(budgetCategory);
+      }else{
+        budgetCategory.setDeletedAt(now);
+        budgetCategory.setDeletedBy(user.getEmail());
+      }
     }
     return activeBudgetCategoryList;
   }

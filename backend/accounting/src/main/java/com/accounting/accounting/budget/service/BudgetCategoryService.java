@@ -18,7 +18,7 @@ public class BudgetCategoryService {
   private final BudgetCategoriesRepository budgetCategoriesRepository;
 
   public void updateBudgetCategoryByCtgrId(User user, List<Long> ctgrIds, Boolean isDeleteOrInactive){
-    log.info("[BudgetService][Update Budget Category] - Create current month budget category by user ({})", user.getEmail());
+    log.info("[BudgetService][Update Budget Category] - Update budget category by user ({})", user.getEmail());
     if (ctgrIds == null || ctgrIds.isEmpty()) return;
 
     List<BudgetCategory> budgetCategories = budgetCategoriesRepository

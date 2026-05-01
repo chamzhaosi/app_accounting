@@ -53,7 +53,7 @@ public class CategoryService implements CategoryServiceItf {
         User user = Common.getAuthenticateUserNThrowException(null);
         log.info("[Category][Create] - User ({}) create new category", user.getEmail());
 
-        boolean exist = categoryRepository.countBySameData(user.getId(), request.getTxnTypeId(), request.getLabel()) > 0;
+        boolean exist = categoryRepository.countBySameData(user.getId(), null, request.getTxnTypeId(), request.getLabel()) > 0;
         if(exist){
             throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
         }
@@ -73,16 +73,16 @@ public class CategoryService implements CategoryServiceItf {
                 .orElseThrow(() -> new InvalidArgumentException(ExceptionEnum.DATA_NOT_FOUND));
         Common.validateVersionMatch(request, category);
 
-        boolean exist = categoryRepository.countBySameData(user.getId(), request.getTxnTypeId(), request.getLabel()) > 0;
+        boolean exist = categoryRepository.countBySameData(user.getId(), request.getId(), request.getTxnTypeId(), request.getLabel()) > 0;
         if(exist){
             throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
         }
 
         category.setLabel(request.getLabel());
         category.setDescription(request.getDescription());
-        category.setIsActive(request.isActive());
+        category.setIsActive(request.getIsActive());
         categoryRepository.save(category);
-        budgetCategoryService.updateBudgetCategoryByCtgrId(user, List.of(request.getId()), !request.isActive());
+        budgetCategoryService.updateBudgetCategoryByCtgrId(user, List.of(request.getId()), !request.getIsActive());
 
         return categoryMapper.toResponse(category);
     }

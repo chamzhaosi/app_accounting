@@ -26,5 +26,5 @@ public class CategoryUpdateRequest implements BaseDto {
     private Long txnTypeId;
 
     @NotNull(message = "isActive is required")
-    private boolean isActive;
+    private Boolean isActive;
 }

@@ -7,12 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
   @Query("""
           SELECT b
-          FROM #{#entityName} b
+          FROM Budget b
           WHERE b.user.id = :userId
             AND b.month = :month
           """)
@@ -23,11 +24,27 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
   @Query(
           """
           SELECT b
-          FROM #{#entityName} b
+          FROM Budget b
           WHERE b.user.id = :userId
               AND b.id = :id
           """
   )
   Optional<Budget> findById(@Param("userId") Long userId,
                        @Param("id") Long id);
+
+  @Query(
+          value = """
+        SELECT b.*
+        FROM budget b
+        JOIN (
+            SELECT user_id, MAX(month) AS max_month
+            FROM budget
+            GROUP BY user_id
+        ) latest
+        ON b.user_id = latest.user_id
+        AND b.month = latest.max_month
+    """,
+          nativeQuery = true
+  )
+  List<Budget> findAllLatestBudgetPerUser();
 }
