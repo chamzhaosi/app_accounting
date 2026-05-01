@@ -22,8 +22,8 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Table(name = "account_types", uniqueConstraints = {
-    @UniqueConstraint(name="uq_acc_types_user_label",
-            columnNames = {"user_id", "active_label"})})
+    @UniqueConstraint(name="uq_acc_types_user_label_active_flag",
+            columnNames = {"user_id", "label", "active_flag"})})
 public class AccountType extends EntityBase {
   @NonNull
   private Long id;

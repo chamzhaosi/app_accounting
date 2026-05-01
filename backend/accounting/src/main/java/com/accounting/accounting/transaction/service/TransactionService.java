@@ -267,7 +267,7 @@ public class TransactionService implements TransactionServiceItf {
                     LinkedHashMap::new
             ));
     List<Transaction> finalTransactions = new ArrayList<>(uniqueTransactions.values());
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = Common.getLocalDateTime(null);
 
     accountService.resetCurrentBalance(finalTransactions);
     finalTransactions.forEach(t -> {

@@ -1,6 +1,6 @@
 package com.accounting.accounting.account.dto;
 
-import com.accounting.accounting.common.dto.BaseUpdateRequestDto;
+import com.accounting.accounting.common.dto.BaseDto;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -15,9 +15,9 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class AccountUpdateRequest extends BaseUpdateRequestDto {
-  @NotNull(message = "id is required")
+public class AccountUpdateRequest implements BaseDto {
   private Long id;
+  private Long vrs;
 
   @NotBlank(message = "label is required")
   @Size(max= 50, message = "label must not exceed 50 characters")

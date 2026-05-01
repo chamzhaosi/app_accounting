@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "categories", uniqueConstraints = {
-    @UniqueConstraint(name = "uq_ctgr_user_type_id_label",
-        columnNames = {"user_id", "txn_type_id", "active_label"})
+    @UniqueConstraint(name = "uq_ctgr_user_type_id_label_active_flag",
+        columnNames = {"user_id", "txn_type_id", "label", "active_flag"})
 })
 @NoArgsConstructor
 public class Category extends EntityBase {

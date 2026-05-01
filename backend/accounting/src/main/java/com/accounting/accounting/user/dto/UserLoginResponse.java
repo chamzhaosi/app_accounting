@@ -1,6 +1,5 @@
 package com.accounting.accounting.user.dto;
 
-import com.accounting.accounting.user.entity.User;
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

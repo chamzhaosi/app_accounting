@@ -123,7 +123,7 @@ public class AccountService implements AccountServiceItf {
     }
 
     accounts.forEach(c -> {
-      c.setDeletedAt(LocalDateTime.now());
+      c.setDeletedAt(Common.getLocalDateTime(null));
       c.setDeletedBy(user.getEmail());
     });
     accountRepository.saveAll(accounts);

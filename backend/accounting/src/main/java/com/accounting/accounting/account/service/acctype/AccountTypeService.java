@@ -42,7 +42,7 @@ public class AccountTypeService implements AccountTypeServiceItf {
         User user = Common.getAuthenticateUserNThrowException(null);
         log.info("[Account Type][Find all] - User ({}) create new account type", user.getEmail());
 
-        boolean exist = accountTypeRepository.countByUserIdAndLabel(user.getId(), request.getLabel()) > 0;
+        boolean exist = accountTypeRepository.countByUserIdAndLabel(user.getId(), null, request.getLabel()) > 0;
         if(exist){
             throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
         }
@@ -62,7 +62,7 @@ public class AccountTypeService implements AccountTypeServiceItf {
         Common.validateVersionMatch(request, accountType);
 
         checkTxnTypIsNotCrtBySystem(accountType);
-        boolean exist = accountTypeRepository.countByUserIdAndLabel(user.getId(), request.getLabel()) > 0;
+        boolean exist = accountTypeRepository.countByUserIdAndLabel(user.getId(), request.getId(), request.getLabel()) > 0;
         if(exist){
             throw new InvalidArgumentException(ExceptionEnum.DUPLICATE_DATA_FOUND);
         }
@@ -92,7 +92,7 @@ public class AccountTypeService implements AccountTypeServiceItf {
 
         accountTypes.forEach(accountType -> {
                     checkTxnTypIsNotCrtBySystem(accountType);
-                    accountType.setDeletedAt(LocalDateTime.now());
+                    accountType.setDeletedAt(Common.getLocalDateTime(null));
                     accountType.setDeletedBy(user.getEmail());
                 }
         );

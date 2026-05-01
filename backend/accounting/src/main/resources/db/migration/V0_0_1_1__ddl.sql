@@ -104,8 +104,8 @@ CREATE TABLE transaction_types (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_txn_types_user_active_flag
-    UNIQUE (user_id, active_flag)
+  CONSTRAINT uq_txn_types_user_label_active_flag
+    UNIQUE (user_id, label, active_flag)
 );
 
 CREATE TABLE categories (
@@ -138,8 +138,8 @@ CREATE TABLE categories (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_ctgr_user_type_id_active_flag
-    UNIQUE (user_id, txn_type_id, active_flag)
+  CONSTRAINT uq_ctgr_user_type_id_label_active_flag
+    UNIQUE (user_id, txn_type_id, label, active_flag)
 );
 
 CREATE TABLE account_types (
@@ -166,8 +166,8 @@ CREATE TABLE account_types (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_acc_types_user_active_flag
-    UNIQUE (user_id, active_flag)
+  CONSTRAINT uq_acc_types_user_label_active_flag
+    UNIQUE (user_id, label, active_flag)
 );
 
 CREATE TABLE accounts (
@@ -180,7 +180,7 @@ CREATE TABLE accounts (
   current_balance    DECIMAL(10,2) DEFAULT 0.00,
   is_main_account    BOOLEAN NOT NULL DEFAULT TRUE,
   is_active          BOOLEAN NOT NULL DEFAULT TRUE,
-  active_flag   TINYINT
+  active_flag        TINYINT
     GENERATED ALWAYS AS (
         CASE
             WHEN deleted_at IS NULL THEN 1
@@ -203,8 +203,8 @@ CREATE TABLE accounts (
     FOREIGN KEY (user_id)
     REFERENCES users(id),
 
-  CONSTRAINT uq_acc_types_user_acc_type_active_flag
-    UNIQUE (user_id, acc_type_id, active_flag)
+  CONSTRAINT uq_acc_types_user_acc_type_label_active_flag
+    UNIQUE (user_id, acc_type_id, label, active_flag)
 );
 
 CREATE TABLE transactions (
@@ -242,14 +242,27 @@ CREATE TABLE transactions (
     REFERENCES accounts(id)
 );
 
-CREATE TABLE budget {
+CREATE TABLE budget (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id       BIGINT NOT NULL,
-  month         BIGINT NOT NULL,
+  month         DATE NOT NULL,
   total_budget  DECIMAL(10,2) NOT NULL,
-}
+  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by    VARCHAR(100),
+  modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  modified_by   VARCHAR(100),
+  vrs           BIGINT DEFAULT 0,
 
-CREATE TABLE budget_categories{
+  CONSTRAINT fk_budget_users
+    FOREIGN KEY (user_id)
+    REFERENCES users(id),
+
+  CONSTRAINT uq_budget_user_id_month
+    UNIQUE (user_id, month)
+);
+
+CREATE TABLE budget_categories (
   id            BIGINT PRIMARY KEY AUTO_INCREMENT,
   budget_id     BIGINT NOT NULL,
   ctgr_id       BIGINT NOT NULL,
@@ -259,12 +272,24 @@ CREATE TABLE budget_categories{
       CASE
         WHEN deleted_at IS NULL THEN 1
         ELSE NULL
-    )
-  deleted_at            DATETIME NULL,
-  deleted_by            VARCHAR(100) NULL,
-  created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by            VARCHAR(100),
-  modified_at           DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  modified_by           VARCHAR(100),
-  vrs                   BIGINT DEFAULT 0,
-}
+      END
+    ) STORED,
+  deleted_at    DATETIME NULL,
+  deleted_by    VARCHAR(100) NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by    VARCHAR(100),
+  modified_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  modified_by   VARCHAR(100),
+  vrs           BIGINT DEFAULT 0,
+
+  CONSTRAINT fk_budget_ctgrs_budget
+    FOREIGN KEY (budget_id)
+    REFERENCES budget(id),
+
+  CONSTRAINT fk_budget_ctgrs_ctgrs
+    FOREIGN KEY (ctgr_id)
+    REFERENCES categories(id),
+
+  CONSTRAINT uq_budget_ctgrs_budget_ctgr_active_flag
+    UNIQUE (budget_id, ctgr_id, active_flag)
+);

@@ -1,18 +1,11 @@
 package com.accounting.accounting.common.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
 
-@Getter
-@Setter
-@NoArgsConstructor
-public abstract class BaseDto {
-  protected Long id;
-  protected Long vrs;
+public interface BaseDto {
+  @NotNull(message = "id is required")
+  Long getId();
 
-  public BaseDto(Long id, Long vrs) {
-    this.id = id;
-    this.vrs = vrs;
-  }
+  @NotNull(message = "vrs is required")
+  Long getVrs();
 }
