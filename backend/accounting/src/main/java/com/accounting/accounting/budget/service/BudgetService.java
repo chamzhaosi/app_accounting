@@ -22,6 +22,7 @@ import com.accounting.accounting.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,10 +61,10 @@ public class BudgetService implements
     return budgetMapper.toResponse(budget, budgetCategories);
   }
 
-  public Optional<BudgetResponse> getBudget(){
+  public Optional<BudgetResponse> getBudget(@Nullable LocalDate month){
     User user = Common.getAuthenticateUserNThrowException(null);
     log.info("[BudgetService][Get Budget] - Get current month budget by user ({})", user.getEmail());
-    Optional<Budget> budget = budgetRepository.findAllByYearMonth(user.getId(), Common.getCurrentMonthYear());
+    Optional<Budget> budget = budgetRepository.findAllByYearMonth(user.getId(), month == null ? Common.getCurrentMonthYear() : month);
 
     if(budget.isPresent()){
       List<BudgetCategory> budgetCategories = budgetCategoriesRepository

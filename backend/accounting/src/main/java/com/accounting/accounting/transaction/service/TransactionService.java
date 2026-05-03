@@ -2,14 +2,23 @@ package com.accounting.accounting.transaction.service;
 
 import com.accounting.accounting.account.entity.Account;
 import com.accounting.accounting.account.service.AccountService;
+import com.accounting.accounting.budget.dto.BudgetResponse;
+import com.accounting.accounting.budget.entity.Budget;
+import com.accounting.accounting.budget.service.BudgetService;
 import com.accounting.accounting.category.entity.Category;
 import com.accounting.accounting.category.service.CategoryService;
 import com.accounting.accounting.common.enums.ExceptionEnum;
 import com.accounting.accounting.common.enums.TransactionNatureEnum;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.common.helper.Common;
+import com.accounting.accounting.dashboard.dto.DashboardBudgetSummaryResponse;
+import com.accounting.accounting.dashboard.dto.DashboardCategoriesSummaryResponse;
+import com.accounting.accounting.dashboard.dto.common.DashboardCategoriesSummary;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionAdjustResponse;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionUpdateAdjustRequest;
+import com.accounting.accounting.transaction.dto.common.TransactionBudgetSummary;
+import com.accounting.accounting.transaction.dto.common.TransactionCategoriesSummary;
+import com.accounting.accounting.transaction.dto.common.TransactionSummary;
 import com.accounting.accounting.transaction.dto.transaction.*;
 import com.accounting.accounting.transaction.dto.transfer.*;
 import com.accounting.accounting.transaction.entity.Transaction;
@@ -22,12 +31,17 @@ import com.accounting.accounting.user.entity.User;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -43,6 +57,7 @@ public class TransactionService implements TransactionServiceItf {
   private final TransactionTypeService transactionTypeService;
   private final AccountService accountService;
   private final CategoryService categoryService;
+  private final BudgetService budgetService;
   private final TransactionMapper transactionMapper;
 
   @Override
@@ -275,6 +290,52 @@ public class TransactionService implements TransactionServiceItf {
       t.setDeletedBy(user.getEmail());
     });
     transactionRepository.saveAll(finalTransactions);
+  }
+
+  public TransactionSummary getSummaryByPeriod (LocalDate from, LocalDate to) {
+    User user = Common.getAuthenticateUserNThrowException(null);
+    log.info("[TransactionService] - Get total up income and expense from {} to {} transactions", from, to);
+    return transactionRepository.getTransactionSummaryByPeriod(user.getId(), from, to);
+  }
+
+  public List<TransactionResponse> getTop5TransactionList (LocalDate from, LocalDate to){
+    User user = Common.getAuthenticateUserNThrowException(null);
+    log.info("[TransactionService] - Get top 5 expense transaction from {} to {}", from, to);
+    Pageable top5 = PageRequest.of(0,5, Sort.by("amount").descending());
+    List<Transaction> transactionList = transactionRepository.findTopExpenseTransactions(user.getId(), from, to, top5);
+
+    return transactionMapper.toResponseList(transactionList);
+  }
+
+  public DashboardCategoriesSummaryResponse getCategoriesSummary(LocalDate from, LocalDate to){
+    User user = Common.getAuthenticateUserNThrowException(null);
+    log.info("[TransactionService] - Get categories summary from {} to {} transactions", from, to);
+    List<TransactionCategoriesSummary> incTransactionCategoriesSummaryList = transactionRepository
+            .findTransactionCategoriesSummary(user.getId(), TransactionNatureEnum.INC.getCode(), from, to);
+    List<TransactionCategoriesSummary> expTransactionCategoriesSummaryList = transactionRepository
+            .findTransactionCategoriesSummary(user.getId(), TransactionNatureEnum.EXP.getCode(), from, to);
+
+    return new DashboardCategoriesSummaryResponse(covertToCategorySummaryList(incTransactionCategoriesSummaryList),
+            covertToCategorySummaryList(expTransactionCategoriesSummaryList));
+  }
+
+  public Optional<DashboardBudgetSummaryResponse> getBudgetSummary(LocalDate from){
+    LocalDate month = from.withDayOfMonth(1);
+    log.info("[TransactionService] - Get budget summary for {} transactions", month.getMonth());
+    BudgetResponse budgetResponse = budgetService.getBudget(month).orElse(null);
+    if(budgetResponse ==  null) return Optional.empty();
+
+    User user = Common.getAuthenticateUserNThrowException(null);
+    List<TransactionBudgetSummary> transactionBudgetSummaryList =  transactionRepository.findTransactionBudgetSummary(user.getId(), month, month.withDayOfMonth(month.lengthOfMonth()));
+
+    return Optional.of(new DashboardBudgetSummaryResponse(transactionBudgetSummaryList, budgetResponse));
+  }
+
+  private List<DashboardCategoriesSummary> covertToCategorySummaryList(List<TransactionCategoriesSummary> transactionCategoriesSummaryList){
+    BigDecimal total = transactionCategoriesSummaryList.stream().map(TransactionCategoriesSummary::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    return transactionCategoriesSummaryList.stream().map(t -> new DashboardCategoriesSummary(t.getCategory(), t.getAmount(), t.getAmount()
+            .divide(total, 2, RoundingMode.HALF_UP)  // first divide
+            .multiply(BigDecimal.valueOf(100)))).toList();
   }
 
   private Map<Long, Account> getIdAccountMap (Long userId, Long fromAccId, Long toAccId){

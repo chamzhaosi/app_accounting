@@ -7,10 +7,16 @@ import com.accounting.accounting.transaction.dto.transfer.TransactionsTransferRe
 import com.accounting.accounting.transaction.entity.Transaction;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class TransactionMapper {
   public TransactionResponse toResponse(Transaction transaction){
     return new TransactionResponse(transaction);
+  }
+
+  public List<TransactionResponse> toResponseList(List<Transaction> transactionList){
+    return transactionList.stream().map(TransactionResponse::new).toList();
   }
 
   public TransactionsTransferResponse toTransferResponse(Transaction formTransaction, Transaction toTransaction){
