@@ -12,8 +12,10 @@ import com.accounting.accounting.common.enums.TransactionNatureEnum;
 import com.accounting.accounting.common.exception.InvalidArgumentException;
 import com.accounting.accounting.common.helper.Common;
 import com.accounting.accounting.dashboard.dto.DashboardBudgetSummaryResponse;
+import com.accounting.accounting.dashboard.dto.DashboardCalendarSummaryResponse;
 import com.accounting.accounting.dashboard.dto.DashboardCategoriesSummaryResponse;
 import com.accounting.accounting.dashboard.dto.common.DashboardCategoriesSummary;
+import com.accounting.accounting.dashboard.dto.common.DashboardDailySummary;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionAdjustResponse;
 import com.accounting.accounting.transaction.dto.adjustment.TransactionUpdateAdjustRequest;
 import com.accounting.accounting.transaction.dto.common.TransactionBudgetSummary;
@@ -329,6 +331,35 @@ public class TransactionService implements TransactionServiceItf {
     List<TransactionBudgetSummary> transactionBudgetSummaryList =  transactionRepository.findTransactionBudgetSummary(user.getId(), month, month.withDayOfMonth(month.lengthOfMonth()));
 
     return Optional.of(new DashboardBudgetSummaryResponse(transactionBudgetSummaryList, budgetResponse));
+  }
+
+  public List<DashboardDailySummary> getAllTransactionByPeriod(LocalDate date) {
+    LocalDate from = date.withDayOfMonth(1);
+    LocalDate today = LocalDate.now();
+    LocalDate endOfMonth = date.withDayOfMonth(date.lengthOfMonth());
+    LocalDate to = date.getMonthValue() == today.getMonthValue()
+            && date.getYear() == today.getYear()
+            ? today
+            : endOfMonth;
+    User user = Common.getAuthenticateUserNThrowException(null);
+    log.info("[TransactionService] - Get transaction list from {} to {} to calculate calendar summary", from, to);
+    List<Transaction> transactions = transactionRepository.getAllTransactionByPeriod(user.getId(), from, to);
+    return transactions.stream().collect(
+            Collectors.groupingBy(Transaction::getTxnDate)
+    ).entrySet().stream().map(entry -> {
+      LocalDate txnDate = entry.getKey();
+      List<Transaction> transactionList = entry.getValue();
+
+      BigDecimal income = transactionList.stream()
+              .filter(t -> t.getTransactionType().getNature().equals(TransactionNatureEnum.INC.getCode()))
+              .map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+      BigDecimal expense = transactionList.stream()
+              .filter(t -> t.getTransactionType().getNature().equals(TransactionNatureEnum.EXP.getCode()))
+              .map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+      return new DashboardDailySummary(txnDate, income, expense);
+    }).sorted(Comparator.comparing(DashboardDailySummary::getTxnDate)).toList();
   }
 
   private List<DashboardCategoriesSummary> covertToCategorySummaryList(List<TransactionCategoriesSummary> transactionCategoriesSummaryList){

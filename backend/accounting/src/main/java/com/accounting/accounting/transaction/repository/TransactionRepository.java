@@ -160,4 +160,17 @@ public interface TransactionRepository extends BaseRepositoryItf<Transaction, Lo
           @Param("from") LocalDate from,
           @Param("to") LocalDate to
   );
+
+  @Query("""
+              SELECT t
+              FROM Transaction t
+              WHERE t.user.id = :userId
+                AND t.txnDate BETWEEN :from AND :to
+                AND t.deletedAt IS NULL
+          """)
+  List<Transaction> getAllTransactionByPeriod(
+          @Param("userId") Long userId,
+          @Param("from") LocalDate from,
+          @Param("to") LocalDate to
+  );
 }

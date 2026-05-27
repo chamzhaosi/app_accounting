@@ -2,10 +2,8 @@ package com.accounting.accounting.dashboard.controller;
 
 import com.accounting.accounting.common.response.ApiResponse;
 import com.accounting.accounting.common.response.ApiResponsePagination;
-import com.accounting.accounting.dashboard.dto.DashboardBudgetSummaryResponse;
-import com.accounting.accounting.dashboard.dto.DashboardCategoriesSummaryResponse;
-import com.accounting.accounting.dashboard.dto.DashboardSearchTransactionsRequest;
-import com.accounting.accounting.dashboard.dto.DashboardTransactionSummaryResponse;
+import com.accounting.accounting.dashboard.dto.*;
+import com.accounting.accounting.dashboard.dto.common.DashboardDailySummary;
 import com.accounting.accounting.dashboard.service.DashboardService;
 import com.accounting.accounting.transaction.dto.transaction.TransactionResponse;
 import jakarta.validation.Valid;
@@ -13,10 +11,14 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,5 +50,15 @@ public class DashboardController {
   public ApiResponse<DashboardBudgetSummaryResponse> findBudgetByPeriod(@Valid DashboardSearchTransactionsRequest request){
     Optional<DashboardBudgetSummaryResponse> dashboardCategoriesSummaryResponse = dashboardService.findBudgetByPeriod(request);
     return ApiResponse.success(dashboardCategoriesSummaryResponse.orElse(null));
+  }
+
+  @GetMapping("/get-cash-flow-balance")
+  public ApiResponse<BigDecimal> findCashFlowBalance(){
+    return ApiResponse.success((dashboardService.findCashFlowBalance()));
+  }
+
+  @GetMapping("/get-calendar-summary/{date}")
+  public List<DashboardDailySummary> findCalendarSummary(@PathVariable LocalDate date) {
+    return dashboardService.findCalendarSummaryResponse(date);
   }
 }

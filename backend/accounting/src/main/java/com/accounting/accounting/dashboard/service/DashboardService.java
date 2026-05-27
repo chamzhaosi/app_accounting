@@ -1,10 +1,9 @@
 package com.accounting.accounting.dashboard.service;
 
+import com.accounting.accounting.account.service.AccountService;
 import com.accounting.accounting.category.service.CategoryService;
-import com.accounting.accounting.dashboard.dto.DashboardBudgetSummaryResponse;
-import com.accounting.accounting.dashboard.dto.DashboardCategoriesSummaryResponse;
-import com.accounting.accounting.dashboard.dto.DashboardSearchTransactionsRequest;
-import com.accounting.accounting.dashboard.dto.DashboardTransactionSummaryResponse;
+import com.accounting.accounting.dashboard.dto.*;
+import com.accounting.accounting.dashboard.dto.common.DashboardDailySummary;
 import com.accounting.accounting.dashboard.mapper.DashboardMapper;
 import com.accounting.accounting.transaction.dto.common.TransactionCategoriesSummary;
 import com.accounting.accounting.transaction.dto.common.TransactionSummary;
@@ -17,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DashboardService {
   private final TransactionService transactionService;
+  private final AccountService accountService;
   private final DashboardMapper dashboardMapper;
 
   public DashboardTransactionSummaryResponse findTransactionSummaryByPeriod(DashboardSearchTransactionsRequest request){
@@ -45,5 +47,13 @@ public class DashboardService {
 
   public Optional<DashboardBudgetSummaryResponse> findBudgetByPeriod(DashboardSearchTransactionsRequest request){
     return transactionService.getBudgetSummary(request.getSttTxnDate());
+  }
+
+  public BigDecimal findCashFlowBalance(){
+    return accountService.getAllCurrentBalance(true);
+  }
+
+  public List<DashboardDailySummary> findCalendarSummaryResponse(LocalDate date){
+    return transactionService.getAllTransactionByPeriod(date);
   }
 }
