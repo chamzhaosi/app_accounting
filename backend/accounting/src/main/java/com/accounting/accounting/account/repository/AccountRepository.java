@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+
 @NullMarked
 public interface AccountRepository
         extends BaseRepositoryItf<Account, Long> {
@@ -44,4 +46,18 @@ public interface AccountRepository
                        @Param("accTypeId") Long accTypeId,
                        @Param("isActive") Boolean isActive,
                        Pageable pageable);
+
+
+  @Query(
+        """
+        SELECT COALESCE(SUM(a.currentBalance), 0)
+        FROM Account a
+        WHERE a.user.id = :userId
+          AND (:isMainOnly IS NULL OR a.isMainAccount = :isMainOnly)
+          AND a.isActive = true
+          AND a.deletedAt IS NULL
+        """)
+  BigDecimal getAllCurrentBalance(@Param("userId") Long userId,
+                                  @Nullable @Param("isMainOnly") Boolean isMainOnly
+  );
 }

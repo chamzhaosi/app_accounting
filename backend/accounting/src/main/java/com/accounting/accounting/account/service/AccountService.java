@@ -22,6 +22,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -165,6 +166,12 @@ public class AccountService implements AccountServiceItf {
       account.setCurrentBalance(currentBalance.add(amountToAdj));
     });
     accountRepository.saveAll(accountMap.values());
+  }
+
+  public BigDecimal getAllCurrentBalance(@Nullable Boolean isMainOnly){
+    log.info("[Account] - Get current balance account with param isMainOnly {}", isMainOnly);
+    User user = Common.getAuthenticateUserNThrowException(null);
+    return accountRepository.getAllCurrentBalance(user.getId(), isMainOnly);
   }
 
   private BigDecimal getTransactionAmount(Transaction transaction) {

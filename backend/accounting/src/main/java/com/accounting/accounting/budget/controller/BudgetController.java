@@ -23,7 +23,7 @@ public class BudgetController {
 
   @GetMapping("/get-budget")
   public ApiResponse<BudgetResponse> getBudget(){
-    BudgetResponse budgetResponse = budgetService.getBudget().orElse(null);
+    BudgetResponse budgetResponse = budgetService.getBudget(null).orElse(null);
     return ApiResponse.success(budgetResponse);
   }
 
