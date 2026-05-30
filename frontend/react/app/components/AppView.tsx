@@ -1,5 +1,6 @@
 import { View, ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { cn } from "../utils/common";
 
 type AppViewProps = {
   isSafe?: boolean;
@@ -16,8 +17,8 @@ export default function AppView({
   return (
     <View
       {...props}
-      // style={{ marginTop: insets.top, marginBottom: insets.bottom }}
-      className={`flex-1 dark:bg-gray-800 ${className}`}
+      style={{ marginTop: insets.top, marginBottom: insets.bottom }}
+      className={cn("flex-1 dark:bg-gray-800", className)}
     />
   );
 }

@@ -5,6 +5,7 @@ import {
   View,
 } from "react-native";
 import AppText from "./AppText";
+import { cn } from "../utils/common";
 
 export enum ButtonTypeEnum {
   PRIMARY = "primary",
@@ -41,22 +42,25 @@ export default function AppButton({
       btnColor = "bg-red-400 dark:bg-red-700";
       break;
     default:
-      btnColor = "bg-blue-500 dark:bg-blue-700";
+      btnColor = "bg-lightBtnPrimary dark:bg-blue-700";
       break;
   }
 
   return (
     <Pressable
-      className={`py-3 rounded-lg w-[90%] items-center active:opacity-80
-         ${btnColor} ${isLoading && "disabled:opacity-60"} 
-         ${className}`}
+      className={cn(
+        "py-3 rounded-lg w-[90%] items-center active:opacity-80",
+        btnColor,
+        isLoading && "disabled:opacity-60",
+        className,
+      )}
       {...props}
     >
       <View className="flex-row gap-4">
         {isLoading && (
           <ActivityIndicator className="scale-150 text-gray-700 dark:text-slate-300" />
         )}
-        <AppText className={`text-3xl ${labelClassName}`}>{label}</AppText>
+        <AppText className={cn("text-3xl", labelClassName)}>{label}</AppText>
       </View>
     </Pressable>
   );

@@ -3,22 +3,26 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "clsx": "^2.1.1",
     "expo": "~56.0.5",
     "expo-constants": "~56.0.16",
+    "expo-font": "~56.0.5",
     "expo-linking": "~56.0.12",
     "expo-router": "~56.2.7",
     "expo-status-bar": "~56.0.4",
     "nativewind": "^4.2.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.76.1",
     "react-native": "0.85.3",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "tailwind-merge": "^3.6.0",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
