@@ -1,0 +1,31 @@
+export const LIGHT = {
+  // Light color scheme
+  BG_PRIMARY: "#C0E1D2",
+  BG_SECONDARY: "#F3F3E0",
+  BG_ACCENT: "#FBE8CE",
+
+  BTN_PRIMARY: "#3E5879",
+  BTN_SECONDARY: "#4B2E2B",
+
+  TEXT_PRIMARY: "#124170",
+  TEXT_SECONDARY: "#093C5D",
+  TEXT_ACCENT: "#EBF4F6",
+
+  TEXT_ERROR: "#C30E59",
+};
+
+export const DARK = {
+  // Dark color scheme
+  BG_PRIMARY: "#393E46",
+  BG_SECONDARY: "#222831",
+  BG_ACCENT: "#3F4F44",
+
+  BTN_PRIMARY: "#077A7D",
+  BTN_SECONDARY: "#27548A",
+
+  TEXT_PRIMARY: "#DFD0B8",
+  TEXT_SECONDARY: "#D3DAD9",
+  TEXT_ACCENT: "#6EADBC",
+
+  TEXT_ERROR: "#B45253",
+};

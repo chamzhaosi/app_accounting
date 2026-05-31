@@ -1,24 +1,22 @@
-import { useRef, useState } from "react";
-import { Keyboard, TextInput, TouchableWithoutFeedback } from "react-native";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Link } from "expo-router";
+import { useEffect, useState } from "react";
+import { Controller, FieldErrors, useForm } from "react-hook-form";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
 import AppButton, { ButtonTypeEnum } from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
-import { useForm, Controller } from "react-hook-form";
 import {
   loginFormDefaultValues,
   LoginFormType,
   loginSchema,
 } from "../../forms/auth/schemas/login.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "expo-router";
+import { TextInput } from "react-native-paper";
 
 export default function Loign() {
-  const emailRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
-
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
 
@@ -26,6 +24,7 @@ export default function Loign() {
     control,
     handleSubmit,
     formState: { errors },
+    setFocus,
   } = useForm<LoginFormType>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
@@ -33,7 +32,12 @@ export default function Loign() {
     defaultValues: loginFormDefaultValues,
   });
 
-  const loginSubmitter = async (data: LoginFormType) => {
+  const onError = (errors: FieldErrors<LoginFormType>) => {
+    const fieldName = Object.keys(errors)[0] as keyof LoginFormType;
+    fieldName && setFocus(fieldName);
+  };
+
+  const onSubmit = async (data: LoginFormType) => {
     setRspErrorMsg("");
     console.log(data);
     setIsSubmitting(true);
@@ -44,18 +48,18 @@ export default function Loign() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <AppView className="flex-1 bg-lightBgPrimary dark:bg-gray-900">
+      <AppView className="flex-1 bg-LIGHT-BG_PRIMARY dark:bg-DARK-BG_PRIMARY">
         <AppView
           isSafe
           className="flex-grow-[0.25] w-full justify-center items-center m-0 "
         >
-          <AppText isTitle className="text-7xl font-robotoMono font-[600]">
+          <AppText isTitle className="text-7xl font-ROBOTO_MONO font-[600]">
             Finora
           </AppText>
           <AppText className="text-gray-800">Personal Accounting App</AppText>
         </AppView>
         <AppScrollView
-          className="pt-8 bg-lightBgSecondary rounded-t-[50]"
+          className="pt-8 rounded-t-[50]"
           style={{
             shadowColor: "#000",
             shadowOffset: { width: 0, height: -4 },
@@ -64,7 +68,7 @@ export default function Loign() {
             elevation: 5,
           }}
         >
-          <AppView isSafe className="items-center">
+          <AppView isSafe className="w-[90%] self-center">
             <AppText isTitle className="text-[2rem] text-start w-[90%] ms-4">
               SIGN IN
             </AppText>
@@ -74,17 +78,21 @@ export default function Loign() {
             <Controller
               control={control}
               name="email"
-              render={({ field: { value, onChange, onBlur } }) => (
+              render={({ field: { value, onChange, onBlur, ref } }) => (
                 <AppTextInput
-                  ref={emailRef}
+                  ref={ref}
+                  mode="outlined"
+                  label={"Email"}
+                  autoFocus
+                  editable={!isSubmitting}
                   placeholder="Email"
                   keyboardType="email-address"
-                  autoCapitalize="none"
+                  autoComplete="email"
                   onChangeText={onChange}
                   onBlur={onBlur}
                   value={value}
                   submitBehavior="submit"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  onSubmitEditing={() => setFocus("password")}
                 />
               )}
             />
@@ -98,15 +106,18 @@ export default function Loign() {
             <Controller
               control={control}
               name="password"
-              render={({ field: { value, onChange, onBlur } }) => (
+              render={({ field: { value, onChange, onBlur, ref } }) => (
                 <AppTextInput
-                  ref={passwordRef}
+                  ref={ref}
+                  mode="outlined"
                   placeholder="Password"
-                  secureTextEntry
+                  label={"Password"}
+                  editable={!isSubmitting}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   value={value}
-                  onSubmitEditing={handleSubmit(loginSubmitter)}
+                  isMaskValue
+                  onSubmitEditing={handleSubmit(onSubmit)}
                 />
               )}
             />
@@ -120,13 +131,13 @@ export default function Loign() {
 
             <AppButton
               label="LOGIN"
-              labelClassName="text-lightTextAccent font-robotoMono font-light"
+              labelClassName="text-LIGHT-TEXT_ACCENT dark:text-DARK-TEXT_SECONDARY font-ROBOTO_MONO font-light"
               type={ButtonTypeEnum.PRIMARY}
               disabled={isSubmitting}
               isLoading={isSubmitting}
               onPress={() => {
                 Keyboard.dismiss();
-                handleSubmit(loginSubmitter)();
+                handleSubmit(onSubmit, onError)();
               }}
             />
             {rspErrorMsg && (

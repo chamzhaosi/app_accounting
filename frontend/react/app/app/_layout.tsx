@@ -2,10 +2,11 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import "../global.css";
+import { FONTS } from "../constants/fonts";
 
 export default function StackLayout() {
   const [loaded] = useFonts({
-    ROBOTO_MONO: require("../assets/fonts/RobotoMono-VariableFont_wght.ttf"),
+    [FONTS.ROBOTO_MONO]: require("../assets/fonts/RobotoMono-VariableFont_wght.ttf"),
   });
 
   if (!loaded) {

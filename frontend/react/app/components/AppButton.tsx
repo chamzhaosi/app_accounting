@@ -42,14 +42,14 @@ export default function AppButton({
       btnColor = "bg-red-400 dark:bg-red-700";
       break;
     default:
-      btnColor = "bg-lightBtnPrimary dark:bg-blue-700";
+      btnColor = "bg-LIGHT-BTN_PRIMARY dark:bg-DARK-BTN_PRIMARY";
       break;
   }
 
   return (
     <Pressable
       className={cn(
-        "py-3 rounded-lg w-[90%] items-center active:opacity-80",
+        "py-3 rounded-lg items-center active:opacity-80",
         btnColor,
         isLoading && "disabled:opacity-60",
         className,

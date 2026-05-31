@@ -17,7 +17,10 @@ export default function AppScrollView({
 
   return (
     <KeyboardAwareScrollView
-      className={cn("flex-1 bg-blue-200 dark:bg-gray-800", className)}
+      className={cn(
+        "flex-1 bg-LIGHT-BG_SECONDARY dark:bg-DARK-BG_SECONDARY",
+        className,
+      )}
       enableOnAndroid
       extraScrollHeight={
         40 + insets.top + insets.bottom + (extraScrollHeight ?? 0)

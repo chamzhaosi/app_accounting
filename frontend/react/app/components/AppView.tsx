@@ -18,7 +18,7 @@ export default function AppView({
     <View
       {...props}
       style={{ marginTop: insets.top, marginBottom: insets.bottom }}
-      className={cn("flex-1 dark:bg-gray-800", className)}
+      className={cn("flex-1", className)}
     />
   );
 }

@@ -19,7 +19,7 @@ export default function AppText({
   ...props
 }: AppTextProps) {
   const titleClassName = isTitle
-    ? "text-3xl font-bold dark:text-slate-200 text-lightTextPrimary"
+    ? "text-3xl font-bold dark:text-DARK-TEXT_PRIMARY text-LIGHT-TEXT_PRIMARY"
     : "";
 
   let textClassName = "";
@@ -27,14 +27,14 @@ export default function AppText({
   switch (type) {
     case TextTypEnum.ERROR:
       textClassName =
-        "text-lightTextError dark:text-red-500 w-[90%] px-3 text-start font-semibold text-md";
+        "text-LIGHT-TEXT_ERROR dark:text-DARK-TEXT_ERROR w-[90%] px-3 text-start font-semibold text-md";
       break;
     case TextTypEnum.LINK:
-      textClassName = "text-blue-800 underline";
+      textClassName = "text-blue-800 dark:text-DARK-TEXT_ACCENT underline";
       break;
     default:
       textClassName =
-        "font-robotoMono font-[600] text-lightTextSecondary dark:text-slate-300";
+        "font-ROBOTO_MONO font-[600] text-LIGHT-TEXT_SECONDARY dark:text-DARK-TEXT_SECONDARY";
       break;
   }
 
