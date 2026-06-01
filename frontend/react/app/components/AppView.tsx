@@ -11,7 +11,7 @@ export default function AppView({
   className,
   ...props
 }: AppViewProps) {
-  if (!isSafe) return <View className={className} {...props} />;
+  if (!isSafe) return <View className={cn("flex-1", className)} {...props} />;
 
   const insets = useSafeAreaInsets();
   return (

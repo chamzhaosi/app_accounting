@@ -14,6 +14,10 @@ export default function StackLayout() {
           name="register"
           options={{ title: "Register", headerShown: false }}
         />
+        <Stack.Screen
+          name="otp"
+          options={{ title: "OTP", headerShown: false }}
+        />
       </Stack>
     </>
   );

@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
@@ -7,15 +6,15 @@ import AppButton, { ButtonTypeEnum } from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
 import AppText, { TextTypEnum } from "../../components/AppText";
-import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
 import {
-  loginFormDefaultValues,
-  LoginFormType,
-  loginSchema,
-} from "../../forms/auth/schemas/login.schema";
+  otpFormDefaultValues,
+  OtpFormType,
+  otpSchema,
+} from "../../forms/auth/schemas/otp.schema";
+import AppTextInput from "../../components/AppTextInput";
 
-export default function Loign() {
+export default function OTP() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
 
@@ -24,26 +23,25 @@ export default function Loign() {
     handleSubmit,
     formState: { errors },
     setFocus,
-  } = useForm<LoginFormType>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<OtpFormType>({
+    resolver: zodResolver(otpSchema),
     mode: "onBlur",
     reValidateMode: "onChange",
-    defaultValues: loginFormDefaultValues,
+    defaultValues: otpFormDefaultValues,
   });
 
-  const onError = (errors: FieldErrors<LoginFormType>) => {
-    const fieldName = Object.keys(errors)[0] as keyof LoginFormType;
+  const onError = (errors: FieldErrors<OtpFormType>) => {
+    const fieldName = Object.keys(errors)[0] as keyof OtpFormType;
     fieldName && setFocus(fieldName);
   };
 
-  const onSubmit = async (data: LoginFormType) => {
+  const onSubmit = async (data: OtpFormType) => {
     setRspErrorMsg("");
     console.log(data);
     setIsSubmitting(true);
     await new Promise((res) => setTimeout(res, 2000));
     setIsSubmitting(false);
-    // setRspErrorMsg("Email or password is invalid. Please try again.");
-    router.push("/(auth)/otp");
+    setRspErrorMsg("Invalid OTP. Please try again.");
   };
 
   return (
@@ -70,67 +68,44 @@ export default function Loign() {
         >
           <AppView isSafe className="w-[90%] self-center">
             <AppText isTitle className="text-[2rem] text-start w-[90%] ms-4">
-              SIGN IN
+              VERIFICATION
             </AppText>
 
-            <AppSpacer />
+            <AppSpacer height={8} />
+            <AppText className="text-md mx-4">
+              Please enter the verification code we send to your email address.
+            </AppText>
+
+            <AppSpacer height={8} />
 
             <Controller
               control={control}
-              name="email"
+              name="otp"
               render={({ field: { value, onChange, onBlur, ref } }) => (
                 <AppTextInput
                   ref={ref}
                   mode="outlined"
-                  label={"Email"}
+                  keyboardType="number-pad"
+                  label={"OTP"}
+                  placeholder="OTP"
+                  maxLength={6}
                   autoFocus
-                  editable={!isSubmitting}
-                  placeholder="Email"
-                  keyboardType="email-address"
-                  autoComplete="email"
+                  value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
-                  value={value}
-                  submitBehavior="submit"
-                  onSubmitEditing={() => setFocus("password")}
+                  onSubmitEditing={handleSubmit(onSubmit, onError)}
                 />
               )}
             />
 
-            {errors.email && (
-              <AppText type={TextTypEnum.ERROR}>{errors.email.message}</AppText>
-            )}
-
-            <AppSpacer height={10} />
-
-            <Controller
-              control={control}
-              name="password"
-              render={({ field: { value, onChange, onBlur, ref } }) => (
-                <AppTextInput
-                  ref={ref}
-                  mode="outlined"
-                  placeholder="Password"
-                  label={"Password"}
-                  editable={!isSubmitting}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                  isMaskValue
-                  onSubmitEditing={handleSubmit(onSubmit)}
-                />
-              )}
-            />
-            {errors.password && (
-              <AppText type={TextTypEnum.ERROR}>
-                {errors.password.message}
-              </AppText>
+            {errors.otp && (
+              <AppText type={TextTypEnum.ERROR}>{errors.otp.message}</AppText>
             )}
 
             <AppSpacer height={20} />
 
             <AppButton
-              label="LOGIN"
+              label="VERIFY"
               labelClassName="text-LIGHT-TEXT_ACCENT dark:text-DARK-TEXT_SECONDARY font-ROBOTO_MONO font-light"
               type={ButtonTypeEnum.PRIMARY}
               disabled={isSubmitting}
@@ -145,17 +120,6 @@ export default function Loign() {
             )}
 
             <AppSpacer height={20} />
-
-            <AppView className="w-full justify-center items-center flex flex-row">
-              <AppText className="text-md mr-2">
-                Don't have an account yet?
-              </AppText>
-              <Link href={"/(auth)/register"}>
-                <AppText className="font-semibold" type={TextTypEnum.LINK}>
-                  Sign Up
-                </AppText>
-              </Link>
-            </AppView>
           </AppView>
         </AppScrollView>
       </AppView>
