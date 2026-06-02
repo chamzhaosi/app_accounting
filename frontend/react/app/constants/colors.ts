@@ -13,6 +13,25 @@ export const LIGHT = {
   TEXT_ACCENT: "#EBF4F6",
 
   TEXT_ERROR: "#C30E59",
+
+  // Tabs colors
+  TAB_ACTIVE_BG: "#C7D9DD",
+  TAB_INACTIVE_BG: "#D5E5D5",
+
+  TAB_ACTIVE_TINT: "#626F47",
+  TAB_INACTIVE_TINT: "#ADB2D4",
+
+  // List item colors
+  LIST_ITEM_BG: "#C7D9DD",
+  LIST_ITEM_BG_PRESSED: "#D5E5D5",
+
+  // Toast colors
+  TOAST_BG_SUCCESS: "#BDE3C3",
+  TOAST_BG_ERROR: "#FF9494",
+  TOAST_BG_INFO: "#AEDEFC",
+  TOAST_BG_WARNING: "#FFE699",
+
+  TOAST_TEXT: "#27391C",
 };
 
 export const DARK = {
@@ -30,4 +49,23 @@ export const DARK = {
   TEXT_ACCENT: "#6EADBC",
 
   TEXT_ERROR: "#B45253",
+
+  // Tabs colors
+  TAB_ACTIVE_BG: "#37353E",
+  TAB_INACTIVE_BG: "#44444E",
+
+  TAB_ACTIVE_TINT: "#DBAFA0",
+  TAB_INACTIVE_TINT: "#5C5470",
+
+  // List item colors
+  LIST_ITEM_BG: "#352F44",
+  LIST_ITEM_BG_PRESSED: "#5C5470",
+
+  // Toast colors
+  TOAST_BG_SUCCESS: "#2E4F4F",
+  TOAST_BG_ERROR: "#A3485A",
+  TOAST_BG_INFO: "#0F4C75",
+  TOAST_BG_WARNING: "#B77466",
+
+  TOAST_TEXT: "#FCF5EE",
 };

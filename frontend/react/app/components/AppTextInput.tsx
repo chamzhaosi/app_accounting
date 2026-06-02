@@ -3,6 +3,7 @@ import { TextInput, TextInputProps } from "react-native-paper";
 import { TextInput as RNTextInput, useColorScheme } from "react-native";
 import { DARK, LIGHT } from "../constants/colors";
 import { FONTS } from "../constants/fonts";
+import { useThemeStore } from "../stores/useThemeStore";
 
 type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;
@@ -10,7 +11,7 @@ type AppTextInputProps = TextInputProps & {
 
 const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
   ({ isMaskValue = false, ...props }, ref) => {
-    const isDark = useColorScheme() === "dark";
+    const { isDark, THEME } = useThemeStore();
 
     const [showPassword, setShowPassword] = useState(false);
 
@@ -23,10 +24,10 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
           fontWeight: 400,
         }}
         style={{
-          backgroundColor: isDark ? DARK.BG_ACCENT : LIGHT.BG_ACCENT,
+          backgroundColor: THEME.BG_ACCENT,
         }}
         textColor={isDark ? DARK.TEXT_PRIMARY : ""}
-        activeOutlineColor={isDark ? DARK.TEXT_PRIMARY : LIGHT.TEXT_PRIMARY}
+        activeOutlineColor={THEME.TEXT_PRIMARY}
         autoCorrect={false}
         autoCapitalize={"none"}
         theme={{

@@ -46,7 +46,7 @@ export default function Register() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <AppView className="flex-1 bg-LIGHT-BG_PRIMARY dark:bg-DARK-BG_PRIMARY">
+      <AppView>
         <AppView
           isSafe
           className="flex-grow-[0.25] w-full justify-center items-center m-0 "

@@ -1,12 +1,12 @@
 import { ActivityIndicator } from "react-native-paper";
 import AppText from "../components/AppText";
 import AppView from "../components/AppView";
-import { useColorScheme } from "react-native";
 import { DARK, LIGHT } from "../constants/colors";
 import { useLoadingStore } from "../stores/useLoadingStore";
+import { useThemeStore } from "../stores/useThemeStore";
 
 export default function Landing() {
-  const isDark = useColorScheme() === "dark";
+  const { THEME } = useThemeStore();
   const { isLoading } = useLoadingStore();
 
   return (
@@ -19,10 +19,7 @@ export default function Landing() {
       </AppView>
       {isLoading && (
         <AppView className="absolute inset-0 bg-LIGHT-BG_TRANSPARENT dark:bg-DARK-BG_TRANSPARENT items-center justify-center z-50 ">
-          <ActivityIndicator
-            size="large"
-            color={isDark ? DARK.TEXT_SECONDARY : LIGHT.TEXT_SECONDARY}
-          />
+          <ActivityIndicator size="large" color={THEME.TEXT_SECONDARY} />
         </AppView>
       )}
     </AppView>
