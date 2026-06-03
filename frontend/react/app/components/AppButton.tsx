@@ -33,7 +33,7 @@ export default function AppButton({
 
   switch (type) {
     case ButtonTypeEnum.SECONDARY:
-      btnColor = "bg-green-400 dark:bg-green-700";
+      btnColor = "bg-LIGHT-BTN_SECONDARY dark:bg-DARK-BTN_SECONDARY";
       break;
     case ButtonTypeEnum.WARNING:
       btnColor = "bg-yellow-400 dark:bg-yellow-700";

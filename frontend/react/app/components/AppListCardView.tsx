@@ -73,6 +73,16 @@ export default function AppListCardView({
               `${selectedId === item.id ? "bg-LIGHT-LIST_ITEM_BG_PRESSED dark:bg-DARK-LIST_ITEM_BG_PRESSED" : ""}`,
               itemClassName,
             )}
+            style={{
+              shadowColor: THEME.SHADOW_CARD,
+              shadowOffset: {
+                width: 0,
+                height: 5,
+              },
+              shadowOpacity: 0.5,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
           >
             {!item.isEditable && (
               <View className="absolute top-1 right-1">
@@ -83,7 +93,7 @@ export default function AppListCardView({
             <AppSpacer height={4} />
             {!isShowIconOnly && (
               <AppText
-                className="text-sm dark:text-DARK-TEXT_PRIMARY text-justify"
+                className="text-sm text-LIGHT-TEXT_PRIMARY font-[800] dark:text-DARK-TEXT_PRIMARY text-justify"
                 numberOfLines={3}
               >
                 {item.label}

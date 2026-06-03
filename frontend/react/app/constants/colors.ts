@@ -3,14 +3,20 @@ export const LIGHT = {
   BG_PRIMARY: "#C0E1D2",
   BG_SECONDARY: "#F3F3E0",
   BG_ACCENT: "#FBE8CE",
+
   BG_TRANSPARENT: "rgba(154, 177, 122, 0.6)",
+
+  BG_DIVIDER: "#003161",
 
   BTN_PRIMARY: "#3E5879",
   BTN_SECONDARY: "#4B2E2B",
+  BTN_ACCENT: "#66785F",
+  BTN_ACCENT_ACTIVE: "#4B5945",
 
   TEXT_PRIMARY: "#124170",
-  TEXT_SECONDARY: "#093C5D",
+  TEXT_SECONDARY: "#6984A9",
   TEXT_ACCENT: "#EBF4F6",
+  TEXT_PLACEHOLDER: "#5C5470",
 
   TEXT_ERROR: "#C30E59",
 
@@ -22,8 +28,8 @@ export const LIGHT = {
   TAB_INACTIVE_TINT: "#ADB2D4",
 
   // List item colors
-  LIST_ITEM_BG: "#C7D9DD",
-  LIST_ITEM_BG_PRESSED: "#D5E5D5",
+  LIST_ITEM_BG: "#AAB99A",
+  LIST_ITEM_BG_PRESSED: "#85A947",
 
   // Toast colors
   TOAST_BG_SUCCESS: "#BDE3C3",
@@ -32,6 +38,9 @@ export const LIGHT = {
   TOAST_BG_WARNING: "#FFE699",
 
   TOAST_TEXT: "#27391C",
+
+  // Shadow colors
+  SHADOW_CARD: "#352F44",
 };
 
 export const DARK = {
@@ -43,10 +52,13 @@ export const DARK = {
 
   BTN_PRIMARY: "#077A7D",
   BTN_SECONDARY: "#27548A",
+  BTN_ACCENT: "#51557E",
+  BTN_ACCENT_ACTIVE: "#443C68",
 
   TEXT_PRIMARY: "#DFD0B8",
   TEXT_SECONDARY: "#D3DAD9",
   TEXT_ACCENT: "#6EADBC",
+  TEXT_PLACEHOLDER: "#948979",
 
   TEXT_ERROR: "#B45253",
 
@@ -68,4 +80,7 @@ export const DARK = {
   TOAST_BG_WARNING: "#B77466",
 
   TOAST_TEXT: "#FCF5EE",
+
+  // Shadow colors
+  SHADOW_CARD: "#818FB4",
 };

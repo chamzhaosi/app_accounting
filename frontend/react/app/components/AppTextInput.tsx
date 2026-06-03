@@ -32,7 +32,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
         autoCapitalize={"none"}
         theme={{
           colors: {
-            onSurfaceVariant: isDark ? DARK.TEXT_PRIMARY : "",
+            onSurfaceVariant: THEME.TEXT_PLACEHOLDER,
           },
         }}
         {...(isMaskValue
