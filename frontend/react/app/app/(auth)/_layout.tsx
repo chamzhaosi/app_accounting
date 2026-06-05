@@ -10,14 +10,14 @@ export default function StackLayout() {
           name="login"
           options={{ title: "Login", headerShown: false }}
         />
-        <Stack.Screen
+        {/* <Stack.Screen
           name="register"
           options={{ title: "Register", headerShown: false }}
         />
         <Stack.Screen
           name="otp"
           options={{ title: "OTP", headerShown: false }}
-        />
+        /> */}
       </Stack>
     </>
   );
