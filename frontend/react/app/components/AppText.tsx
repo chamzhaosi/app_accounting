@@ -24,7 +24,7 @@ export default function AppText({
   switch (type) {
     case TextTypEnum.ERROR:
       typeProps = {
-        style: { color: THEME.onErrorContainer },
+        style: { color: THEME.onErrorContainer, marginTop: 4 },
       };
       break;
     case TextTypEnum.LINK:

@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Controller, FieldErrors, useForm } from "react-hook-form";
-import { Keyboard, TouchableWithoutFeedback } from "react-native";
+import { Keyboard } from "react-native";
 import AppButton from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
@@ -50,106 +50,93 @@ export default function Loign() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <AppView className="flex-1 bg-LIGHT-surface dark:bg-DARK-surface">
-        <AppView
-          isSafe
-          className="flex-grow-[0.25] w-full justify-center items-center m-0 "
-        >
-          <AppText isTitle>Finora</AppText>
-          <AppText variant="labelLarge">Personal Accounting App</AppText>
-        </AppView>
-        <AppScrollView
-          className="pt-8 rounded-t-[50] bg-LIGHT-surfaceContainerLow border-2 border-LIGHT-outlineVariant
+    <AppScrollView
+      className="pt-8 rounded-t-[50] bg-LIGHT-surfaceContainerLow border-2 border-LIGHT-outlineVariant
           dark:bg-DARK-surfaceContainerLow dark:border-DARK-outlineVariant"
+    >
+      <AppView isSafe className="w-[90%] self-center bg-inherit">
+        <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
+          SIGN IN
+        </AppText>
+
+        <AppSpacer />
+
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { value, onChange, onBlur, ref } }) => (
+            <AppTextInput
+              ref={ref}
+              mode="outlined"
+              label={"Email"}
+              autoFocus
+              editable={!isSubmitting}
+              placeholder="Email"
+              keyboardType="email-address"
+              autoComplete="email"
+              onChangeText={onChange}
+              onBlur={onBlur}
+              value={value}
+              submitBehavior="submit"
+              onSubmitEditing={() => setFocus("password")}
+            />
+          )}
+        />
+
+        {errors.email && (
+          <AppText type={TextTypEnum.ERROR}>{errors.email.message}</AppText>
+        )}
+
+        <AppSpacer height={10} />
+
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { value, onChange, onBlur, ref } }) => (
+            <AppTextInput
+              ref={ref}
+              mode="outlined"
+              placeholder="Password"
+              label={"Password"}
+              editable={!isSubmitting}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              value={value}
+              isMaskValue
+              onSubmitEditing={handleSubmit(onSubmit)}
+            />
+          )}
+        />
+        {errors.password && (
+          <AppText type={TextTypEnum.ERROR}>{errors.password.message}</AppText>
+        )}
+
+        <AppSpacer height={20} />
+
+        <AppButton
+          onPress={() => {
+            Keyboard.dismiss();
+            handleSubmit(onSubmit, onError)();
+          }}
+          disabled={isSubmitting}
+          loading={isSubmitting}
+          uppercase
         >
-          <AppView isSafe className="w-[90%] self-center ">
-            <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
-              SIGN IN
-            </AppText>
+          LOGIN
+        </AppButton>
+        {rspErrorMsg && (
+          <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
+        )}
 
-            <AppSpacer />
+        <AppSpacer height={20} />
 
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { value, onChange, onBlur, ref } }) => (
-                <AppTextInput
-                  ref={ref}
-                  mode="outlined"
-                  label={"Email"}
-                  autoFocus
-                  editable={!isSubmitting}
-                  placeholder="Email"
-                  keyboardType="email-address"
-                  autoComplete="email"
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                  submitBehavior="submit"
-                  onSubmitEditing={() => setFocus("password")}
-                />
-              )}
-            />
-
-            {errors.email && (
-              <AppText type={TextTypEnum.ERROR}>{errors.email.message}</AppText>
-            )}
-
-            <AppSpacer height={10} />
-
-            <Controller
-              control={control}
-              name="password"
-              render={({ field: { value, onChange, onBlur, ref } }) => (
-                <AppTextInput
-                  ref={ref}
-                  mode="outlined"
-                  placeholder="Password"
-                  label={"Password"}
-                  editable={!isSubmitting}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                  isMaskValue
-                  onSubmitEditing={handleSubmit(onSubmit)}
-                />
-              )}
-            />
-            {errors.password && (
-              <AppText type={TextTypEnum.ERROR}>
-                {errors.password.message}
-              </AppText>
-            )}
-
-            <AppSpacer height={20} />
-
-            <AppButton
-              onPress={() => {
-                Keyboard.dismiss();
-                handleSubmit(onSubmit, onError)();
-              }}
-              disabled={isSubmitting}
-              loading={isSubmitting}
-              uppercase
-            >
-              LOGIN
-            </AppButton>
-            {rspErrorMsg && (
-              <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
-            )}
-
-            <AppSpacer height={20} />
-
-            <AppView className="flex-0 w-full justify-center items-center flex flex-row">
-              <AppText>{"Don't have an account yet?"}</AppText>
-              <Link href={"/(auth)/register"} style={{ marginStart: 4 }}>
-                <AppText type={TextTypEnum.LINK}>{"Sign Up"}</AppText>
-              </Link>
-            </AppView>
-          </AppView>
-        </AppScrollView>
+        <AppView className="flex-0 w-full justify-center items-center flex flex-row">
+          <AppText>{"Don't have an account yet?"}</AppText>
+          <Link href={"/(auth)/register"} style={{ marginStart: 4 }}>
+            <AppText type={TextTypEnum.LINK}>{"Sign Up"}</AppText>
+          </Link>
+        </AppView>
       </AppView>
-    </TouchableWithoutFeedback>
+    </AppScrollView>
   );
 }

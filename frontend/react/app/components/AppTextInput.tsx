@@ -19,7 +19,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
       <TextInput
         ref={ref}
         style={{
-          height: 60,
+          height: 54,
           fontSize: 18,
           backgroundColor: THEME.surfaceContainerHigh,
         }}

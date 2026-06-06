@@ -1,6 +1,6 @@
 import { useFonts } from "expo-font";
 import { router, Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+
 import { useEffect } from "react";
 import { FONTS, FONTS_THEME } from "../constants/fonts";
 import "../global.css";
@@ -13,6 +13,7 @@ import {
 } from "react-native-paper";
 import { DARK, LIGHT } from "../constants/colors";
 import { ThemeType, useThemeStore } from "../stores/useThemeStore";
+import { StatusBar } from "expo-status-bar";
 
 export default function StackLayout() {
   const colorScheme = useColorScheme() as ThemeType;
