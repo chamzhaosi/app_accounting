@@ -11,36 +11,24 @@ type AppTextInputProps = TextInputProps & {
 
 const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
   ({ isMaskValue = false, ...props }, ref) => {
-    const { isDark, THEME } = useThemeStore();
+    const { THEME } = useThemeStore();
 
     const [showPassword, setShowPassword] = useState(false);
 
     return (
       <TextInput
         ref={ref}
-        contentStyle={{
-          color: isDark ? DARK.TEXT_PRIMARY : "",
-          fontFamily: FONTS.ROBOTO_MONO,
-          fontWeight: 400,
-        }}
         style={{
-          backgroundColor: THEME.BG_ACCENT,
-        }}
-        textColor={isDark ? DARK.TEXT_PRIMARY : ""}
-        activeOutlineColor={THEME.TEXT_PRIMARY}
-        autoCorrect={false}
-        autoCapitalize={"none"}
-        theme={{
-          colors: {
-            onSurfaceVariant: THEME.TEXT_PLACEHOLDER,
-          },
+          height: 54,
+          fontSize: 18,
+          backgroundColor: THEME.surfaceContainerHigh,
         }}
         {...(isMaskValue
           ? {
               secureTextEntry: !showPassword,
               right: (
                 <TextInput.Icon
-                  color={isDark ? DARK.TEXT_PRIMARY : ""}
+                  color={THEME.onSurface}
                   icon={showPassword ? "eye-off" : "eye"}
                   onPressIn={() => setShowPassword(true)}
                   onPressOut={() => setShowPassword(false)}

@@ -1,86 +1,104 @@
+// Tailwind and react native paper apply some below color schema
 export const LIGHT = {
-  // Light color scheme
-  BG_PRIMARY: "#C0E1D2",
-  BG_SECONDARY: "#F3F3E0",
-  BG_ACCENT: "#FBE8CE",
-
-  BG_TRANSPARENT: "rgba(154, 177, 122, 0.6)",
-
-  BG_DIVIDER: "#003161",
-
-  BTN_PRIMARY: "#3E5879",
-  BTN_SECONDARY: "#4B2E2B",
-  BTN_ACCENT: "#66785F",
-  BTN_ACCENT_ACTIVE: "#4B5945",
-
-  TEXT_PRIMARY: "#124170",
-  TEXT_SECONDARY: "#6984A9",
-  TEXT_ACCENT: "#EBF4F6",
-  TEXT_PLACEHOLDER: "#5C5470",
-
-  TEXT_ERROR: "#C30E59",
-
-  // Tabs colors
-  TAB_ACTIVE_BG: "#C7D9DD",
-  TAB_INACTIVE_BG: "#D5E5D5",
-
-  TAB_ACTIVE_TINT: "#626F47",
-  TAB_INACTIVE_TINT: "#ADB2D4",
-
-  // List item colors
-  LIST_ITEM_BG: "#AAB99A",
-  LIST_ITEM_BG_PRESSED: "#85A947",
-
-  // Toast colors
-  TOAST_BG_SUCCESS: "#BDE3C3",
-  TOAST_BG_ERROR: "#FF9494",
-  TOAST_BG_INFO: "#AEDEFC",
-  TOAST_BG_WARNING: "#FFE699",
-
-  TOAST_TEXT: "#27391C",
-
-  // Shadow colors
-  SHADOW_CARD: "#352F44",
+  primary: "#006878",
+  surfaceTint: "#006878",
+  onPrimary: "#FFFFFF",
+  primaryContainer: "#A7EEFF",
+  onPrimaryContainer: "#004E5B",
+  secondary: "#4B6268",
+  onSecondary: "#FFFFFF",
+  secondaryContainer: "#CDE7EE",
+  onSecondaryContainer: "#334A50",
+  tertiary: "#555D7E",
+  onTertiary: "#FFFFFF",
+  tertiaryContainer: "#DCE1FF",
+  onTertiaryContainer: "#3E4565",
+  error: "#BA1A1A",
+  onError: "#FFFFFF",
+  errorContainer: "#FFDAD6",
+  onErrorContainer: "#93000A",
+  background: "#F5FAFC",
+  onBackground: "#171D1E",
+  surface: "#F5FAFC",
+  onSurface: "#171D1E",
+  surfaceVariant: "#DBE4E7",
+  onSurfaceVariant: "#3F484B",
+  outline: "#6F797B",
+  outlineVariant: "#BFC8CB",
+  shadow: "#000000",
+  scrim: "#000000",
+  inverseSurface: "#2B3133",
+  inverseOnSurface: "#ECF2F3",
+  inversePrimary: "#83D2E5",
+  primaryFixed: "#A7EEFF",
+  onPrimaryFixed: "#001F25",
+  primaryFixedDim: "#83D2E5",
+  onPrimaryFixedVariant: "#004E5B",
+  secondaryFixed: "#CDE7EE",
+  onSecondaryFixed: "#051F24",
+  secondaryFixedDim: "#B2CBD2",
+  onSecondaryFixedVariant: "#334A50",
+  tertiaryFixed: "#DCE1FF",
+  onTertiaryFixed: "#121A37",
+  tertiaryFixedDim: "#BDC5EB",
+  onTertiaryFixedVariant: "#3E4565",
+  surfaceDim: "#D5DBDD",
+  surfaceBright: "#F5FAFC",
+  surfaceContainerLowest: "#FFFFFF",
+  surfaceContainerLow: "#EFF4F6",
+  surfaceContainer: "#E9EFF1",
+  surfaceContainerHigh: "#E4E9EB",
+  surfaceContainerHighest: "#DEE3E5",
 };
 
 export const DARK = {
-  // Dark color scheme
-  BG_PRIMARY: "#393E46",
-  BG_SECONDARY: "#222831",
-  BG_ACCENT: "#3F4F44",
-  BG_TRANSPARENT: "rgba(27, 22, 26, 0.7)",
-
-  BTN_PRIMARY: "#077A7D",
-  BTN_SECONDARY: "#27548A",
-  BTN_ACCENT: "#51557E",
-  BTN_ACCENT_ACTIVE: "#443C68",
-
-  TEXT_PRIMARY: "#DFD0B8",
-  TEXT_SECONDARY: "#D3DAD9",
-  TEXT_ACCENT: "#6EADBC",
-  TEXT_PLACEHOLDER: "#948979",
-
-  TEXT_ERROR: "#B45253",
-
-  // Tabs colors
-  TAB_ACTIVE_BG: "#37353E",
-  TAB_INACTIVE_BG: "#44444E",
-
-  TAB_ACTIVE_TINT: "#DBAFA0",
-  TAB_INACTIVE_TINT: "#5C5470",
-
-  // List item colors
-  LIST_ITEM_BG: "#352F44",
-  LIST_ITEM_BG_PRESSED: "#5C5470",
-
-  // Toast colors
-  TOAST_BG_SUCCESS: "#2E4F4F",
-  TOAST_BG_ERROR: "#A3485A",
-  TOAST_BG_INFO: "#0F4C75",
-  TOAST_BG_WARNING: "#B77466",
-
-  TOAST_TEXT: "#FCF5EE",
-
-  // Shadow colors
-  SHADOW_CARD: "#818FB4",
+  primary: "#83D2E5",
+  surfaceTint: "#83D2E5",
+  onPrimary: "#00363F",
+  primaryContainer: "#004E5B",
+  onPrimaryContainer: "#A7EEFF",
+  secondary: "#B2CBD2",
+  onSecondary: "#1C3439",
+  secondaryContainer: "#334A50",
+  onSecondaryContainer: "#CDE7EE",
+  tertiary: "#BDC5EB",
+  onTertiary: "#272F4D",
+  tertiaryContainer: "#3E4565",
+  onTertiaryContainer: "#DCE1FF",
+  error: "#FFB4AB",
+  onError: "#690005",
+  errorContainer: "#93000A",
+  onErrorContainer: "#FFDAD6",
+  background: "#0F1416",
+  onBackground: "#DEE3E5",
+  surface: "#0F1416",
+  onSurface: "#DEE3E5",
+  surfaceVariant: "#3F484B",
+  onSurfaceVariant: "#BFC8CB",
+  outline: "#899295",
+  outlineVariant: "#3F484B",
+  shadow: "#000000",
+  scrim: "#000000",
+  inverseSurface: "#DEE3E5",
+  inverseOnSurface: "#2B3133",
+  inversePrimary: "#006878",
+  primaryFixed: "#A7EEFF",
+  onPrimaryFixed: "#001F25",
+  primaryFixedDim: "#83D2E5",
+  onPrimaryFixedVariant: "#004E5B",
+  secondaryFixed: "#CDE7EE",
+  onSecondaryFixed: "#051F24",
+  secondaryFixedDim: "#B2CBD2",
+  onSecondaryFixedVariant: "#334A50",
+  tertiaryFixed: "#DCE1FF",
+  onTertiaryFixed: "#121A37",
+  tertiaryFixedDim: "#BDC5EB",
+  onTertiaryFixedVariant: "#3E4565",
+  surfaceDim: "#0F1416",
+  surfaceBright: "#343A3C",
+  surfaceContainerLowest: "#090F11",
+  surfaceContainerLow: "#171D1E",
+  surfaceContainer: "#1B2122",
+  surfaceContainerHigh: "#252B2D",
+  surfaceContainerHighest: "#303637",
 };

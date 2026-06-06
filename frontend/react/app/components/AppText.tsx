@@ -1,5 +1,5 @@
-import { Text, TextProps } from "react-native";
-import { cn } from "../utils/common";
+import { Text, TextProps } from "react-native-paper";
+import { useThemeStore } from "../stores/useThemeStore";
 
 export enum TextTypEnum {
   ERROR = "error",
@@ -10,41 +10,42 @@ export enum TextTypEnum {
 type AppTextProps = {
   isTitle?: boolean;
   type?: TextTypEnum;
-} & TextProps;
+} & TextProps<string>;
 
 export default function AppText({
   isTitle,
-  className,
   type = TextTypEnum.DEFAULT,
   ...props
 }: AppTextProps) {
-  const titleClassName = isTitle
-    ? "text-3xl font-bold dark:text-DARK-TEXT_PRIMARY text-LIGHT-TEXT_PRIMARY"
-    : "";
+  const { THEME } = useThemeStore();
 
-  let textClassName = "";
+  let typeProps: Omit<TextProps<string>, "children"> = {};
 
   switch (type) {
     case TextTypEnum.ERROR:
-      textClassName =
-        "text-LIGHT-TEXT_ERROR dark:text-DARK-TEXT_ERROR w-[90%] px-3 text-start font-semibold text-md";
+      typeProps = {
+        style: { color: THEME.onErrorContainer, marginTop: 4 },
+      };
       break;
     case TextTypEnum.LINK:
-      textClassName = "text-blue-800 dark:text-DARK-TEXT_ACCENT underline";
+      typeProps = {
+        style: {
+          color: THEME.onPrimaryContainer,
+          textDecorationLine: "underline",
+        },
+      };
       break;
     default:
-      textClassName =
-        "font-ROBOTO_MONO font-[600] text-LIGHT-TEXT_SECONDARY dark:text-DARK-TEXT_SECONDARY";
       break;
   }
 
   return (
     <Text
-      className={cn(
-        "text-xl",
-        isTitle ? titleClassName : textClassName,
-        className,
-      )}
+      variant="labelLarge"
+      {...typeProps}
+      {...(isTitle
+        ? { variant: "displayLarge", style: { color: THEME.primary } }
+        : {})}
       {...props}
     />
   );

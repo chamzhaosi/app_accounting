@@ -1,67 +1,14 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  PressableProps,
-  View,
-} from "react-native";
-import AppText from "./AppText";
-import { cn } from "../utils/common";
+import { Button, ButtonProps } from "react-native-paper";
 
-export enum ButtonTypeEnum {
-  PRIMARY = "primary",
-  SECONDARY = "secondary",
-  WARNING = "warning",
-  DANGER = "danger",
-}
+type AppButtonProps = ButtonProps;
 
-type AppButtonProps = PressableProps & {
-  label: string;
-  labelClassName?: string;
-  isLoading?: boolean;
-  type?: ButtonTypeEnum;
-};
-
-export default function AppButton({
-  className,
-  label,
-  labelClassName,
-  type = ButtonTypeEnum.PRIMARY,
-  isLoading,
-  ...props
-}: AppButtonProps) {
-  let btnColor;
-
-  switch (type) {
-    case ButtonTypeEnum.SECONDARY:
-      btnColor = "bg-LIGHT-BTN_SECONDARY dark:bg-DARK-BTN_SECONDARY";
-      break;
-    case ButtonTypeEnum.WARNING:
-      btnColor = "bg-yellow-400 dark:bg-yellow-700";
-      break;
-    case ButtonTypeEnum.DANGER:
-      btnColor = "bg-red-400 dark:bg-red-700";
-      break;
-    default:
-      btnColor = "bg-LIGHT-BTN_PRIMARY dark:bg-DARK-BTN_PRIMARY";
-      break;
-  }
-
+export default function AppButton({ ...props }: AppButtonProps) {
   return (
-    <Pressable
-      className={cn(
-        "py-3 rounded-lg items-center active:opacity-80",
-        btnColor,
-        isLoading && "disabled:opacity-60",
-        className,
-      )}
+    <Button
+      mode="contained"
+      contentStyle={{ marginBlock: 12, padding: 0 }}
+      labelStyle={{ fontSize: 28 }}
       {...props}
-    >
-      <View className="flex-row gap-4">
-        {isLoading && (
-          <ActivityIndicator className="scale-150 text-gray-700 dark:text-slate-300" />
-        )}
-        <AppText className={cn("text-3xl", labelClassName)}>{label}</AppText>
-      </View>
-    </Pressable>
+    />
   );
 }
