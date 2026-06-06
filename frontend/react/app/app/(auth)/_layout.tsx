@@ -1,24 +1,39 @@
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
+import AppText from "../../components/AppText";
+import AppView from "../../components/AppView";
+import { useThemeStore } from "../../stores/useThemeStore";
 
 export default function StackLayout() {
+  const { THEME } = useThemeStore();
+
   return (
-    <>
-      <StatusBar style="auto" />
-      <Stack>
-        <Stack.Screen
-          name="login"
-          options={{ title: "Login", headerShown: false }}
-        />
-        <Stack.Screen
-          name="register"
-          options={{ title: "Register", headerShown: false }}
-        />
-        <Stack.Screen
-          name="otp"
-          options={{ title: "OTP", headerShown: false }}
-        />
-      </Stack>
-    </>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <AppView>
+        <AppView
+          isSafe
+          className="flex-grow-[0.25] w-full justify-center items-center m-0"
+        >
+          <AppText isTitle>Finora</AppText>
+          <AppText variant="labelLarge">Personal Accounting App</AppText>
+        </AppView>
+        <Stack
+          screenOptions={{ contentStyle: { backgroundColor: THEME.surface } }}
+        >
+          <Stack.Screen
+            name="login"
+            options={{ title: "Login", headerShown: false }}
+          />
+          <Stack.Screen
+            name="register"
+            options={{ title: "Register", headerShown: false }}
+          />
+          <Stack.Screen
+            name="otp"
+            options={{ title: "OTP", headerShown: false }}
+          />
+        </Stack>
+      </AppView>
+    </TouchableWithoutFeedback>
   );
 }

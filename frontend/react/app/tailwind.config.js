@@ -10,7 +10,8 @@ module.exports = {
         DARK,
       },
       fontFamily: {
-        ROBOTO_MONO: ["ROBOTO_MONO"],
+        ADLAM_DISPALY: ["ADLAM_DISPALY"],
+        ROBOTO: ["ROBOTO"],
       },
     },
   },

@@ -11,14 +11,17 @@ export default function AppView({
   className,
   ...props
 }: AppViewProps) {
-  if (!isSafe) return <View className={cn("flex-1", className)} {...props} />;
+  const sharedClassName = "flex-1 bg-LIGHT-surface dark:bg-DARK-surface";
+
+  if (!isSafe)
+    return <View className={cn(sharedClassName, className)} {...props} />;
 
   const insets = useSafeAreaInsets();
   return (
     <View
       {...props}
       style={{ marginTop: insets.top, marginBottom: insets.bottom }}
-      className={cn("flex-1", className)}
+      className={cn(sharedClassName, className)}
     />
   );
 }
