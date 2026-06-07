@@ -4,6 +4,9 @@ import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
 import AppText from "./AppText";
 import AppView from "./AppView";
+import { List } from "react-native-paper";
+import { FONTS } from "../constants/fonts";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export type AppListItemType = {
   id: string;
@@ -29,30 +32,29 @@ export default function AppListView({
 
   return (
     <FlatList
-      className={cn(className)}
+      className={cn("w-full", className)}
       data={data}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => {
         const Icon = item.icon;
-
         return (
-          <Pressable
+          <List.Item
+            centered
             onPress={item.onPress}
-            className={cn(
-              "w-full px-4 py-3 border-b flex-row justify-between",
-              "border-slate-400/50 bg-LIGHT-LIST_ITEM_BG active:bg-LIGHT-LIST_ITEM_BG_PRESSED",
-              "dark:bg-DARK-LIST_ITEM_BG dark:active:bg-DARK-LIST_ITEM_BG_PRESSED",
-              itemClassName,
-            )}
-          >
-            <Icon color={THEME.TEXT_PRIMARY} />
-            <AppView className="w-full bg-inherit dark:bg-inherit ms-4">
-              <AppText className="dark:text-DARK-TEXT_PRIMARY">
-                {item.label}
-              </AppText>
-            </AppView>
-            <ChevronRight color={THEME.TEXT_PRIMARY} />
-          </Pressable>
+            style={{
+              backgroundColor: THEME.surfaceContainer,
+              borderBottomWidth: 0.6,
+              borderBlockColor: THEME.outline,
+            }}
+            rippleColor={THEME.surfaceContainerHighest}
+            containerStyle={{
+              marginInline: 12,
+            }}
+            title={item.label}
+            titleStyle={{ fontFamily: FONTS.ROBOTO }}
+            left={() => <Icon style={{}} />}
+            right={() => <ChevronRight color={THEME.onSurface} />}
+          />
         );
       }}
       {...props}

@@ -1,26 +1,25 @@
-import { Plus } from "lucide-react-native";
-import { Pressable } from "react-native";
-import { cn } from "../utils/common";
-import { useThemeStore } from "../stores/useThemeStore";
+import { FAB, FABProps } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type AppFloatingButtonProps = {
-  className?: string;
-  onPress: () => void;
-};
+type AppFloatingButtonProps = FABProps;
 
 export default function AppFloatingButton({
-  className,
-  onPress,
+  style,
+  ...props
 }: AppFloatingButtonProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <Pressable
-      onPress={onPress}
-      className={cn(
-        "absolute right-10 bottom-24 w-14 h-14 rounded-full bg-LIGHT-BTN_SECONDARY dark:bg-DARK-BTN_SECONDARY items-center justify-center shadow-lg",
-        className,
-      )}
-    >
-      <Plus color="white" size={28} />
-    </Pressable>
+    <FAB
+      icon="plus"
+      variant="primary"
+      style={{
+        position: "absolute",
+        margin: 16,
+        right: 0,
+        bottom: 0 + insets.bottom,
+        ...style,
+      }}
+      {...props}
+    />
   );
 }

@@ -18,7 +18,12 @@ export default function Setting() {
       icon: Wallet,
       onPress: () => router.push("/account_type/list"),
     },
-    // { id: "2", label: "Account Management", icon: Vault },
+    {
+      id: "2",
+      label: "Account Management",
+      icon: Vault,
+      onPress: () => router.push("/account_type/list"),
+    },
     // { id: "3", label: "Category Management", icon: BookOpenCheck },
     // { id: "4", label: "Budget Management", icon: HandCoins },
     // { id: "5", label: "Reset Password", icon: RotateCcwKey },
@@ -26,7 +31,7 @@ export default function Setting() {
 
   return (
     <AppView>
-      <AppView className="bg-LIGHT-BG_SECONDARY dark:bg-DARK-BG_SECONDARY justify-center items-center">
+      <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow justify-center items-center">
         <AppListView data={data} />
       </AppView>
     </AppView>

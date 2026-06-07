@@ -9,18 +9,19 @@ export default function StackLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveBackgroundColor: THEME.TAB_ACTIVE_BG,
-        tabBarInactiveBackgroundColor: THEME.TAB_INACTIVE_BG,
-        tabBarActiveTintColor: THEME.TAB_ACTIVE_TINT,
-        tabBarInactiveTintColor: THEME.TAB_INACTIVE_TINT,
-        tabBarLabelStyle: { fontFamily: FONTS.ROBOTO_MONO },
+        tabBarActiveBackgroundColor: THEME.primary,
+        tabBarInactiveBackgroundColor: THEME.surfaceContainer,
+        tabBarActiveTintColor: THEME.onPrimary,
+        tabBarInactiveTintColor: THEME.onSurface,
+        tabBarLabelStyle: { fontFamily: FONTS.ROBOTO },
         headerTitleStyle: {
-          fontFamily: FONTS.ROBOTO_MONO,
+          fontFamily: FONTS.ADLAM_DISPLAY,
+          fontSize: 28,
         },
         headerStyle: {
-          backgroundColor: THEME.BG_PRIMARY,
+          backgroundColor: THEME.surfaceContainerHigh,
         },
-        headerTintColor: THEME.TEXT_PRIMARY,
+        headerTintColor: THEME.primary,
       }}
     >
       <Tabs.Screen

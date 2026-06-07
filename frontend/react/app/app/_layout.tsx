@@ -1,29 +1,39 @@
 import { useFonts } from "expo-font";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 
 import { useEffect } from "react";
+import { useColorScheme } from "react-native";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "../config/toastConfig";
 import { FONTS, FONTS_THEME } from "../constants/fonts";
 import "../global.css";
 import { useLoadingStore } from "../stores/useLoadingStore";
 import { ThemeType, useThemeStore } from "../stores/useThemeStore";
-import { useColorScheme } from "react-native";
-import Toast from "react-native-toast-message";
-import { toastConfig } from "../config/toastConfig";
+import * as SystemUI from "expo-system-ui";
 
 import {
-  MD3LightTheme as DefaultLightTheme,
   MD3DarkTheme as DefaultDarkTheme,
+  MD3LightTheme as DefaultLightTheme,
   PaperProvider,
 } from "react-native-paper";
 import { DARK, LIGHT } from "../constants/colors";
 
 import { StatusBar } from "expo-status-bar";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 export default function StackLayout() {
+  const insets = useSafeAreaInsets() ?? {
+    insets: { top: 0, bottom: 0, right: 0, left: 0 },
+  };
   const colorScheme = useColorScheme() as ThemeType;
+  const { isDark, THEME, toggleTheme } = useThemeStore() ?? { THEME: LIGHT };
   const { startLoading, stopLoading } = useLoadingStore();
-  const { isDark, THEME, toggleTheme } = useThemeStore();
+
   const baseTheme = isDark ? DefaultDarkTheme : DefaultLightTheme;
+  SystemUI.setBackgroundColorAsync(THEME.surface);
 
   const theme = {
     ...baseTheme,
@@ -64,44 +74,58 @@ export default function StackLayout() {
   }
 
   return (
-    <PaperProvider theme={theme}>
-      <StatusBar style="auto" />
-      <Stack
-        screenOptions={{
-          headerTitleStyle: {
-            fontFamily: FONTS.ADLAM_DISPLAY,
-          },
-          headerStyle: {
-            backgroundColor: THEME.surface,
-          },
-          headerTintColor: THEME.onSurface,
-        }}
-      >
-        {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <StatusBar style="auto" />
+        <Stack
+          screenOptions={{
+            contentStyle: {
+              backgroundColor: "red",
+            },
+            headerTitleStyle: {
+              fontFamily: FONTS.ADLAM_DISPLAY,
+              fontSize: 28,
+            },
+            headerStyle: {
+              backgroundColor: THEME.surfaceContainerLow,
+            },
+            headerTintColor: THEME.primary,
+          }}
+        >
+          {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
-        {/* <Stack.Screen name="(home)" options={{ headerShown: false }} /> */}
-        <Stack.Screen
-          name="account_type/list"
-          options={{
-            title: "Account Types",
-          }}
-        />
+          {/* <Stack.Screen name="(home)" options={{ headerShown: false }} /> */}
+          <Stack.Screen
+            name="account_type/list"
+            options={{
+              title: "Account Types",
+            }}
+          />
 
-        <Stack.Screen
-          name="account_type/create"
-          options={{
-            title: "Add new account type",
-          }}
-        />
+          <Stack.Screen
+            name="account_type/create"
+            options={{
+              title: "Add new account type",
+              headerTitleStyle: {
+                fontFamily: FONTS.ADLAM_DISPLAY,
+                fontSize: 24,
+              },
+            }}
+          />
 
-        {/* <Stack.Screen
-          name="account_type/[id]"
-          options={{
-            title: "Account Type Detail",
-          }}
-        /> */}
-      </Stack>
-      <Toast config={toastConfig(THEME ?? LIGHT)} />
-    </PaperProvider>
+          <Stack.Screen
+            name="account_type/[id]"
+            options={{
+              title: "Account Type Detail",
+              headerTitleStyle: {
+                fontFamily: FONTS.ADLAM_DISPLAY,
+                fontSize: 24,
+              },
+            }}
+          />
+        </Stack>
+        <Toast config={toastConfig(THEME, insets)} />
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }

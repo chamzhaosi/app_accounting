@@ -16,6 +16,7 @@ import {
   Euro,
   HandCoins,
   Landmark,
+  LucideIcon,
   PiggyBank,
   Vault,
   Wallet,
@@ -24,7 +25,9 @@ import {
 } from "lucide-react-native";
 import { AppListCardItemType } from "../components/AppListCardView";
 
-export const ACCOUNT_TYPE_ICONS: Pick<AppListCardItemType, "id" | "icon">[] = [
+export const ACCOUNT_TYPE_ICONS: (Pick<AppListCardItemType, "id"> & {
+  icon: LucideIcon;
+})[] = [
   {
     id: "Wallet",
     icon: Wallet,

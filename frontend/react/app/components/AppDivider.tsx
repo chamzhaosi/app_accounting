@@ -1,13 +1,9 @@
-import { View } from "react-native";
-import { cn } from "../utils/common";
+import { Divider, DividerProps } from "react-native-paper";
+import { useThemeStore } from "../stores/useThemeStore";
 
-export default function AppDivider({ className }: { className?: string }) {
+export default function AppDivider({ style, ...props }: DividerProps) {
+  const { THEME } = useThemeStore();
   return (
-    <View
-      className={cn(
-        "my-4 border-LIGHT-BG_DIVIDER dark:border-DARK-BG_ACCENT border-b-2",
-        className,
-      )}
-    />
+    <Divider style={{ backgroundColor: THEME.outline, ...style }} {...props} />
   );
 }

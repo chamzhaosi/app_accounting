@@ -3,10 +3,14 @@ import { Wallet } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
+
+import { router } from "expo-router";
+import AppButton from "../../components/AppButton";
 import AppDivider from "../../components/AppDivider";
 import AppListCardView, {
   AppListCardItemType,
 } from "../../components/AppListCardView";
+import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
 import { ACCOUNT_TYPE_ICONS } from "../../constants/account_type";
@@ -16,9 +20,7 @@ import {
   AccountTypeFormType,
 } from "../../forms/account_type/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
-import AppText, { TextTypEnum } from "../../components/AppText";
-import AppButton, { ButtonTypeEnum } from "../../components/AppButton";
-import { router } from "expo-router";
+import { getItemIcon } from "../../utils/common";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
@@ -26,18 +28,21 @@ export default function AccountTypeCreate() {
   const iconData = ACCOUNT_TYPE_ICONS.map((i) => ({
     ...i,
     label: "",
+    icon: i.id,
     isEditable: true,
   }));
 
-  const [selectedIcon, setSelectedIcon] = useState<AppListCardItemType>(
-    iconData[0],
-  );
+  const [selectedIcon, setSelectedIcon] = useState<AppListCardItemType>({
+    ...iconData[0],
+    icon: iconData[0].id,
+  });
   const [isSavingAndNewType, setIsSavingAndNewType] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
+  const isSubmitting = isSavingAndNewType || isSaving;
 
   const DefaultIcon = useMemo(
-    () => iconData.find((i) => i.id === selectedIcon.id)?.icon ?? Wallet,
+    () => getItemIcon(selectedIcon.id),
     [selectedIcon],
   );
 
@@ -56,21 +61,21 @@ export default function AccountTypeCreate() {
     const data = { ...value, icon: selectedIcon.id };
     setRspErrorMsg("");
     console.log(data);
-    setIsSavingAndNewType(true);
+    setIsSaving(true);
     await new Promise((res) => setTimeout(res, 2000));
-    setIsSavingAndNewType(false);
+    setIsSaving(false);
     router.back();
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <AppView className="bg-LIGHT-BG_SECONDARY dark:bg-DARK-BG_SECONDARY">
-        <AppView className="flex-none flex-row justify-around px-4 pt-2 bg-inherit dark:bg-inherit">
+      <AppView isSafe edges={["left", "right", "bottom"]}>
+        <AppView className="flex-none flex-row justify-around px-4 pt-2 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View
             className="items-center justify-center p-4 rounded-lg mr-4 mt-2 
-            bg-LIGHT-LIST_ITEM_BG_PRESSED dark:bg-DARK-LIST_ITEM_BG_PRESSED"
+            bg-LIGHT-tertiary dark:bg-DARK-tertiary"
           >
-            <DefaultIcon size={48} color={THEME.TEXT_PRIMARY} />
+            <DefaultIcon size={48} color={THEME.onTertiary} />
           </View>
 
           <View className="flex-1 justify-center">
@@ -83,7 +88,7 @@ export default function AccountTypeCreate() {
                   mode="outlined"
                   label={"Label"}
                   autoFocus
-                  editable={!isSavingAndNewType || !isSaving}
+                  editable={!isSubmitting}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   value={value}
@@ -99,41 +104,50 @@ export default function AccountTypeCreate() {
           </View>
         </AppView>
 
-        <AppView className="flex-0 flex-row gap-4 mx-4 mt-3 justify-center items-center ms-4 bg-inherit dark:bg-inherit">
+        <AppView className="flex-0 flex-row gap-4 p-4 justify-center items-center bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <AppButton
-            className="flex-1 bg-LIGHT-BTN_ACCENT dark:bg-DARK-BTN_ACCENT"
-            label="Save & New Type"
-            labelClassName="text-lg mx-2 text-LIGHT-TEXT_ACCENT dark:text-DARK-TEXT_SECONDARY font-ROBOTO_MONO font-light"
-            type={ButtonTypeEnum.SECONDARY}
-            disabled={isSavingAndNewType || isSaving}
-            isLoading={isSavingAndNewType}
+            disabled={isSubmitting}
+            loading={isSaving}
             onPress={() => {
               Keyboard.dismiss();
               handleSubmit(onSubmit)();
             }}
-          />
+            contentStyle={{
+              marginBlock: 0,
+              ...(!isSubmitting ? { backgroundColor: THEME.secondary } : {}),
+            }}
+            labelStyle={{
+              fontSize: 18,
+              ...(!isSubmitting ? { color: THEME.onSecondary } : {}),
+            }}
+            style={{ flex: 0.4, borderRadius: 8 }}
+          >
+            Save
+          </AppButton>
 
           <AppButton
-            className="flex-[0.4] bg-LIGHT-BTN_ACCENT_ACTIVE dark:bg-DARK-BTN_ACCENT_ACTIVE"
-            label="Save"
-            labelClassName="text-lg mx-2 text-LIGHT-TEXT_ACCENT dark:text-DARK-TEXT_SECONDARY font-ROBOTO_MONO font-light "
-            type={ButtonTypeEnum.PRIMARY}
-            disabled={isSavingAndNewType || isSaving}
-            isLoading={isSaving}
+            disabled={isSubmitting}
+            loading={isSavingAndNewType}
             onPress={() => {
               Keyboard.dismiss();
               handleSubmit(onSubmit)();
             }}
-          />
+            contentStyle={{ marginBlock: 0 }}
+            labelStyle={{ fontSize: 18 }}
+            style={{ flex: 1, borderRadius: 8 }}
+          >
+            Save & New Type
+          </AppButton>
         </AppView>
 
-        <AppDivider className="mx-4" />
+        <AppDivider />
 
-        <AppView className="bg-inherit dark:bg-inherit">
+        <AppView className="bg-LIGHT-surfaceContainerHigh dark:bg-DARK-surfaceContainerHigh">
           <AppListCardView
             data={iconData}
             onPress={(item) => setSelectedIcon(item)}
             selectedId={selectedIcon.id}
+            getItemIcon={getItemIcon}
             isShowIconOnly
           ></AppListCardView>
         </AppView>
