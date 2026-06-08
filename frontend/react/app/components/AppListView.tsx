@@ -1,12 +1,9 @@
 import { ChevronRight, LucideIcon } from "lucide-react-native";
-import { FlatList, FlatListProps, Pressable } from "react-native";
-import { useThemeStore } from "../stores/useThemeStore";
-import { cn } from "../utils/common";
-import AppText from "./AppText";
-import AppView from "./AppView";
+import { FlatList, FlatListProps, StyleSheet } from "react-native";
 import { List } from "react-native-paper";
 import { FONTS } from "../constants/fonts";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useThemeStore } from "../stores/useThemeStore";
+import { cn } from "../utils/common";
 
 export type AppListItemType = {
   id: string;
@@ -30,34 +27,45 @@ export default function AppListView({
 }: AppListViewType) {
   const { THEME } = useThemeStore();
 
+  const genFlatListRenderItem = ({ item }: { item: AppListItemType }) => {
+    const Icon = item.icon;
+    return (
+      <List.Item
+        centered
+        onPress={item.onPress}
+        title={item.label}
+        titleStyle={{ fontFamily: FONTS.ROBOTO }}
+        style={[
+          defaultStyle.listItemContainer,
+          {
+            backgroundColor: THEME.surfaceContainer,
+            borderBlockColor: THEME.outline,
+          },
+        ]}
+        rippleColor={THEME.surfaceContainerHighest}
+        containerStyle={defaultStyle.containerStyle}
+        left={() => <Icon style={{}} />}
+        right={() => <ChevronRight color={THEME.onSurface} />}
+      />
+    );
+  };
+
   return (
     <FlatList
       className={cn("w-full", className)}
       data={data}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => {
-        const Icon = item.icon;
-        return (
-          <List.Item
-            centered
-            onPress={item.onPress}
-            style={{
-              backgroundColor: THEME.surfaceContainer,
-              borderBottomWidth: 0.6,
-              borderBlockColor: THEME.outline,
-            }}
-            rippleColor={THEME.surfaceContainerHighest}
-            containerStyle={{
-              marginInline: 12,
-            }}
-            title={item.label}
-            titleStyle={{ fontFamily: FONTS.ROBOTO }}
-            left={() => <Icon style={{}} />}
-            right={() => <ChevronRight color={THEME.onSurface} />}
-          />
-        );
-      }}
+      renderItem={genFlatListRenderItem}
       {...props}
     />
   );
 }
+
+const defaultStyle = StyleSheet.create({
+  listItemContainer: {
+    borderBottomWidth: 0.6,
+  },
+  containerStyle: {
+    marginInline: 12,
+  },
+});

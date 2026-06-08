@@ -1,6 +1,10 @@
 import { forwardRef, useState } from "react";
 import { TextInput, TextInputProps } from "react-native-paper";
-import { TextInput as RNTextInput, useColorScheme } from "react-native";
+import {
+  TextInput as RNTextInput,
+  StyleSheet,
+  useColorScheme,
+} from "react-native";
 import { DARK, LIGHT } from "../constants/colors";
 import { FONTS } from "../constants/fonts";
 import { useThemeStore } from "../stores/useThemeStore";
@@ -13,25 +17,27 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
   ({ isMaskValue = false, ...props }, ref) => {
     const { THEME } = useThemeStore();
 
-    const [showPassword, setShowPassword] = useState(false);
+    const [showValue, setShowValue] = useState<boolean>(false);
 
     return (
       <TextInput
         ref={ref}
-        style={{
-          height: 54,
-          fontSize: 18,
-          backgroundColor: THEME.surfaceContainerHigh,
-        }}
+        style={[
+          defaultStyle.container,
+          {
+            backgroundColor: THEME.surfaceContainerHigh,
+          },
+        ]}
         {...(isMaskValue
           ? {
-              secureTextEntry: !showPassword,
+              secureTextEntry: !showValue,
+              setShowValue,
               right: (
                 <TextInput.Icon
                   color={THEME.onSurface}
-                  icon={showPassword ? "eye-off" : "eye"}
-                  onPressIn={() => setShowPassword(true)}
-                  onPressOut={() => setShowPassword(false)}
+                  icon={showValue ? "eye-off" : "eye"}
+                  onPressIn={() => setShowValue(true)}
+                  onPressOut={() => setShowValue(false)}
                   forceTextInputFocus={false}
                 />
               ),
@@ -46,3 +52,10 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
 AppTextInput.displayName = "AppTextInput";
 
 export default AppTextInput;
+
+const defaultStyle = StyleSheet.create({
+  container: {
+    height: 54,
+    fontSize: 18,
+  },
+});

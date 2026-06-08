@@ -1,5 +1,5 @@
 import { Button, ButtonProps } from "react-native-paper";
-import { StyleProp, TextStyle, ViewStyle } from "react-native";
+import { StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import { useThemeStore } from "../stores/useThemeStore";
 
 export enum ButtonType {
@@ -21,8 +21,8 @@ export default function AppButton({
 }: AppButtonProps) {
   const { THEME } = useThemeStore();
 
-  let variantContentStyle: StyleProp<ViewStyle>;
-  let variantLabelStyle: StyleProp<TextStyle>;
+  let variantContentStyle: StyleProp<ViewStyle> = {};
+  let variantLabelStyle: StyleProp<TextStyle> = {};
 
   switch (variant) {
     case ButtonType.ERROR:
@@ -42,8 +42,6 @@ export default function AppButton({
       };
       break;
     default:
-      variantContentStyle = {};
-      variantLabelStyle = {};
       break;
   }
 
@@ -51,18 +49,13 @@ export default function AppButton({
     <Button
       mode="contained"
       contentStyle={[
-        {
-          marginVertical: 12,
-          padding: 0,
-        },
+        defaultStyle.contentStyle,
         variantContentStyle,
         contentStyle,
         disabled ? { backgroundColor: THEME.surfaceDisabled } : {},
       ]}
       labelStyle={[
-        {
-          fontSize: 28,
-        },
+        defaultStyle.labelStyle,
         variantLabelStyle,
         labelStyle,
         disabled ? { color: THEME.onSurfaceDisabled } : {},
@@ -71,3 +64,13 @@ export default function AppButton({
     />
   );
 }
+
+const defaultStyle = StyleSheet.create({
+  contentStyle: {
+    marginVertical: 12,
+    padding: 0,
+  },
+  labelStyle: {
+    fontSize: 28,
+  },
+});

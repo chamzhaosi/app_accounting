@@ -2,7 +2,6 @@ import { View, ViewProps } from "react-native";
 import {
   SafeAreaView,
   SafeAreaViewProps,
-  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { cn } from "../utils/common";
 

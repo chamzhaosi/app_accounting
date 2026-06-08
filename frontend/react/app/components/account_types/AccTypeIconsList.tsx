@@ -1,6 +1,6 @@
 import { ACCOUNT_TYPE_ICONS } from "../../constants/account_type";
 import { AppIconProps } from "../AccIcon";
-import AppListCardView from "../AppListCardView";
+import AppListCardView, { AppListCardItemType } from "../AppListCardView";
 import AppView from "../AppView";
 
 type AccTypeIconsListType = {
@@ -9,10 +9,9 @@ type AccTypeIconsListType = {
   disabled?: boolean;
 };
 
-export const iconData = ACCOUNT_TYPE_ICONS.map((i) => ({
+export const iconData: AppListCardItemType[] = ACCOUNT_TYPE_ICONS.map((i) => ({
   id: i,
   label: "",
-  isEditable: true,
 }));
 
 export default function AccTypeIconsList({
