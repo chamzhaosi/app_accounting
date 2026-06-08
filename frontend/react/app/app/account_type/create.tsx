@@ -18,6 +18,7 @@ import {
 } from "../../forms/account_type/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { AppToast } from "../../components/AppToast";
+import { TextInput } from "react-native-paper";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
@@ -30,17 +31,13 @@ export default function AccountTypeCreate() {
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
   const isSubmitting = isSavingAndNewType || isSaving;
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<AccountTypeFormType>({
-    resolver: zodResolver(accountTypeFormSchema),
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: accountTypeFormDefaultValues,
-  });
+  const { control, handleSubmit, formState, setValue, reset } =
+    useForm<AccountTypeFormType>({
+      resolver: zodResolver(accountTypeFormSchema),
+      mode: "onBlur",
+      reValidateMode: "onChange",
+      defaultValues: accountTypeFormDefaultValues,
+    });
 
   const onSubmit = async (
     value: AccountTypeFormType,
@@ -59,7 +56,8 @@ export default function AccountTypeCreate() {
       }, 2000),
     );
     setLoading(false);
-    saveAnotherType ? formReset() : router.back();
+    // saveAnotherType ? formReset() : router.back();
+    setRspErrorMsg("Account type already added.");
   };
 
   const formReset = () => {
@@ -82,7 +80,10 @@ export default function AccountTypeCreate() {
             <Controller
               control={control}
               name="label"
-              render={({ field: { value, onChange, onBlur, ref } }) => (
+              render={({
+                field: { value, onChange, onBlur, ref },
+                fieldState: { error },
+              }) => (
                 <AppTextInput
                   ref={ref}
                   mode="outlined"
@@ -92,51 +93,53 @@ export default function AccountTypeCreate() {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   value={value}
+                  maxLength={20}
+                  onClearBtn={() => setValue("label", "")}
+                  errorDetail={error}
                 />
               )}
             />
-            {errors.label && (
-              <AppText type={TextTypEnum.ERROR}>{errors.label.message}</AppText>
-            )}
-            {rspErrorMsg && (
-              <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
-            )}
           </View>
         </AppView>
 
-        <AppView className="flex-0 flex-row gap-4 p-4 justify-center items-center bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
-          <AppButton
-            disabled={isSubmitting}
-            loading={isSaving}
-            variant={ButtonType.SECONDARY}
-            onPress={() => {
-              Keyboard.dismiss();
-              handleSubmit((value) => onSubmit(value, false))();
-            }}
-            contentStyle={{
-              marginBlock: 0,
-            }}
-            labelStyle={{
-              fontSize: 18,
-            }}
-            style={{ flex: 0.4, borderRadius: 8 }}
-          >
-            Save
-          </AppButton>
+        <AppView className="flex-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer p-4">
+          <AppView className="flex-0 flex-row gap-4 justify-center items-center bg-inherit dark:bg-inherit">
+            <AppButton
+              disabled={isSubmitting}
+              loading={isSaving}
+              variant={ButtonType.SECONDARY}
+              onPress={() => {
+                Keyboard.dismiss();
+                handleSubmit((value) => onSubmit(value, false))();
+              }}
+              contentStyle={{
+                marginBlock: 0,
+              }}
+              labelStyle={{
+                fontSize: 18,
+              }}
+              style={{ flex: 0.4, borderRadius: 8 }}
+            >
+              Save
+            </AppButton>
+            <AppButton
+              disabled={isSubmitting}
+              loading={isSavingAndNewType}
+              onPress={() => {
+                Keyboard.dismiss();
+                handleSubmit((value) => onSubmit(value, true))();
+              }}
+              contentStyle={{ marginBlock: 0 }}
+              labelStyle={{ fontSize: 18 }}
+              style={{ flex: 1, borderRadius: 8 }}
+            >
+              Save & New Type
+            </AppButton>
+          </AppView>
 
-          <AppButton
-            disabled={isSubmitting}
-            loading={isSavingAndNewType}
-            onPress={() => {
-              Keyboard.dismiss();
-              handleSubmit((value) => onSubmit(value, true))();
-            }}
-            contentStyle={{ marginBlock: 0 }}
-            labelStyle={{ fontSize: 18 }}
-            style={{ flex: 1, borderRadius: 8 }}
-          >
-            Save & New Type
-          </AppButton>
+          {rspErrorMsg && (
+            <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
+          )}
         </AppView>
 
         <AppDivider />

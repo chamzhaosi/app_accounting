@@ -71,7 +71,7 @@ export default function AppListCardView({
           style={defaultStyle.rippleContainer}
         >
           <>
-            {!item.isEditable && (
+            {item.isEditable === false && (
               <View className="absolute top-1 right-1">
                 <PencilOff size={12} color={THEME.error} />
               </View>

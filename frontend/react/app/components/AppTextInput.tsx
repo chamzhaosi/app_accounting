@@ -1,50 +1,73 @@
 import { forwardRef, useState } from "react";
+import { FieldError } from "react-hook-form";
+import { TextInput as RNTextInput, StyleSheet } from "react-native";
 import { TextInput, TextInputProps } from "react-native-paper";
-import {
-  TextInput as RNTextInput,
-  StyleSheet,
-  useColorScheme,
-} from "react-native";
-import { DARK, LIGHT } from "../constants/colors";
-import { FONTS } from "../constants/fonts";
 import { useThemeStore } from "../stores/useThemeStore";
+import AppText, { TextTypEnum } from "./AppText";
+import AppView from "./AppView";
 
 type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;
+  maxLabel?: number;
+  onClearBtn?: () => void;
+  errorDetail?: FieldError;
 };
 
 const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
-  ({ isMaskValue = false, ...props }, ref) => {
+  (
+    { isMaskValue = false, value, maxLabel, onClearBtn, errorDetail, ...props },
+    ref,
+  ) => {
     const { THEME } = useThemeStore();
-
     const [showValue, setShowValue] = useState<boolean>(false);
 
     return (
-      <TextInput
-        ref={ref}
-        style={[
-          defaultStyle.container,
-          {
-            backgroundColor: THEME.surfaceContainerHigh,
-          },
-        ]}
-        {...(isMaskValue
-          ? {
-              secureTextEntry: !showValue,
-              setShowValue,
-              right: (
-                <TextInput.Icon
-                  color={THEME.onSurface}
-                  icon={showValue ? "eye-off" : "eye"}
-                  onPressIn={() => setShowValue(true)}
-                  onPressOut={() => setShowValue(false)}
-                  forceTextInputFocus={false}
-                />
-              ),
-            }
-          : {})}
-        {...props}
-      />
+      <AppView className="bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+        <TextInput
+          ref={ref}
+          style={[
+            defaultStyle.container,
+            {
+              backgroundColor: THEME.surfaceContainerHigh,
+            },
+          ]}
+          {...(isMaskValue
+            ? {
+                secureTextEntry: !showValue,
+                setShowValue,
+                right: (
+                  <TextInput.Icon
+                    color={THEME.onSurface}
+                    icon={showValue ? "eye-off" : "eye"}
+                    onPressIn={() => setShowValue(true)}
+                    onPressOut={() => setShowValue(false)}
+                    forceTextInputFocus={false}
+                  />
+                ),
+              }
+            : {})}
+          right={
+            onClearBtn &&
+            value?.length && (
+              <TextInput.Icon icon="close" onPress={onClearBtn} />
+            )
+          }
+          value={value}
+          error={!!errorDetail?.message}
+          {...props}
+        />
+
+        <AppView className="flex-row ms-auto bg-inherit dark:bg-inherit">
+          {errorDetail?.message && (
+            <AppText className="flex-1" type={TextTypEnum.ERROR}>
+              {errorDetail.message}
+            </AppText>
+          )}
+          <AppText variant="labelLarge" className="mt-1">
+            {value?.length ?? 0}/{20}
+          </AppText>
+        </AppView>
+      </AppView>
     );
   },
 );
