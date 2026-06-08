@@ -7,7 +7,7 @@ export const accountTypeFormSchema = z.object({
     .string()
     .trim()
     .min(1, "Please enter account type label")
-    .max(20, "Account type label must be less than 20 characters"),
+    .max(20, "Label must be less than 20 characters"),
   icon: z.string().trim(),
 });
 

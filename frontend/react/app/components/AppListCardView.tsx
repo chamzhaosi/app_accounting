@@ -1,4 +1,4 @@
-import { LucideIcon, PencilOff } from "lucide-react-native";
+import { PencilOff } from "lucide-react-native";
 import { useWindowDimensions, View } from "react-native";
 import {
   KeyboardAwareFlatList,
@@ -7,18 +7,19 @@ import {
 import { Surface, TouchableRipple } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
+import AppIcon, { AppIconProps } from "./AccIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
+import AppEmpty from "./AppEmpty";
 
 export type AppListCardItemType = {
-  id: string;
+  id: AppIconProps["name"];
   label: string;
-  icon: string;
   description?: string;
   isEditable?: boolean;
 };
 
-type AppListViewType = Omit<
+type AppListViewProps = Omit<
   KeyboardAwareFlatListProps<AppListCardItemType>,
   "renderItem"
 > & {
@@ -26,8 +27,7 @@ type AppListViewType = Omit<
   className?: string;
   itemClassName?: string;
   isShowIconOnly?: boolean;
-  selectedId?: string;
-  getItemIcon: (name: string) => LucideIcon;
+  selectedItem?: AppIconProps["name"];
   onPress: (item: AppListCardItemType) => void;
 };
 
@@ -36,13 +36,12 @@ export default function AppListCardView({
   className,
   itemClassName,
   isShowIconOnly,
-  selectedId,
+  selectedItem,
   onPress,
   extraScrollHeight,
   onRefresh,
-  getItemIcon,
   ...props
-}: AppListViewType) {
+}: AppListViewProps) {
   const { THEME } = useThemeStore();
   const { width } = useWindowDimensions();
 
@@ -68,9 +67,8 @@ export default function AppListCardView({
       enableOnAndroid
       extraScrollHeight={extraScrollHeight ?? 40}
       keyboardShouldPersistTaps="handled"
-      renderItem={({ item }) => {
-        const Icon = getItemIcon(item.icon);
-        const isItemSelected = selectedId === item.id;
+      renderItem={({ item }: { item: AppListCardItemType }) => {
+        const isItemSelected = item.id === selectedItem;
 
         return (
           <Surface
@@ -102,7 +100,8 @@ export default function AppListCardView({
                     <PencilOff size={12} color={THEME.error} />
                   </View>
                 )}
-                <Icon
+                <AppIcon
+                  name={item.id}
                   color={isItemSelected ? THEME.onTertiary : THEME.primary}
                 />
 
@@ -123,6 +122,12 @@ export default function AppListCardView({
           </Surface>
         );
       }}
+      ListFooterComponent={
+        <AppText className="py-4 self-center" style={{ color: THEME.outline }}>
+          ----- No more data -----
+        </AppText>
+      }
+      ListEmptyComponent={<AppEmpty />}
       {...props}
     />
   );

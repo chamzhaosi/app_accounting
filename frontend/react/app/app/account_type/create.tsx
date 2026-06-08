@@ -1,18 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Wallet } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-
 import { router } from "expo-router";
-import AppButton from "../../components/AppButton";
+import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
+import AppButton, { ButtonType } from "../../components/AppButton";
 import AppDivider from "../../components/AppDivider";
-import AppListCardView, {
-  AppListCardItemType,
-} from "../../components/AppListCardView";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
+import AppIcon, { AppIconProps } from "../../components/AccIcon";
 import { ACCOUNT_TYPE_ICONS } from "../../constants/account_type";
 import {
   accountTypeFormDefaultValues,
@@ -20,36 +17,24 @@ import {
   AccountTypeFormType,
 } from "../../forms/account_type/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { getItemIcon } from "../../utils/common";
+import { AppToast } from "../../components/AppToast";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
 
-  const iconData = ACCOUNT_TYPE_ICONS.map((i) => ({
-    ...i,
-    label: "",
-    icon: i.id,
-    isEditable: true,
-  }));
-
-  const [selectedIcon, setSelectedIcon] = useState<AppListCardItemType>({
-    ...iconData[0],
-    icon: iconData[0].id,
-  });
+  const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
+    ACCOUNT_TYPE_ICONS[0],
+  );
   const [isSavingAndNewType, setIsSavingAndNewType] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
   const isSubmitting = isSavingAndNewType || isSaving;
 
-  const DefaultIcon = useMemo(
-    () => getItemIcon(selectedIcon.id),
-    [selectedIcon],
-  );
-
   const {
     control,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<AccountTypeFormType>({
     resolver: zodResolver(accountTypeFormSchema),
     mode: "onBlur",
@@ -57,14 +42,29 @@ export default function AccountTypeCreate() {
     defaultValues: accountTypeFormDefaultValues,
   });
 
-  const onSubmit = async (value: AccountTypeFormType) => {
-    const data = { ...value, icon: selectedIcon.id };
+  const onSubmit = async (
+    value: AccountTypeFormType,
+    saveAnotherType: boolean,
+  ) => {
+    const data = { ...value, icon: selectedItem };
+    const setLoading = saveAnotherType ? setIsSavingAndNewType : setIsSaving;
+
     setRspErrorMsg("");
     console.log(data);
-    setIsSaving(true);
-    await new Promise((res) => setTimeout(res, 2000));
-    setIsSaving(false);
-    router.back();
+    setLoading(true);
+    await new Promise((res) =>
+      setTimeout(() => {
+        res("success");
+        AppToast.success({ message: "Add account type successfully" });
+      }, 2000),
+    );
+    setLoading(false);
+    saveAnotherType ? formReset() : router.back();
+  };
+
+  const formReset = () => {
+    reset();
+    setSelectedItem(ACCOUNT_TYPE_ICONS[0]);
   };
 
   return (
@@ -75,7 +75,7 @@ export default function AccountTypeCreate() {
             className="items-center justify-center p-4 rounded-lg mr-4 mt-2 
             bg-LIGHT-tertiary dark:bg-DARK-tertiary"
           >
-            <DefaultIcon size={48} color={THEME.onTertiary} />
+            <AppIcon name={selectedItem} size={48} color={THEME.onTertiary} />
           </View>
 
           <View className="flex-1 justify-center">
@@ -108,17 +108,16 @@ export default function AccountTypeCreate() {
           <AppButton
             disabled={isSubmitting}
             loading={isSaving}
+            variant={ButtonType.SECONDARY}
             onPress={() => {
               Keyboard.dismiss();
-              handleSubmit(onSubmit)();
+              handleSubmit((value) => onSubmit(value, false))();
             }}
             contentStyle={{
               marginBlock: 0,
-              ...(!isSubmitting ? { backgroundColor: THEME.secondary } : {}),
             }}
             labelStyle={{
               fontSize: 18,
-              ...(!isSubmitting ? { color: THEME.onSecondary } : {}),
             }}
             style={{ flex: 0.4, borderRadius: 8 }}
           >
@@ -130,7 +129,7 @@ export default function AccountTypeCreate() {
             loading={isSavingAndNewType}
             onPress={() => {
               Keyboard.dismiss();
-              handleSubmit(onSubmit)();
+              handleSubmit((value) => onSubmit(value, true))();
             }}
             contentStyle={{ marginBlock: 0 }}
             labelStyle={{ fontSize: 18 }}
@@ -142,15 +141,11 @@ export default function AccountTypeCreate() {
 
         <AppDivider />
 
-        <AppView className="bg-LIGHT-surfaceContainerHigh dark:bg-DARK-surfaceContainerHigh">
-          <AppListCardView
-            data={iconData}
-            onPress={(item) => setSelectedIcon(item)}
-            selectedId={selectedIcon.id}
-            getItemIcon={getItemIcon}
-            isShowIconOnly
-          ></AppListCardView>
-        </AppView>
+        <AccTypeIconsList
+          setSelectedItem={setSelectedItem}
+          selectedItem={selectedItem}
+          disabled={isSubmitting}
+        />
       </AppView>
     </TouchableWithoutFeedback>
   );

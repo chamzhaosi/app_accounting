@@ -1,16 +1,17 @@
-import { useLocalSearchParams } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CreditCard, Wallet } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-
 import { router } from "expo-router";
-import AppButton, { ButtonType } from "../../components/AppButton";
+import AppIcon, { AppIconProps } from "../../components/AccIcon";
+import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
+import AppButton, {
+  AppButtonProps,
+  ButtonType,
+} from "../../components/AppButton";
+import AppDialog from "../../components/AppDialog";
 import AppDivider from "../../components/AppDivider";
-import AppListCardView, {
-  AppListCardItemType,
-} from "../../components/AppListCardView";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
@@ -21,32 +22,19 @@ import {
   AccountTypeFormType,
 } from "../../forms/account_type/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { getItemIcon } from "../../utils/common";
 
 export default function AccountTypeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
 
-  const iconData = ACCOUNT_TYPE_ICONS.map((i) => ({
-    ...i,
-    label: "",
-    icon: i.id,
-    isEditable: true,
-  }));
-
-  const [selectedIcon, setSelectedIcon] = useState<AppListCardItemType>({
-    ...iconData[0],
-    icon: iconData[0].id,
-  });
+  const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
+    ACCOUNT_TYPE_ICONS[0],
+  );
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
+  const [showDialog, setShowDialog] = useState<boolean>(false);
   const isSubmitting = isDeleting || isSaving;
-
-  const DefaultIcon = useMemo(
-    () => getItemIcon(selectedIcon.id),
-    [selectedIcon],
-  );
 
   const {
     control,
@@ -61,7 +49,7 @@ export default function AccountTypeDetail() {
   });
 
   const onSubmit = async (value: AccountTypeFormType) => {
-    const data = { ...value, icon: selectedIcon.id };
+    const data = { ...value, icon: selectedItem };
     setRspErrorMsg("");
     console.log(data);
     setIsSaving(true);
@@ -70,28 +58,66 @@ export default function AccountTypeDetail() {
     router.back();
   };
 
+  const onDelete = async () => {
+    setIsDeleting(true);
+    await new Promise((res) => setTimeout(res, 2000));
+    setIsDeleting(false);
+    router.back();
+  };
+
+  const actionBtnSharedProps: Omit<AppButtonProps, "children"> = {
+    labelStyle: { fontSize: 14 },
+    contentStyle: {
+      marginVertical: 0,
+    },
+    style: { borderRadius: 8 },
+  };
+
   useEffect(() => {
     setValues({
       label:
         "Card - in card drawer, my friend put de, dont take it Card - in card drawer, my friend put de, dont take it",
       icon: "CreditCard",
     });
-    setSelectedIcon({
-      id: "CreditCard",
-      icon: "CreditCard",
-      label: "",
-    });
-  }, []);
+    setSelectedItem("CreditCard");
+  }, [id]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <AppView isSafe edges={["left", "right", "bottom"]}>
+        <AppDialog
+          title="Delete"
+          description="Are you sure you want to delete this account type?
+          Accounts associated with this type will not be affected."
+          showDialog={showDialog}
+          onDismiss={() => setShowDialog(false)}
+          actionRender={
+            <>
+              <AppButton
+                {...actionBtnSharedProps}
+                onPress={() => setShowDialog(false)}
+              >
+                No
+              </AppButton>
+              <AppButton
+                {...actionBtnSharedProps}
+                variant={ButtonType.ERROR}
+                onPress={() => {
+                  setShowDialog(false);
+                  onDelete();
+                }}
+              >
+                Yes
+              </AppButton>
+            </>
+          }
+        />
         <AppView className="flex-none flex-row justify-around px-4 pt-2 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View
             className="items-center justify-center p-4 rounded-lg mr-4 mt-2
             bg-LIGHT-tertiary dark:bg-DARK-tertiary"
           >
-            <DefaultIcon size={48} color={THEME.onTertiary} />
+            <AppIcon name={selectedItem} size={48} color={THEME.onTertiary} />
           </View>
 
           <View className="flex-1 justify-center">
@@ -103,7 +129,6 @@ export default function AccountTypeDetail() {
                   ref={ref}
                   mode="outlined"
                   label={"Label"}
-                  autoFocus
                   editable={!isSubmitting}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -126,7 +151,7 @@ export default function AccountTypeDetail() {
             loading={isDeleting}
             onPress={() => {
               Keyboard.dismiss();
-              handleSubmit(onSubmit)();
+              setShowDialog(true);
             }}
             variant={ButtonType.ERROR}
             contentStyle={{ marginBlock: 0 }}
@@ -142,13 +167,12 @@ export default function AccountTypeDetail() {
               Keyboard.dismiss();
               handleSubmit(onSubmit)();
             }}
+            variant={ButtonType.SECONDARY}
             contentStyle={{
               marginBlock: 0,
-              ...(!isSubmitting ? { backgroundColor: THEME.secondary } : {}),
             }}
             labelStyle={{
               fontSize: 18,
-              ...(!isSubmitting ? { color: THEME.onSecondary } : {}),
             }}
             style={{ flex: 0.4, borderRadius: 8 }}
           >
@@ -158,15 +182,10 @@ export default function AccountTypeDetail() {
 
         <AppDivider />
 
-        <AppView className="bg-LIGHT-surfaceContainerHigh dark:bg-DARK-surfaceContainerHigh">
-          <AppListCardView
-            data={iconData}
-            onPress={(item) => setSelectedIcon(item)}
-            selectedId={selectedIcon.id}
-            getItemIcon={getItemIcon}
-            isShowIconOnly
-          ></AppListCardView>
-        </AppView>
+        <AccTypeIconsList
+          setSelectedItem={setSelectedItem}
+          selectedItem={selectedItem}
+        />
       </AppView>
     </TouchableWithoutFeedback>
   );

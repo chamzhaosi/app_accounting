@@ -4,10 +4,11 @@ import { useThemeStore } from "../stores/useThemeStore";
 
 export enum ButtonType {
   PRIMARY,
+  SECONDARY,
   ERROR,
 }
 
-type AppButtonProps = ButtonProps & {
+export type AppButtonProps = ButtonProps & {
   variant?: ButtonType;
 };
 
@@ -15,6 +16,7 @@ export default function AppButton({
   labelStyle,
   contentStyle,
   variant = ButtonType.PRIMARY,
+  disabled,
   ...props
 }: AppButtonProps) {
   const { THEME } = useThemeStore();
@@ -31,7 +33,14 @@ export default function AppButton({
         color: THEME.onError,
       };
       break;
-
+    case ButtonType.SECONDARY:
+      variantContentStyle = {
+        backgroundColor: THEME.secondary,
+      };
+      variantLabelStyle = {
+        color: THEME.onSecondary,
+      };
+      break;
     default:
       variantContentStyle = {};
       variantLabelStyle = {};
@@ -48,6 +57,7 @@ export default function AppButton({
         },
         variantContentStyle,
         contentStyle,
+        disabled ? { backgroundColor: THEME.surfaceDisabled } : {},
       ]}
       labelStyle={[
         {
@@ -55,6 +65,7 @@ export default function AppButton({
         },
         variantLabelStyle,
         labelStyle,
+        disabled ? { color: THEME.onSurfaceDisabled } : {},
       ]}
       {...props}
     />

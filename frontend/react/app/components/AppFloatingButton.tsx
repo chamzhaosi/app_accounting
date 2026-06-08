@@ -1,5 +1,6 @@
 import { FAB, FABProps } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useToastStore } from "../stores/useToastStore";
 
 type AppFloatingButtonProps = FABProps;
 
@@ -8,6 +9,8 @@ export default function AppFloatingButton({
   ...props
 }: AppFloatingButtonProps) {
   const insets = useSafeAreaInsets();
+  const { isShow } = useToastStore();
+
   return (
     <FAB
       icon="plus"
@@ -16,7 +19,7 @@ export default function AppFloatingButton({
         position: "absolute",
         margin: 16,
         right: 0,
-        bottom: 0 + insets.bottom,
+        bottom: 0 + insets.bottom + (isShow ? 100 : 0),
         ...style,
       }}
       {...props}

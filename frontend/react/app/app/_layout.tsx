@@ -12,6 +12,7 @@ import { ThemeType, useThemeStore } from "../stores/useThemeStore";
 import * as SystemUI from "expo-system-ui";
 
 import {
+  Appbar,
   MD3DarkTheme as DefaultDarkTheme,
   MD3LightTheme as DefaultLightTheme,
   PaperProvider,
@@ -23,8 +24,10 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { useToastStore } from "../stores/useToastStore";
 
 export default function StackLayout() {
+  const { setShowToast, setHideToast } = useToastStore();
   const insets = useSafeAreaInsets() ?? {
     insets: { top: 0, bottom: 0, right: 0, left: 0 },
   };
@@ -79,12 +82,9 @@ export default function StackLayout() {
         <StatusBar style="auto" />
         <Stack
           screenOptions={{
-            contentStyle: {
-              backgroundColor: "red",
-            },
             headerTitleStyle: {
               fontFamily: FONTS.ADLAM_DISPLAY,
-              fontSize: 28,
+              fontSize: 20,
             },
             headerStyle: {
               backgroundColor: THEME.surfaceContainerLow,
@@ -105,11 +105,7 @@ export default function StackLayout() {
           <Stack.Screen
             name="account_type/create"
             options={{
-              title: "Add new account type",
-              headerTitleStyle: {
-                fontFamily: FONTS.ADLAM_DISPLAY,
-                fontSize: 24,
-              },
+              title: "New Account Type",
             }}
           />
 
@@ -117,14 +113,14 @@ export default function StackLayout() {
             name="account_type/[id]"
             options={{
               title: "Account Type Detail",
-              headerTitleStyle: {
-                fontFamily: FONTS.ADLAM_DISPLAY,
-                fontSize: 24,
-              },
             }}
           />
         </Stack>
-        <Toast config={toastConfig(THEME, insets)} />
+        <Toast
+          config={toastConfig(THEME, insets)}
+          onShow={setShowToast}
+          onHide={setHideToast}
+        />
       </PaperProvider>
     </SafeAreaProvider>
   );
