@@ -1,9 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import { router } from "expo-router";
 import AppIcon, { AppIconProps } from "../../components/AccIcon";
 import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
 import AppButton, {
@@ -20,6 +19,7 @@ import {
   accountTypeFormDefaultValues,
   accountTypeFormSchema,
   AccountTypeFormType,
+  LABEL_MAX_LEN,
 } from "../../forms/account_type/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
 
@@ -36,14 +36,9 @@ export default function AccountTypeDetail() {
   const [showDialog, setShowDialog] = useState<boolean>(false);
   const isSubmitting = isDeleting || isSaving;
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    setValues,
-  } = useForm<AccountTypeFormType>({
+  const { control, handleSubmit, setValues } = useForm<AccountTypeFormType>({
     resolver: zodResolver(accountTypeFormSchema),
-    mode: "onBlur",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: accountTypeFormDefaultValues,
   });
@@ -124,7 +119,10 @@ export default function AccountTypeDetail() {
             <Controller
               control={control}
               name="label"
-              render={({ field: { value, onChange, onBlur, ref } }) => (
+              render={({
+                field: { value, onChange, onBlur, ref },
+                fieldState: { error },
+              }) => (
                 <AppTextInput
                   ref={ref}
                   mode="outlined"
@@ -133,51 +131,54 @@ export default function AccountTypeDetail() {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   value={value}
+                  maxLength={LABEL_MAX_LEN}
+                  onClearBtn={() => setValues({ label: "" })}
+                  errorField={error}
                 />
               )}
             />
-            {errors.label && (
-              <AppText type={TextTypEnum.ERROR}>{errors.label.message}</AppText>
-            )}
-            {rspErrorMsg && (
-              <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
-            )}
           </View>
         </AppView>
 
-        <AppView className="flex-0 flex-row gap-4 p-4 justify-center items-center bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
-          <AppButton
-            disabled={isSubmitting}
-            loading={isDeleting}
-            onPress={() => {
-              Keyboard.dismiss();
-              setShowDialog(true);
-            }}
-            variant={ButtonType.ERROR}
-            contentStyle={{ marginBlock: 0 }}
-            labelStyle={{ fontSize: 18 }}
-            style={{ flex: 1, borderRadius: 8 }}
-          >
-            Delete
-          </AppButton>
-          <AppButton
-            disabled={isSubmitting}
-            loading={isSaving}
-            onPress={() => {
-              Keyboard.dismiss();
-              handleSubmit(onSubmit)();
-            }}
-            variant={ButtonType.SECONDARY}
-            contentStyle={{
-              marginBlock: 0,
-            }}
-            labelStyle={{
-              fontSize: 18,
-            }}
-            style={{ flex: 0.4, borderRadius: 8 }}
-          >
-            Save
-          </AppButton>
+        <AppView className="flex-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer p-4">
+          <AppView className="flex-0 flex-row gap-4 justify-center items-center bg-inherit dark:bg-inherit">
+            <AppButton
+              disabled={isSubmitting}
+              loading={isDeleting}
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowDialog(true);
+              }}
+              variant={ButtonType.ERROR}
+              contentStyle={{ marginBlock: 0 }}
+              labelStyle={{ fontSize: 18 }}
+              style={{ flex: 1, borderRadius: 8 }}
+            >
+              Delete
+            </AppButton>
+            <AppButton
+              disabled={isSubmitting}
+              loading={isSaving}
+              onPress={() => {
+                Keyboard.dismiss();
+                handleSubmit(onSubmit)();
+              }}
+              variant={ButtonType.SECONDARY}
+              contentStyle={{
+                marginBlock: 0,
+              }}
+              labelStyle={{
+                fontSize: 18,
+              }}
+              style={{ flex: 0.4, borderRadius: 8 }}
+            >
+              Save
+            </AppButton>
+          </AppView>
+
+          {rspErrorMsg && (
+            <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
+          )}
         </AppView>
 
         <AppDivider />

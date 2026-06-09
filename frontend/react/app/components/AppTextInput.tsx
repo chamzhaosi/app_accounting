@@ -8,14 +8,13 @@ import AppView from "./AppView";
 
 type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;
-  maxLabel?: number;
   onClearBtn?: () => void;
-  errorDetail?: FieldError;
+  errorField?: FieldError;
 };
 
 const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
   (
-    { isMaskValue = false, value, maxLabel, onClearBtn, errorDetail, ...props },
+    { isMaskValue = false, value, onClearBtn, errorField, maxLength, ...props },
     ref,
   ) => {
     const { THEME } = useThemeStore();
@@ -53,19 +52,22 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
             )
           }
           value={value}
-          error={!!errorDetail?.message}
+          error={!!errorField?.message}
+          maxLength={maxLength}
           {...props}
         />
 
         <AppView className="flex-row ms-auto bg-inherit dark:bg-inherit">
-          {errorDetail?.message && (
+          {errorField?.message && (
             <AppText className="flex-1" type={TextTypEnum.ERROR}>
-              {errorDetail.message}
+              {errorField.message}
             </AppText>
           )}
-          <AppText variant="labelLarge" className="mt-1">
-            {value?.length ?? 0}/{20}
-          </AppText>
+          {maxLength && (
+            <AppText variant="labelLarge" className="mt-1">
+              {value?.length ?? 0}/{maxLength}
+            </AppText>
+          )}
         </AppView>
       </AppView>
     );

@@ -2,23 +2,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import { router } from "expo-router";
+import AppIcon, { AppIconProps } from "../../components/AccIcon";
 import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
 import AppButton, { ButtonType } from "../../components/AppButton";
 import AppDivider from "../../components/AppDivider";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
-import AppIcon, { AppIconProps } from "../../components/AccIcon";
 import { ACCOUNT_TYPE_ICONS } from "../../constants/account_type";
 import {
   accountTypeFormDefaultValues,
   accountTypeFormSchema,
   AccountTypeFormType,
+  LABEL_MAX_LEN,
 } from "../../forms/account_type/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { AppToast } from "../../components/AppToast";
-import { TextInput } from "react-native-paper";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
@@ -31,10 +29,10 @@ export default function AccountTypeCreate() {
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
   const isSubmitting = isSavingAndNewType || isSaving;
 
-  const { control, handleSubmit, formState, setValue, reset } =
+  const { control, handleSubmit, setValue, reset } =
     useForm<AccountTypeFormType>({
       resolver: zodResolver(accountTypeFormSchema),
-      mode: "onBlur",
+      mode: "onChange",
       reValidateMode: "onChange",
       defaultValues: accountTypeFormDefaultValues,
     });
@@ -49,14 +47,16 @@ export default function AccountTypeCreate() {
     setRspErrorMsg("");
     console.log(data);
     setLoading(true);
-    await new Promise((res) =>
-      setTimeout(() => {
-        res("success");
-        AppToast.success({ message: "Add account type successfully" });
-      }, 2000),
-    );
-    setLoading(false);
+    // await new Promise((res) =>
+    //   setTimeout(() => {
+    //     res("success");
+    //     AppToast.success({ message: "Add account type successfully" });
+    //   }, 2000),
+    // );
+    // setLoading(false);
     // saveAnotherType ? formReset() : router.back();
+    await new Promise((res) => setTimeout(res, 200));
+    setLoading(false);
     setRspErrorMsg("Account type already added.");
   };
 
@@ -93,9 +93,9 @@ export default function AccountTypeCreate() {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   value={value}
-                  maxLength={20}
+                  maxLength={LABEL_MAX_LEN}
                   onClearBtn={() => setValue("label", "")}
-                  errorDetail={error}
+                  errorField={error}
                 />
               )}
             />
