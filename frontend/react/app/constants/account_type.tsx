@@ -1,0 +1,26 @@
+import { AppIconProps } from "../components/AccIcon";
+
+export const ACCOUNT_TYPE_ICONS: AppIconProps["name"][] = [
+  "Wallet",
+  "WalletCards",
+  "WalletMinimal",
+  "Coins",
+  "Bitcoin",
+  "CirclePoundSterling",
+  "CircleDollarSign",
+  "DollarSign",
+  "Euro",
+  "BadgeCent",
+  "BadgeDollarSign",
+  "BadgeEuro",
+  "BadgeJapaneseYen",
+  "Banknote",
+  "BanknoteArrowDown",
+  "BanknoteArrowUp",
+  "BanknoteX",
+  "CreditCard",
+  "Landmark",
+  "Vault",
+  "HandCoins",
+  "PiggyBank",
+];

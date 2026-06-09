@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "app_accounting",
+    "backgroundColor": "#121212",
     "experiments": {
       "typedRoutes": true
     },
@@ -21,7 +22,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "pan",
+      "backgroundColor": "#121212"
     },
     "web": {
       "favicon": "./assets/favicon.png",

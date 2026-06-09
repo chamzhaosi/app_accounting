@@ -1,24 +1,42 @@
 import { useFonts } from "expo-font";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 
 import { useEffect } from "react";
+import { useColorScheme } from "react-native";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "../config/toastConfig";
 import { FONTS, FONTS_THEME } from "../constants/fonts";
 import "../global.css";
 import { useLoadingStore } from "../stores/useLoadingStore";
-import { useColorScheme } from "react-native";
+import { ThemeType, useThemeStore } from "../stores/useThemeStore";
+import * as SystemUI from "expo-system-ui";
+
 import {
-  MD3LightTheme as DefaultLightTheme,
+  Appbar,
   MD3DarkTheme as DefaultDarkTheme,
+  MD3LightTheme as DefaultLightTheme,
   PaperProvider,
 } from "react-native-paper";
 import { DARK, LIGHT } from "../constants/colors";
-import { ThemeType, useThemeStore } from "../stores/useThemeStore";
+
 import { StatusBar } from "expo-status-bar";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { useToastStore } from "../stores/useToastStore";
 
 export default function StackLayout() {
+  const { setShowToast, setHideToast } = useToastStore();
+  const insets = useSafeAreaInsets() ?? {
+    insets: { top: 0, bottom: 0, right: 0, left: 0 },
+  };
   const colorScheme = useColorScheme() as ThemeType;
-  const { isDark, THEME, toggleTheme } = useThemeStore();
+  const { isDark, THEME, toggleTheme } = useThemeStore() ?? { THEME: LIGHT };
+  const { startLoading, stopLoading } = useLoadingStore();
+
   const baseTheme = isDark ? DefaultDarkTheme : DefaultLightTheme;
+  SystemUI.setBackgroundColorAsync(THEME.surface);
 
   const theme = {
     ...baseTheme,
@@ -31,8 +49,6 @@ export default function StackLayout() {
       ...FONTS_THEME(baseTheme),
     },
   };
-
-  const { startLoading, stopLoading } = useLoadingStore();
 
   const [loaded] = useFonts({
     [FONTS.ROBOTO]: require("../assets/fonts/Roboto-VariableFont_wdth,wght.ttf"),
@@ -52,7 +68,8 @@ export default function StackLayout() {
     startLoading();
     await new Promise((res) => setTimeout(res, 2000));
     stopLoading();
-    router.push("/(auth)/login");
+    // router.replace("/(auth)/login");
+    // router.push("/(home)/dashboard");
   };
 
   if (!loaded) {
@@ -60,12 +77,51 @@ export default function StackLayout() {
   }
 
   return (
-    <PaperProvider theme={theme}>
-      <StatusBar style="auto" />
-      <Stack>
-        <Stack.Screen name="landing" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack>
-    </PaperProvider>
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <StatusBar style="auto" />
+        <Stack
+          screenOptions={{
+            headerTitleStyle: {
+              fontFamily: FONTS.ADLAM_DISPLAY,
+              fontSize: 20,
+            },
+            headerStyle: {
+              backgroundColor: THEME.surfaceContainerLow,
+            },
+            headerTintColor: THEME.primary,
+          }}
+        >
+          {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
+          {/* <Stack.Screen name="(home)" options={{ headerShown: false }} /> */}
+          <Stack.Screen
+            name="account_type/list"
+            options={{
+              title: "Account Types",
+            }}
+          />
+
+          <Stack.Screen
+            name="account_type/create"
+            options={{
+              title: "New Account Type",
+            }}
+          />
+
+          <Stack.Screen
+            name="account_type/[id]"
+            options={{
+              title: "Account Type Detail",
+            }}
+          />
+        </Stack>
+        <Toast
+          config={toastConfig(THEME, insets)}
+          onShow={setShowToast}
+          onHide={setHideToast}
+        />
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }

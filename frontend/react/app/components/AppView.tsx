@@ -1,10 +1,13 @@
 import { View, ViewProps } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  SafeAreaViewProps,
+} from "react-native-safe-area-context";
 import { cn } from "../utils/common";
 
 type AppViewProps = {
   isSafe?: boolean;
-} & ViewProps;
+} & (ViewProps | SafeAreaViewProps);
 
 export default function AppView({
   isSafe = false,
@@ -16,12 +19,5 @@ export default function AppView({
   if (!isSafe)
     return <View className={cn(sharedClassName, className)} {...props} />;
 
-  const insets = useSafeAreaInsets();
-  return (
-    <View
-      {...props}
-      style={{ marginTop: insets.top, marginBottom: insets.bottom }}
-      className={cn(sharedClassName, className)}
-    />
-  );
+  return <SafeAreaView className={cn(sharedClassName, className)} {...props} />;
 }
