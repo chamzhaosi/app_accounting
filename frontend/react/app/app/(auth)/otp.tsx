@@ -48,10 +48,7 @@ export default function OTP() {
   };
 
   return (
-    <AppScrollView
-      className="pt-8 rounded-t-[50] bg-LIGHT-surfaceContainerLow border-2 border-LIGHT-outlineVariant
-                 dark:bg-DARK-surfaceContainerLow dark:border-DARK-outlineVariant"
-    >
+    <AppScrollView className="pt-8 rounded-t-[50]">
       <AppView isSafe className="w-[90%] self-center bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
           VERIFICATION

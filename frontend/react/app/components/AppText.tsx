@@ -14,6 +14,7 @@ type AppTextProps = {
 
 export default function AppText({
   isTitle,
+  style,
   type = TextTypEnum.DEFAULT,
   ...props
 }: AppTextProps) {
@@ -24,7 +25,7 @@ export default function AppText({
   switch (type) {
     case TextTypEnum.ERROR:
       typeProps = {
-        style: { color: THEME.onErrorContainer, marginTop: 4 },
+        style: { color: THEME.onErrorContainer, marginTop: 4, ...style },
       };
       break;
     case TextTypEnum.LINK:
@@ -32,10 +33,14 @@ export default function AppText({
         style: {
           color: THEME.onPrimaryContainer,
           textDecorationLine: "underline",
+          ...style,
         },
       };
       break;
     default:
+      typeProps = {
+        style,
+      };
       break;
   }
 
@@ -44,7 +49,7 @@ export default function AppText({
       variant="labelLarge"
       {...typeProps}
       {...(isTitle
-        ? { variant: "displayLarge", style: { color: THEME.primary } }
+        ? { variant: "displayLarge", style: { color: THEME.primary, ...style } }
         : {})}
       {...props}
     />

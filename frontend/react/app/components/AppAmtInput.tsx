@@ -1,37 +1,31 @@
-import { forwardRef, useState } from "react";
+import { forwardRef } from "react";
 import { FieldError } from "react-hook-form";
 import { TextInput as RNTextInput, StyleSheet } from "react-native";
 import { TextInput, TextInputProps } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
-import AppText, { TextTypEnum } from "./AppText";
 import AppView from "./AppView";
 import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/common";
+import AppText, { TextTypEnum } from "./AppText";
 
 type AppTextInputProps = TextInputProps & {
-  isMaskValue?: boolean;
   errorField?: FieldError;
   showClear?: boolean;
 };
 
-const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
+const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
   (
     {
-      isMaskValue = false,
       value,
-      showClear = false,
       errorField,
-      maxLength,
       onChangeText,
-      style,
-      numberOfLines,
-      multiline,
+      onBlur,
+      maxLength,
+      showClear = false,
       ...props
     },
     ref,
   ) => {
     const { THEME } = useThemeStore();
-    const [showValue, setShowValue] = useState<boolean>(false);
-
     return (
       <>
         <TextInput
@@ -40,27 +34,8 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
             defaultStyle.container,
             {
               backgroundColor: THEME.surfaceContainerHigh,
-              height: multiline
-                ? TEXTINPUT_HEIGHT * ((numberOfLines ?? 1) - 1)
-                : TEXTINPUT_HEIGHT,
-              ...style,
             },
           ]}
-          {...(isMaskValue
-            ? {
-                secureTextEntry: !showValue,
-                setShowValue,
-                right: (
-                  <TextInput.Icon
-                    color={THEME.onSurface}
-                    icon={showValue ? "eye-off" : "eye"}
-                    onPressIn={() => setShowValue(true)}
-                    onPressOut={() => setShowValue(false)}
-                    forceTextInputFocus={false}
-                  />
-                ),
-              }
-            : {})}
           right={
             showClear &&
             value?.length && (
@@ -71,9 +46,12 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
           value={value}
           error={!!errorField?.message}
           maxLength={maxLength}
+          onBlur={(e) => {
+            const num = Number(value);
+            onChangeText?.(isNaN(num) ? "0.00" : num.toFixed(2));
+            onBlur?.(e);
+          }}
           onChangeText={onChangeText}
-          numberOfLines={numberOfLines}
-          multiline={multiline}
           {...props}
         />
 
@@ -83,23 +61,19 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
               {errorField.message}
             </AppText>
           )}
-          {maxLength && (
-            <AppText variant="labelLarge" className="mt-1 ms-auto">
-              {value?.length ?? 0}/{maxLength}
-            </AppText>
-          )}
         </AppView>
       </>
     );
   },
 );
 
-AppTextInput.displayName = "AppTextInput";
+AppAmtInput.displayName = "AppAmtInput";
 
-export default AppTextInput;
+export default AppAmtInput;
 
 const defaultStyle = StyleSheet.create({
   container: {
+    height: TEXTINPUT_HEIGHT,
     fontSize: TEXTINPUT_FONTSIZE,
   },
 });

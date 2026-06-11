@@ -8,6 +8,7 @@ import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
 import AppButton, {
   AppButtonProps,
   ButtonType,
+  SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
 import AppDialog from "../../components/AppDialog";
 import AppDivider from "../../components/AppDivider";
@@ -132,7 +133,7 @@ export default function AccountTypeDetail() {
                   onBlur={onBlur}
                   value={value}
                   maxLength={LABEL_MAX_LEN}
-                  onClearBtn={() => setValues({ label: "" })}
+                  showClear
                   errorField={error}
                 />
               )}
@@ -140,8 +141,8 @@ export default function AccountTypeDetail() {
           </View>
         </AppView>
 
-        <AppView className="flex-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer p-4">
-          <AppView className="flex-0 flex-row gap-4 justify-center items-center bg-inherit dark:bg-inherit">
+        <View className="m-4 mt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+          <View className="flex-row items-center justify-center gap-4 mt-4">
             <AppButton
               disabled={isSubmitting}
               loading={isDeleting}
@@ -150,9 +151,8 @@ export default function AccountTypeDetail() {
                 setShowDialog(true);
               }}
               variant={ButtonType.ERROR}
-              contentStyle={{ marginBlock: 0 }}
-              labelStyle={{ fontSize: 18 }}
               style={{ flex: 1, borderRadius: 8 }}
+              {...SUBMIT_BTN_CONTENT_STYLE}
             >
               Delete
             </AppButton>
@@ -164,22 +164,17 @@ export default function AccountTypeDetail() {
                 handleSubmit(onSubmit)();
               }}
               variant={ButtonType.SECONDARY}
-              contentStyle={{
-                marginBlock: 0,
-              }}
-              labelStyle={{
-                fontSize: 18,
-              }}
               style={{ flex: 0.4, borderRadius: 8 }}
+              {...SUBMIT_BTN_CONTENT_STYLE}
             >
               Save
             </AppButton>
-          </AppView>
+          </View>
 
           {rspErrorMsg && (
             <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
           )}
-        </AppView>
+        </View>
 
         <AppDivider />
 

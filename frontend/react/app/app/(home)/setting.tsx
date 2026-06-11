@@ -13,16 +13,16 @@ import { router } from "expo-router";
 export default function Setting() {
   const data: AppListItemType[] = [
     {
-      id: "1",
+      id: 1,
       label: "Account Type",
-      icon: Wallet,
+      icon: "Wallet",
       onPress: () => router.push("/account_type/list"),
     },
     {
-      id: "2",
+      id: 2,
       label: "Account Management",
-      icon: Vault,
-      onPress: () => router.push("/account_type/list"),
+      icon: "Vault",
+      onPress: () => router.push("/account_management/list"),
     },
     // { id: "3", label: "Category Management", icon: BookOpenCheck },
     // { id: "4", label: "Budget Management", icon: HandCoins },

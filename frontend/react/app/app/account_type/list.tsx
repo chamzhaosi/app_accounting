@@ -9,20 +9,27 @@ import AppView from "../../components/AppView";
 export default function AccountTypeList() {
   const data: AppListCardItemType[] = [
     {
-      id: "Banknote",
+      id: 1,
+      icon: "Banknote",
       label: "Cash",
       isEditable: false,
     },
-    { id: "Landmark", label: "Bank", isEditable: false },
-    { id: "WalletMinimal", label: "Wallet", isEditable: false },
-    { id: "CreditCard", label: "Card", isEditable: false },
+    { id: 2, icon: "Landmark", label: "Bank", isEditable: false },
     {
-      id: "CreditCard",
+      id: 3,
+      icon: "WalletMinimal",
+      label: "Wallet",
+      isEditable: false,
+    },
+    { id: 4, icon: "CreditCard", label: "Card", isEditable: false },
+    {
+      id: 5,
+      icon: "Landmark",
       label:
         "Card - in card drawer, my friend put de, dont take it Card - in card drawer, my friend put de, dont take it",
       isEditable: true,
     },
-    { id: "CreditCard", label: "Other", isEditable: false },
+    { id: 6, icon: "CreditCard", label: "Other", isEditable: false },
   ];
 
   const onPress = (item: AppListCardItemType) => {
@@ -42,8 +49,8 @@ export default function AccountTypeList() {
 
   return (
     <AppView className="relative">
-      <AppView className="bg-LIGHT-BG_SECONDARY dark:bg-DARK-BG_SECONDARY ">
-        <AppListCardView data={data} onPress={onPress} />
+      <AppView>
+        <AppListCardView data={data} onPress={onPress} extraCardHeight={20} />
       </AppView>
       <AppFloatingButton
         icon="plus"

@@ -74,3 +74,13 @@ const defaultStyle = StyleSheet.create({
     fontSize: 28,
   },
 });
+
+export const SUBMIT_BTN_CONTENT_STYLE = {
+  contentStyle: {
+    marginBlock: 0,
+    height: 45,
+  },
+  labelStyle: {
+    fontSize: 18,
+  },
+};
