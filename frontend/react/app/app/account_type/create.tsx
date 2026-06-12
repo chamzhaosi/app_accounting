@@ -4,7 +4,10 @@ import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
 import AppIcon, { AppIconProps } from "../../components/AccIcon";
 import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
-import AppButton, { ButtonType } from "../../components/AppButton";
+import AppButton, {
+  ButtonType,
+  SUBMIT_BTN_CONTENT_STYLE,
+} from "../../components/AppButton";
 import AppDivider from "../../components/AppDivider";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
@@ -29,13 +32,17 @@ export default function AccountTypeCreate() {
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
   const isSubmitting = isSavingAndNewType || isSaving;
 
-  const { control, handleSubmit, setValue, reset } =
-    useForm<AccountTypeFormType>({
-      resolver: zodResolver(accountTypeFormSchema),
-      mode: "onChange",
-      reValidateMode: "onChange",
-      defaultValues: accountTypeFormDefaultValues,
-    });
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<AccountTypeFormType>({
+    resolver: zodResolver(accountTypeFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    defaultValues: accountTypeFormDefaultValues,
+  });
 
   const onSubmit = async (
     value: AccountTypeFormType,
@@ -67,8 +74,8 @@ export default function AccountTypeCreate() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <AppView isSafe edges={["left", "right", "bottom"]}>
-        <AppView className="flex-none flex-row justify-around px-4 pt-2 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+      <AppView>
+        <View className="flex-row justify-around px-4 pt-2 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View
             className="items-center justify-center p-4 rounded-lg mr-4 mt-2 
             bg-LIGHT-tertiary dark:bg-DARK-tertiary"
@@ -91,19 +98,20 @@ export default function AccountTypeCreate() {
                   autoFocus
                   editable={!isSubmitting}
                   onChangeText={onChange}
+                  onChange={onChange}
                   onBlur={onBlur}
                   value={value}
                   maxLength={LABEL_MAX_LEN}
-                  onClearBtn={() => setValue("label", "")}
+                  showClear
                   errorField={error}
                 />
               )}
             />
           </View>
-        </AppView>
+        </View>
 
-        <AppView className="flex-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer p-4">
-          <AppView className="flex-0 flex-row gap-4 justify-center items-center bg-inherit dark:bg-inherit">
+        <View className="m-4 mt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+          <View className="flex-row items-center justify-center gap-4 mt-4">
             <AppButton
               disabled={isSubmitting}
               loading={isSaving}
@@ -112,13 +120,8 @@ export default function AccountTypeCreate() {
                 Keyboard.dismiss();
                 handleSubmit((value) => onSubmit(value, false))();
               }}
-              contentStyle={{
-                marginBlock: 0,
-              }}
-              labelStyle={{
-                fontSize: 18,
-              }}
               style={{ flex: 0.4, borderRadius: 8 }}
+              {...SUBMIT_BTN_CONTENT_STYLE}
             >
               Save
             </AppButton>
@@ -126,21 +129,20 @@ export default function AccountTypeCreate() {
               disabled={isSubmitting}
               loading={isSavingAndNewType}
               onPress={() => {
-                Keyboard.dismiss();
+                !errors.label && Keyboard.dismiss();
                 handleSubmit((value) => onSubmit(value, true))();
               }}
-              contentStyle={{ marginBlock: 0 }}
-              labelStyle={{ fontSize: 18 }}
               style={{ flex: 1, borderRadius: 8 }}
+              {...SUBMIT_BTN_CONTENT_STYLE}
             >
               Save & New Type
             </AppButton>
-          </AppView>
+          </View>
 
           {rspErrorMsg && (
             <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
           )}
-        </AppView>
+        </View>
 
         <AppDivider />
 

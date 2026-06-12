@@ -18,7 +18,7 @@ export default function AppScrollView({
   return (
     <KeyboardAwareScrollView
       className={cn(
-        "flex-1 bg-LIGHT-BG_SECONDARY dark:bg-DARK-BG_SECONDARY",
+        "flex-1 bg-LIGHT-surfaceContainerLow border-2 border-LIGHT-outlineVariant dark:bg-DARK-surfaceContainerLow dark:border-DARK-outlineVariant",
         className,
       )}
       enableOnAndroid

@@ -13,7 +13,8 @@ import AppText from "./AppText";
 import AppEmpty from "./AppEmpty";
 
 export type AppListCardItemType = {
-  id: AppIconProps["name"];
+  id: number;
+  icon: AppIconProps["name"];
   label: string;
   description?: string;
   isEditable?: boolean;
@@ -28,7 +29,9 @@ type AppListViewProps = Omit<
   itemClassName?: string;
   isShowIconOnly?: boolean;
   selectedItem?: AppIconProps["name"];
+  extraCardHeight?: number;
   onPress: (item: AppListCardItemType) => void;
+  isShowNoMoreData?: boolean;
 };
 
 export default function AppListCardView({
@@ -38,25 +41,30 @@ export default function AppListCardView({
   isShowIconOnly,
   selectedItem,
   onPress,
+  extraCardHeight = 0,
   extraScrollHeight,
   onRefresh,
+  isShowNoMoreData,
   ...props
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
   const { width } = useWindowDimensions();
 
+  const gapSize = 16;
   const itemNumInRow = isShowIconOnly ? 6 : 4;
-  const itemSize = Math.floor((width - 16 * (itemNumInRow + 1)) / itemNumInRow);
+  const itemSize = Math.floor(
+    (width - gapSize * (itemNumInRow + 1)) / itemNumInRow,
+  );
 
   const genListRenderItem = ({ item }: { item: AppListCardItemType }) => {
-    const isItemSelected = item.id === selectedItem;
+    const isItemSelected = item.icon === selectedItem;
 
     return (
       <Surface
         style={[
           defaultStyle.container,
           {
-            height: itemSize,
+            height: itemSize + extraCardHeight,
             width: itemSize,
             backgroundColor: isItemSelected
               ? THEME.tertiary
@@ -77,8 +85,9 @@ export default function AppListCardView({
               </View>
             )}
             <AppIcon
-              name={item.id}
-              color={isItemSelected ? THEME.onTertiary : THEME.primary}
+              name={item.icon}
+              size={30}
+              color={isItemSelected ? THEME.onTertiary : undefined}
             />
 
             {!isShowIconOnly && (
@@ -87,7 +96,8 @@ export default function AppListCardView({
                 <AppText
                   variant="bodySmall"
                   className="text-LIGHT-primary dark:text-DARK-primary text-justify"
-                  numberOfLines={2}
+                  numberOfLines={3}
+                  style={{ fontSize: 14 }}
                 >
                   {item.label}
                 </AppText>
@@ -116,7 +126,7 @@ export default function AppListCardView({
       contentContainerStyle={defaultStyle.contentContainerStyle}
       renderItem={genListRenderItem}
       ListEmptyComponent={<AppEmpty />}
-      ListFooterComponent={genNoMoreData}
+      ListFooterComponent={isShowNoMoreData ? genNoMoreData : undefined}
       keyExtractor={(item) => item.id}
       enableOnAndroid
       extraScrollHeight={extraScrollHeight ?? 40}
@@ -135,7 +145,7 @@ const defaultStyle = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    padding: 8,
+    padding: 12,
     borderRadius: "8px",
   },
   columnWrapperStyle: {

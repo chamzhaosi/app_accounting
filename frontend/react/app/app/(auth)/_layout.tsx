@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { Keyboard, TouchableWithoutFeedback } from "react-native";
+import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
 import AppText from "../../components/AppText";
 import AppView from "../../components/AppView";
 import { useThemeStore } from "../../stores/useThemeStore";
@@ -9,14 +9,11 @@ export default function StackLayout() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <AppView>
-        <AppView
-          isSafe
-          className="flex-grow-[0.25] w-full justify-center items-center m-0"
-        >
+      <AppView isSafe edges={["top", "left", "right"]}>
+        <View className="flex-grow-[0.20] w-full justify-center items-center m-0">
           <AppText isTitle>Finora</AppText>
           <AppText variant="labelLarge">Personal Accounting App</AppText>
-        </AppView>
+        </View>
         <Stack
           screenOptions={{ contentStyle: { backgroundColor: THEME.surface } }}
         >

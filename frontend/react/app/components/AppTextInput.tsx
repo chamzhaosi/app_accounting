@@ -5,29 +5,45 @@ import { TextInput, TextInputProps } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppText, { TextTypEnum } from "./AppText";
 import AppView from "./AppView";
+import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/common";
 
 type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;
-  onClearBtn?: () => void;
   errorField?: FieldError;
+  showClear?: boolean;
 };
 
 const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
   (
-    { isMaskValue = false, value, onClearBtn, errorField, maxLength, ...props },
+    {
+      isMaskValue = false,
+      value,
+      showClear = false,
+      errorField,
+      maxLength,
+      onChangeText,
+      style,
+      numberOfLines,
+      multiline,
+      ...props
+    },
     ref,
   ) => {
     const { THEME } = useThemeStore();
     const [showValue, setShowValue] = useState<boolean>(false);
 
     return (
-      <AppView className="bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+      <>
         <TextInput
           ref={ref}
           style={[
             defaultStyle.container,
             {
               backgroundColor: THEME.surfaceContainerHigh,
+              height: multiline
+                ? TEXTINPUT_HEIGHT * ((numberOfLines ?? 1) - 1)
+                : TEXTINPUT_HEIGHT,
+              ...style,
             },
           ]}
           {...(isMaskValue
@@ -46,30 +62,34 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
               }
             : {})}
           right={
-            onClearBtn &&
+            showClear &&
             value?.length && (
-              <TextInput.Icon icon="close" onPress={onClearBtn} />
+              <TextInput.Icon icon="close" onPress={() => onChangeText?.("")} />
             )
           }
+          placeholder="Please enter"
           value={value}
           error={!!errorField?.message}
           maxLength={maxLength}
+          onChangeText={onChangeText}
+          numberOfLines={numberOfLines}
+          multiline={multiline}
           {...props}
         />
 
-        <AppView className="flex-row ms-auto bg-inherit dark:bg-inherit">
+        <AppView className="flex-0 flex-row ms-auto bg-inherit dark:bg-inherit">
           {errorField?.message && (
             <AppText className="flex-1" type={TextTypEnum.ERROR}>
               {errorField.message}
             </AppText>
           )}
           {maxLength && (
-            <AppText variant="labelLarge" className="mt-1">
+            <AppText variant="labelLarge" className="mt-1 ms-auto">
               {value?.length ?? 0}/{maxLength}
             </AppText>
           )}
         </AppView>
-      </AppView>
+      </>
     );
   },
 );
@@ -80,7 +100,6 @@ export default AppTextInput;
 
 const defaultStyle = StyleSheet.create({
   container: {
-    height: 54,
-    fontSize: 18,
+    fontSize: TEXTINPUT_FONTSIZE,
   },
 });

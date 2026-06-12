@@ -1,5 +1,5 @@
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
@@ -69,7 +69,7 @@ export default function StackLayout() {
     await new Promise((res) => setTimeout(res, 2000));
     stopLoading();
     // router.replace("/(auth)/login");
-    // router.push("/(home)/dashboard");
+    router.push("/(home)/dashboard");
   };
 
   if (!loaded) {
@@ -93,8 +93,8 @@ export default function StackLayout() {
           }}
         >
           {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
-          {/* <Stack.Screen name="(home)" options={{ headerShown: false }} /> */}
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
+          <Stack.Screen name="(home)" options={{ headerShown: false }} />
           <Stack.Screen
             name="account_type/list"
             options={{
@@ -113,6 +113,27 @@ export default function StackLayout() {
             name="account_type/[id]"
             options={{
               title: "Account Type Detail",
+            }}
+          />
+
+          <Stack.Screen
+            name="account_management/list"
+            options={{
+              title: "Account Management",
+            }}
+          />
+
+          <Stack.Screen
+            name="account_management/create"
+            options={{
+              title: "New Account",
+            }}
+          />
+
+          <Stack.Screen
+            name="account_management/[id]"
+            options={{
+              title: "Account Detail",
             }}
           />
         </Stack>

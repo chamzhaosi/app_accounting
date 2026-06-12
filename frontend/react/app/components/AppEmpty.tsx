@@ -1,20 +1,20 @@
+import { View } from "react-native";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon from "./AccIcon";
 import AppText from "./AppText";
-import AppView from "./AppView";
 
 export default function AppEmpty() {
   const { THEME } = useThemeStore();
 
   return (
-    <AppView className="flex-1 h-[350px] justify-center items-center">
-      <AppIcon name="PackageOpen" size={100} color={THEME.onSurfaceDisabled} />
+    <View className="h-[300px] justify-center items-center">
+      <AppIcon name="PackageOpen" size={80} color={THEME.onSurfaceDisabled} />
       <AppText
-        variant="headlineMedium"
+        variant="headlineSmall"
         style={{ color: THEME.onSurfaceDisabled }}
       >
         No Data
       </AppText>
-    </AppView>
+    </View>
   );
 }

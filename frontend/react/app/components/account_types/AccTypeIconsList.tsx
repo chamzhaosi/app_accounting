@@ -9,10 +9,13 @@ type AccTypeIconsListType = {
   disabled?: boolean;
 };
 
-export const iconData: AppListCardItemType[] = ACCOUNT_TYPE_ICONS.map((i) => ({
-  id: i,
-  label: "",
-}));
+export const iconData: AppListCardItemType[] = ACCOUNT_TYPE_ICONS.map(
+  (i, index) => ({
+    id: index,
+    label: "",
+    icon: i,
+  }),
+);
 
 export default function AccTypeIconsList({
   setSelectedItem,
@@ -23,7 +26,7 @@ export default function AccTypeIconsList({
     <AppView className="bg-LIGHT-surfaceContainerHigh dark:bg-DARK-surfaceContainerHigh">
       <AppListCardView
         data={iconData}
-        onPress={(item) => (disabled ? {} : setSelectedItem(item.id))}
+        onPress={(item) => (disabled ? {} : setSelectedItem(item.icon))}
         selectedItem={selectedItem}
         isShowIconOnly
       />

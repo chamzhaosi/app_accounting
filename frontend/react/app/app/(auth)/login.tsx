@@ -2,8 +2,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Controller, FieldErrors, useForm } from "react-hook-form";
-import { Keyboard } from "react-native";
-import AppButton from "../../components/AppButton";
+import { Keyboard, View } from "react-native";
+import AppButton, { ButtonType } from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
 import AppText, { TextTypEnum } from "../../components/AppText";
@@ -29,7 +29,7 @@ export default function Loign() {
     setFocus,
   } = useForm<LoginFormType>({
     resolver: zodResolver(loginSchema),
-    mode: "onBlur",
+    mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: loginFormDefaultValues,
   });
@@ -50,11 +50,8 @@ export default function Loign() {
   };
 
   return (
-    <AppScrollView
-      className="pt-8 rounded-t-[50] bg-LIGHT-surfaceContainerLow border-2 border-LIGHT-outlineVariant
-          dark:bg-DARK-surfaceContainerLow dark:border-DARK-outlineVariant"
-    >
-      <AppView isSafe className="w-[90%] self-center bg-inherit">
+    <AppScrollView className="pt-8 rounded-t-[50]">
+      <AppView className="w-[90%] self-center bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
           SIGN IN
         </AppText>
@@ -118,9 +115,16 @@ export default function Loign() {
             Keyboard.dismiss();
             handleSubmit(onSubmit, onError)();
           }}
+          variant={ButtonType.PRIMARY}
           disabled={isSubmitting}
           loading={isSubmitting}
           uppercase
+          contentStyle={{
+            marginVertical: 6,
+          }}
+          labelStyle={{
+            fontSize: 24,
+          }}
         >
           LOGIN
         </AppButton>
@@ -130,12 +134,12 @@ export default function Loign() {
 
         <AppSpacer height={20} />
 
-        <AppView className="flex-0 w-full justify-center items-center flex flex-row">
+        <View className="w-full justify-center items-center flex flex-row">
           <AppText>{"Don't have an account yet?"}</AppText>
           <Link href={"/(auth)/register"} style={{ marginStart: 4 }}>
             <AppText type={TextTypEnum.LINK}>{"Sign Up"}</AppText>
           </Link>
-        </AppView>
+        </View>
       </AppView>
     </AppScrollView>
   );
