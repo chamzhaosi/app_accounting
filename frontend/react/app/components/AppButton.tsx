@@ -48,6 +48,13 @@ export default function AppButton({
   return (
     <Button
       mode="contained"
+      style={[
+        disabled
+          ? {
+              backgroundColor: THEME.surfaceDisabled,
+            }
+          : {},
+      ]}
       contentStyle={[
         defaultStyle.contentStyle,
         variantContentStyle,

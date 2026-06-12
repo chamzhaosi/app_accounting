@@ -1,9 +1,9 @@
 import { ReactElement } from "react";
+import { View } from "react-native";
 import { Dialog, Portal } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AccIcon";
 import AppText from "./AppText";
-import AppView from "./AppView";
 
 type AppDialogProps = {
   title: string;
@@ -33,8 +33,8 @@ export default function AppDialog({
         onDismiss={onDismiss}
         style={{ backgroundColor: bgColor }}
       >
-        <AppView
-          className="flex-0 flex-row items-center mx-6"
+        <View
+          className="flex-row items-center mx-6"
           style={{ backgroundColor: bgColor }}
         >
           {iconName && <AppIcon name={iconName} color={textColor} />}
@@ -44,19 +44,16 @@ export default function AppDialog({
           >
             {title}
           </AppText>
-        </AppView>
+        </View>
         <Dialog.Content>
           <AppText variant="bodyLarge" style={{ color: textColor }}>
             {description}
           </AppText>
         </Dialog.Content>
         <Dialog.Actions>
-          <AppView
-            className="flex-0 flex-row gap-2"
-            style={{ backgroundColor: bgColor }}
-          >
+          <View className="flex-row gap-2" style={{ backgroundColor: bgColor }}>
             {actionRender}
-          </AppView>
+          </View>
         </Dialog.Actions>
       </Dialog>
     </Portal>

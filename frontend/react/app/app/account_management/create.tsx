@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
 import AppAmtInput from "../../components/AppAmtInput";
@@ -7,10 +8,11 @@ import AppButton, {
   ButtonType,
   SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
+import AppDivider from "../../components/AppDivider";
+import AppScrollView from "../../components/AppScrollView";
 import AppSelect, { SelectOptionType } from "../../components/AppSelect";
 import AppSwitch from "../../components/AppSwitch";
 import AppTextInput from "../../components/AppTextInput";
-import AppView from "../../components/AppView";
 import {
   accountManagementFormDefaultValues,
   accountManagementFormSchema,
@@ -18,9 +20,6 @@ import {
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
 } from "../../forms/account_management/schemas/account_management.schemas";
-import { useState } from "react";
-import AppDivider from "../../components/AppDivider";
-import AppScrollView from "../../components/AppScrollView";
 
 export default function AccountManagementCreate() {
   const [isSavingAndNewAcc, setIsSavingAndNewAcc] = useState<boolean>(false);

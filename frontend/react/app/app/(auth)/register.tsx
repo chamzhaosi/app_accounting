@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Keyboard, TextInput } from "react-native";
+import { Keyboard, TextInput, View } from "react-native";
 import AppButton from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
@@ -33,7 +33,7 @@ export default function Register() {
     formState: { errors },
   } = useForm<RegisterFormType>({
     resolver: zodResolver(registerSchema),
-    mode: "onBlur",
+    mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: registerFormDefaultValues,
   });
@@ -49,7 +49,7 @@ export default function Register() {
 
   return (
     <AppScrollView className="pt-8 rounded-t-[50]">
-      <AppView isSafe className="w-[90%] self-center bg-inherit">
+      <AppView className="w-[90%] self-center bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
           SIGN UP
         </AppText>
@@ -143,6 +143,12 @@ export default function Register() {
           disabled={isSubmitting}
           loading={isSubmitting}
           uppercase
+          contentStyle={{
+            marginVertical: 6,
+          }}
+          labelStyle={{
+            fontSize: 24,
+          }}
         >
           Register
         </AppButton>
@@ -152,12 +158,12 @@ export default function Register() {
 
         <AppSpacer height={20} />
 
-        <AppView className="flex-0 w-full justify-center items-center flex flex-row">
+        <View className="w-full justify-center items-center flex flex-row">
           <AppText>Already have an account?</AppText>
           <Link href={"/(auth)/login"} style={{ marginStart: 4 }}>
             <AppText type={TextTypEnum.LINK}>Log In</AppText>
           </Link>
-        </AppView>
+        </View>
       </AppView>
     </AppScrollView>
   );

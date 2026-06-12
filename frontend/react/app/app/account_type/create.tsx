@@ -74,8 +74,8 @@ export default function AccountTypeCreate() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <AppView isSafe edges={["left", "right", "bottom"]}>
-        <AppView className="flex-none flex-row justify-around px-4 pt-2 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+      <AppView>
+        <View className="flex-row justify-around px-4 pt-2 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View
             className="items-center justify-center p-4 rounded-lg mr-4 mt-2 
             bg-LIGHT-tertiary dark:bg-DARK-tertiary"
@@ -108,7 +108,7 @@ export default function AccountTypeCreate() {
               )}
             />
           </View>
-        </AppView>
+        </View>
 
         <View className="m-4 mt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View className="flex-row items-center justify-center gap-4 mt-4">

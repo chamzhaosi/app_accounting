@@ -30,10 +30,8 @@ export default function Setting() {
   ];
 
   return (
-    <AppView>
-      <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow justify-center items-center">
-        <AppListView data={data} />
-      </AppView>
+    <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow justify-center items-center">
+      <AppListView data={data} />
     </AppView>
   );
 }

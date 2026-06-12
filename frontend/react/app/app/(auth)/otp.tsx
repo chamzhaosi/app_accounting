@@ -28,7 +28,7 @@ export default function OTP() {
     setFocus,
   } = useForm<OtpFormType>({
     resolver: zodResolver(otpSchema),
-    mode: "onBlur",
+    mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: otpFormDefaultValues,
   });
@@ -49,7 +49,7 @@ export default function OTP() {
 
   return (
     <AppScrollView className="pt-8 rounded-t-[50]">
-      <AppView isSafe className="w-[90%] self-center bg-inherit">
+      <AppView className="w-[90%] self-center bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
           VERIFICATION
         </AppText>
@@ -77,13 +77,10 @@ export default function OTP() {
               onChangeText={onChange}
               onBlur={onBlur}
               onSubmitEditing={handleSubmit(onSubmit, onError)}
+              errorField={errors.otp}
             />
           )}
         />
-
-        {errors.otp && (
-          <AppText type={TextTypEnum.ERROR}>{errors.otp.message}</AppText>
-        )}
 
         <AppSpacer height={20} />
 
@@ -95,6 +92,12 @@ export default function OTP() {
           disabled={isSubmitting}
           loading={isSubmitting}
           uppercase
+          contentStyle={{
+            marginVertical: 6,
+          }}
+          labelStyle={{
+            fontSize: 24,
+          }}
         >
           Verify
         </AppButton>

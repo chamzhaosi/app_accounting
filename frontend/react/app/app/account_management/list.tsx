@@ -46,12 +46,10 @@ export default function AccountManagementList() {
 
   return (
     <AppView className="relative">
-      <AppView>
-        <AppListView
-          data={data}
-          onPress={(item) => router.push(`/account_management/${item.id}`)}
-        />
-      </AppView>
+      <AppListView
+        data={data}
+        onPress={(item) => router.push(`/account_management/${item.id}`)}
+      />
       <AppFloatingButton
         icon="plus"
         onPress={() => router.push("/account_management/create")}

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import {
   LayoutRectangle,
   TextInput as RNTextInput,
@@ -122,61 +122,80 @@ export default function AppSelect({
           </View>
         }
       >
-        <ScrollView style={{ height: ACTUAL_OPTIONS_CONTAINER_HEIGHT }}>
-          {options.map((i, index) => {
-            const isLastItem = options.length - 1 === index;
-            const isOptSelected = i.id.toString() === value;
-            const hasItemIcon = !!i.icon;
-            const itemTitleMinWidth =
-              minWidth - ICON_DEFAULT_WIDTH * (1 + (hasItemIcon ? 1 : 0)); // 2 = Leading and Trailing icon
-            const itemIcon = () =>
-              hasItemIcon ? (
-                <AppIcon
-                  name={i.icon!}
-                  color={isOptSelected ? THEME.onTertiary : undefined}
-                ></AppIcon>
-              ) : undefined;
-            const selectedIcon = () =>
-              isOptSelected ? (
-                <AppIcon name="Check" color={THEME.onTertiary}></AppIcon>
-              ) : undefined;
+        <ScrollView
+          style={{
+            height: ACTUAL_OPTIONS_CONTAINER_HEIGHT,
+          }}
+        >
+          {isEmptyOptions ? (
+            <Menu.Item
+              title="No data"
+              leadingIcon={() => (
+                <AppIcon name="PackageOpen" color={THEME.outlineVariant} />
+              )}
+              style={{ minWidth }}
+              contentStyle={{
+                minWidth,
+              }}
+              titleStyle={{
+                color: THEME.outlineVariant,
+              }}
+            />
+          ) : (
+            options.map((i, index) => {
+              const isLastItem = options.length - 1 === index;
+              const isOptSelected = i.id.toString() === value;
+              const hasItemIcon = !!i.icon;
+              const itemTitleMinWidth =
+                minWidth - ICON_DEFAULT_WIDTH * (1 + (hasItemIcon ? 1 : 0)); // 2 = Leading and Trailing icon
+              const itemIcon = () =>
+                hasItemIcon ? (
+                  <AppIcon
+                    name={i.icon!}
+                    color={isOptSelected ? THEME.onTertiary : undefined}
+                  />
+                ) : undefined;
+              const selectedIcon = () =>
+                isOptSelected ? (
+                  <AppIcon name="Check" color={THEME.onTertiary} />
+                ) : undefined;
 
-            return (
-              <>
-                <Menu.Item
-                  key={i.id}
-                  title={i.label}
-                  onPress={() => {
-                    onChange(i.id);
-                    setShowOptions(false);
-                  }}
-                  leadingIcon={itemIcon}
-                  trailingIcon={selectedIcon}
-                  dense={false}
-                  style={[
-                    defaultStyle.menuItemContainer,
-                    {
-                      minWidth,
-                      ...(isOptSelected
-                        ? {
-                            backgroundColor: THEME.tertiary,
-                            color: THEME.onTertiary,
-                          }
-                        : {}),
-                    },
-                  ]}
-                  titleStyle={{
-                    minWidth: itemTitleMinWidth,
-                    ...(isOptSelected ? { color: THEME.onTertiary } : {}),
-                  }}
-                  contentStyle={{
-                    minWidth: itemTitleMinWidth,
-                  }}
-                />
-                {!isLastItem && <AppDivider />}
-              </>
-            );
-          })}
+              return (
+                <Fragment key={i.id}>
+                  <Menu.Item
+                    title={i.label}
+                    onPress={() => {
+                      onChange(i.id);
+                      setShowOptions(false);
+                    }}
+                    leadingIcon={itemIcon}
+                    trailingIcon={selectedIcon}
+                    dense={false}
+                    style={[
+                      defaultStyle.menuItemContainer,
+                      {
+                        minWidth,
+                        ...(isOptSelected
+                          ? {
+                              backgroundColor: THEME.tertiary,
+                              color: THEME.onTertiary,
+                            }
+                          : {}),
+                      },
+                    ]}
+                    titleStyle={{
+                      minWidth: itemTitleMinWidth,
+                      ...(isOptSelected ? { color: THEME.onTertiary } : {}),
+                    }}
+                    contentStyle={{
+                      minWidth: itemTitleMinWidth,
+                    }}
+                  />
+                  {!isLastItem && <AppDivider />}
+                </Fragment>
+              );
+            })
+          )}
         </ScrollView>
       </Menu>
       {errorField?.message && (

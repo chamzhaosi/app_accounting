@@ -49,9 +49,7 @@ export default function AccountTypeList() {
 
   return (
     <AppView className="relative">
-      <AppView>
-        <AppListCardView data={data} onPress={onPress} extraCardHeight={20} />
-      </AppView>
+      <AppListCardView data={data} onPress={onPress} extraCardHeight={20} />
       <AppFloatingButton
         icon="plus"
         onPress={() => router.push("/account_type/create")}

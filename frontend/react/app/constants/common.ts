@@ -1,4 +1,5 @@
 export const SWITCH_LABEL_FONTSIZE = 18;
+
 export const LIST_ITEM_TITLE_FONTSIZE = 18;
 export const LIST_ITEM_DESCRIPTION_FONTSIZE = 16;
 

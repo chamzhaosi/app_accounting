@@ -1,10 +1,9 @@
 import { forwardRef } from "react";
 import { FieldError } from "react-hook-form";
-import { TextInput as RNTextInput, StyleSheet } from "react-native";
+import { TextInput as RNTextInput, StyleSheet, View } from "react-native";
 import { TextInput, TextInputProps } from "react-native-paper";
-import { useThemeStore } from "../stores/useThemeStore";
-import AppView from "./AppView";
 import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/common";
+import { useThemeStore } from "../stores/useThemeStore";
 import AppText, { TextTypEnum } from "./AppText";
 
 type AppTextInputProps = TextInputProps & {
@@ -55,13 +54,13 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
           {...props}
         />
 
-        <AppView className="flex-0 flex-row ms-auto bg-inherit dark:bg-inherit">
+        <View className="flex-row ms-auto bg-inherit dark:bg-inherit">
           {errorField?.message && (
             <AppText className="flex-1" type={TextTypEnum.ERROR}>
               {errorField.message}
             </AppText>
           )}
-        </AppView>
+        </View>
       </>
     );
   },
