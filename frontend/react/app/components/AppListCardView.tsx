@@ -1,16 +1,18 @@
-import { PencilOff } from "lucide-react-native";
+import { Info, PencilOff } from "lucide-react-native";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import {
   KeyboardAwareFlatList,
   KeyboardAwareFlatListProps,
 } from "react-native-keyboard-aware-scroll-view";
-import { Surface, TouchableRipple } from "react-native-paper";
+import { Surface, Tooltip, TouchableRipple } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
 import AppIcon, { AppIconProps } from "./AccIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
 import AppEmpty from "./AppEmpty";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 
 export type AppListCardItemType = {
   id: number;
@@ -31,6 +33,7 @@ type AppListViewProps = Omit<
   selectedItem?: AppIconProps["name"];
   extraCardHeight?: number;
   onPress: (item: AppListCardItemType) => void;
+  numberItemInRow?: number;
   isShowNoMoreData?: boolean;
 };
 
@@ -45,13 +48,15 @@ export default function AppListCardView({
   extraScrollHeight,
   onRefresh,
   isShowNoMoreData,
+  numberItemInRow,
+  onScroll,
   ...props
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
   const { width } = useWindowDimensions();
 
   const gapSize = 16;
-  const itemNumInRow = isShowIconOnly ? 6 : 4;
+  const itemNumInRow = numberItemInRow ?? (isShowIconOnly ? 6 : 4);
   const itemSize = Math.floor(
     (width - gapSize * (itemNumInRow + 1)) / itemNumInRow,
   );
@@ -80,8 +85,15 @@ export default function AppListCardView({
         >
           <>
             {item.isEditable === false && (
+              <View className="absolute bottom-1 right-1">
+                <PencilOff size={16} color={THEME.error} />
+              </View>
+            )}
+            {item.description && (
               <View className="absolute top-1 right-1">
-                <PencilOff size={12} color={THEME.error} />
+                <Tooltip title={item.description}>
+                  <Info size={20} color={THEME.tertiary} />
+                </Tooltip>
               </View>
             )}
             <AppIcon
@@ -96,7 +108,7 @@ export default function AppListCardView({
                 <AppText
                   variant="bodySmall"
                   className="text-LIGHT-primary dark:text-DARK-primary text-justify"
-                  numberOfLines={3}
+                  numberOfLines={2}
                   style={{ fontSize: 14 }}
                 >
                   {item.label}
@@ -131,6 +143,15 @@ export default function AppListCardView({
       enableOnAndroid
       extraScrollHeight={extraScrollHeight ?? 40}
       keyboardShouldPersistTaps="handled"
+      // onScrollBeginDrag={() => {
+      //   console.log("user start scrolling");
+      // }}
+      // onScrollEndDrag={() => {
+      //   console.log("user stop dragging");
+      // }}
+      // onMomentumScrollEnd={() => {
+      //   console.log("scroll fully stopped");
+      // }}
       {...props}
     />
   );

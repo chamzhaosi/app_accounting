@@ -9,6 +9,7 @@ type AccTypeIconsListType = {
   setSelectedItem: React.Dispatch<React.SetStateAction<AppIconProps["name"]>>;
   selectedItem: AppIconProps["name"];
   disabled?: boolean;
+  onScroll?: () => void;
 };
 
 export const iconData: AppListCardItemType[] = ACCOUNT_TYPE_ICONS.map(
@@ -19,11 +20,12 @@ export const iconData: AppListCardItemType[] = ACCOUNT_TYPE_ICONS.map(
   }),
 );
 
-export default function AccTypeIconsList({
+export default function CtgryIconsList({
   className,
   setSelectedItem,
   selectedItem,
   disabled,
+  onScroll,
 }: AccTypeIconsListType) {
   return (
     <AppView
@@ -37,6 +39,7 @@ export default function AccTypeIconsList({
         onPress={(item) => (disabled ? {} : setSelectedItem(item.icon))}
         selectedItem={selectedItem}
         isShowIconOnly
+        onScroll={onScroll}
       />
     </AppView>
   );

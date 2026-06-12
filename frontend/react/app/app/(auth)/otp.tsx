@@ -12,7 +12,7 @@ import {
   otpFormDefaultValues,
   OtpFormType,
   otpSchema,
-} from "../../forms/auth/schemas/otp.schema";
+} from "../../forms/schemas/auth/otp.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 
 export default function OTP() {

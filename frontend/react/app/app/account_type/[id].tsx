@@ -21,7 +21,7 @@ import {
   accountTypeFormSchema,
   AccountTypeFormType,
   LABEL_MAX_LEN,
-} from "../../forms/account_type/schemas/accout_type.schemas";
+} from "../../forms/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
 
 export default function AccountTypeDetail() {
