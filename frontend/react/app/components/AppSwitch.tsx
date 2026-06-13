@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { Switch as RNSwitch, StyleSheet, View } from "react-native";
 import { Switch, SwitchProps } from "react-native-paper";
-import { SWITCH_LABEL_FONTSIZE } from "../constants/common";
+import { SWITCH_LABEL_FONTSIZE } from "../constants/size";
 import AppText from "./AppText";
 
 type AppSwitchProps = SwitchProps & {

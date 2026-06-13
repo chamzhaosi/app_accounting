@@ -8,7 +8,7 @@ import AppIcon, { AppIconProps } from "./AccIcon";
 import {
   LIST_ITEM_TITLE_FONTSIZE,
   LIST_ITEM_DESCRIPTION_FONTSIZE,
-} from "../constants/common";
+} from "../constants/size";
 
 export type AppListItemType = {
   id: number;

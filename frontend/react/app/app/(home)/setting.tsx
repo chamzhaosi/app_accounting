@@ -24,7 +24,12 @@ export default function Setting() {
       icon: "Vault",
       onPress: () => router.push("/account_management/list"),
     },
-    // { id: "3", label: "Category Management", icon: BookOpenCheck },
+    {
+      id: 3,
+      label: "Category Management",
+      icon: "BookOpenCheck",
+      onPress: () => router.push("/category_management/list"),
+    },
     // { id: "4", label: "Budget Management", icon: HandCoins },
     // { id: "5", label: "Reset Password", icon: RotateCcwKey },
   ];

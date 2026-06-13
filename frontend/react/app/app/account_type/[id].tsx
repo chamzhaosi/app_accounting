@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
 import AppIcon, { AppIconProps } from "../../components/AccIcon";
-import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
+import AccTypeIconsList from "./_components/AccTypeIconsList";
 import AppButton, {
   AppButtonProps,
   ButtonType,
@@ -15,21 +15,22 @@ import AppDivider from "../../components/AppDivider";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
-import { ACCOUNT_TYPE_ICONS } from "../../constants/account_type";
 import {
   accountTypeFormDefaultValues,
   accountTypeFormSchema,
   AccountTypeFormType,
   LABEL_MAX_LEN,
-} from "../../forms/account_type/schemas/accout_type.schemas";
+} from "../../forms/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { ICONS } from "../../constants/icons";
+import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 
 export default function AccountTypeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
 
   const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
-    ACCOUNT_TYPE_ICONS[0],
+    ICONS.ACCOUNT_TYPE[0],
   );
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -61,14 +62,6 @@ export default function AccountTypeDetail() {
     router.back();
   };
 
-  const actionBtnSharedProps: Omit<AppButtonProps, "children"> = {
-    labelStyle: { fontSize: 14 },
-    contentStyle: {
-      marginVertical: 0,
-    },
-    style: { borderRadius: 8 },
-  };
-
   useEffect(() => {
     setValues({
       label:
@@ -90,13 +83,13 @@ export default function AccountTypeDetail() {
           actionRender={
             <>
               <AppButton
-                {...actionBtnSharedProps}
+                {...DIALOG_COMMON_BTN_PROPS}
                 onPress={() => setShowDialog(false)}
               >
                 No
               </AppButton>
               <AppButton
-                {...actionBtnSharedProps}
+                {...DIALOG_COMMON_BTN_PROPS}
                 variant={ButtonType.ERROR}
                 onPress={() => {
                   setShowDialog(false);

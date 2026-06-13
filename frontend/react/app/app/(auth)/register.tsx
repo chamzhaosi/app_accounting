@@ -13,7 +13,7 @@ import {
   registerFormDefaultValues,
   RegisterFormType,
   registerSchema,
-} from "../../forms/auth/schemas/register.schema";
+} from "../../forms/schemas/auth/register.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 
 export default function Register() {

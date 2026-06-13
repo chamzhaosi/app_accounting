@@ -19,7 +19,7 @@ import {
   AccountManagementFormType,
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
-} from "../../forms/account_management/schemas/account_management.schemas";
+} from "../../forms/schemas/account_management.schemas";
 
 export default function AccountManagementCreate() {
   const [isSavingAndNewAcc, setIsSavingAndNewAcc] = useState<boolean>(false);

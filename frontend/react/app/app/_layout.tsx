@@ -1,6 +1,7 @@
 import { useFonts } from "expo-font";
 import { router, Stack } from "expo-router";
 
+import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import Toast from "react-native-toast-message";
@@ -9,10 +10,8 @@ import { FONTS, FONTS_THEME } from "../constants/fonts";
 import "../global.css";
 import { useLoadingStore } from "../stores/useLoadingStore";
 import { ThemeType, useThemeStore } from "../stores/useThemeStore";
-import * as SystemUI from "expo-system-ui";
 
 import {
-  Appbar,
   MD3DarkTheme as DefaultDarkTheme,
   MD3LightTheme as DefaultLightTheme,
   PaperProvider,
@@ -25,6 +24,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useToastStore } from "../stores/useToastStore";
+import { AppStack } from "../components/AppStack";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -69,7 +69,7 @@ export default function StackLayout() {
     await new Promise((res) => setTimeout(res, 2000));
     stopLoading();
     // router.replace("/(auth)/login");
-    router.push("/(home)/dashboard");
+    // router.push("/(home)/dashboard");
   };
 
   if (!loaded) {
@@ -80,63 +80,20 @@ export default function StackLayout() {
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
         <StatusBar style="auto" />
-        <Stack
-          screenOptions={{
-            headerTitleStyle: {
-              fontFamily: FONTS.ADLAM_DISPLAY,
-              fontSize: 20,
-            },
-            headerStyle: {
-              backgroundColor: THEME.surfaceContainerLow,
-            },
-            headerTintColor: THEME.primary,
-          }}
-        >
+        <AppStack>
           {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
           <Stack.Screen name="(home)" options={{ headerShown: false }} />
+          <Stack.Screen name="account_type" options={{ headerShown: false }} />
           <Stack.Screen
-            name="account_type/list"
-            options={{
-              title: "Account Types",
-            }}
+            name="account_management"
+            options={{ headerShown: false }}
           />
-
           <Stack.Screen
-            name="account_type/create"
-            options={{
-              title: "New Account Type",
-            }}
+            name="category_management"
+            options={{ headerShown: false }}
           />
-
-          <Stack.Screen
-            name="account_type/[id]"
-            options={{
-              title: "Account Type Detail",
-            }}
-          />
-
-          <Stack.Screen
-            name="account_management/list"
-            options={{
-              title: "Account Management",
-            }}
-          />
-
-          <Stack.Screen
-            name="account_management/create"
-            options={{
-              title: "New Account",
-            }}
-          />
-
-          <Stack.Screen
-            name="account_management/[id]"
-            options={{
-              title: "Account Detail",
-            }}
-          />
-        </Stack>
+        </AppStack>
         <Toast
           config={toastConfig(THEME, insets)}
           onShow={setShowToast}

@@ -2,7 +2,7 @@ import { forwardRef } from "react";
 import { FieldError } from "react-hook-form";
 import { TextInput as RNTextInput, StyleSheet, View } from "react-native";
 import { TextInput, TextInputProps } from "react-native-paper";
-import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/common";
+import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppText, { TextTypEnum } from "./AppText";
 

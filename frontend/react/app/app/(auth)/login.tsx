@@ -13,7 +13,7 @@ import {
   loginFormDefaultValues,
   LoginFormType,
   loginSchema,
-} from "../../forms/auth/schemas/login.schema";
+} from "../../forms/schemas/auth/login.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 
 export default function Loign() {

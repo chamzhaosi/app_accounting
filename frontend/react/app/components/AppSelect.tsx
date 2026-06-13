@@ -14,7 +14,7 @@ import {
   SELECT_OPTIONS_ITEM_HEIGHT,
   TEXTINPUT_FONTSIZE,
   TEXTINPUT_HEIGHT,
-} from "../constants/common";
+} from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AccIcon";
 import { FieldError } from "react-hook-form";
@@ -147,14 +147,20 @@ export default function AppSelect({
               const isOptSelected = i.id.toString() === value;
               const hasItemIcon = !!i.icon;
               const itemTitleMinWidth =
-                minWidth - ICON_DEFAULT_WIDTH * (1 + (hasItemIcon ? 1 : 0)); // 2 = Leading and Trailing icon
-              const itemIcon = () =>
-                hasItemIcon ? (
-                  <AppIcon
-                    name={i.icon!}
-                    color={isOptSelected ? THEME.onTertiary : undefined}
-                  />
-                ) : undefined;
+                minWidth -
+                ICON_DEFAULT_WIDTH *
+                  /* 2 = Leading and Trailing icon */
+                  (1 + (hasItemIcon ? 1 : 0)) -
+                /* 12 = Padding */
+                12;
+              const itemIcon = hasItemIcon
+                ? () => (
+                    <AppIcon
+                      name={i.icon!}
+                      color={isOptSelected ? THEME.onTertiary : undefined}
+                    />
+                  )
+                : undefined;
               const selectedIcon = () =>
                 isOptSelected ? (
                   <AppIcon name="Check" color={THEME.onTertiary} />
