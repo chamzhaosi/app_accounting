@@ -1,8 +1,10 @@
-import { ACCOUNT_TYPE_ICONS } from "../../constants/account_type";
-import { cn } from "../../utils/common";
-import { AppIconProps } from "../AccIcon";
-import AppListCardView, { AppListCardItemType } from "../AppListCardView";
-import AppView from "../AppView";
+import { ICONS } from "../../../constants/icons";
+import { cn } from "../../../utils/common";
+import { AppIconProps } from "../../../components/AccIcon";
+import AppListCardView, {
+  AppListCardItemType,
+} from "../../../components/AppListCardView";
+import AppView from "../../../components/AppView";
 
 type AccTypeIconsListType = {
   className?: string;
@@ -11,7 +13,7 @@ type AccTypeIconsListType = {
   disabled?: boolean;
 };
 
-export const iconData: AppListCardItemType[] = ACCOUNT_TYPE_ICONS.map(
+export const iconData: AppListCardItemType[] = ICONS.ACCOUNT_TYPE.map(
   (i, index) => ({
     id: index,
     label: "",

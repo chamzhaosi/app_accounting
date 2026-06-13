@@ -5,7 +5,7 @@ import { TextInput, TextInputProps } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppText, { TextTypEnum } from "./AppText";
 import AppView from "./AppView";
-import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/common";
+import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/size";
 
 type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;

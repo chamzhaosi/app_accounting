@@ -69,7 +69,7 @@ export default function StackLayout() {
     await new Promise((res) => setTimeout(res, 2000));
     stopLoading();
     // router.replace("/(auth)/login");
-    router.push("/(home)/dashboard");
+    // router.push("/(home)/dashboard");
   };
 
   if (!loaded) {

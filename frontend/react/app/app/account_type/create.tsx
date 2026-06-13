@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
 import AppIcon, { AppIconProps } from "../../components/AccIcon";
-import AccTypeIconsList from "../../components/account_types/AccTypeIconsList";
+import AccTypeIconsList from "./_components/AccTypeIconsList";
 import AppButton, {
   ButtonType,
   SUBMIT_BTN_CONTENT_STYLE,
@@ -12,7 +12,7 @@ import AppDivider from "../../components/AppDivider";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
-import { ACCOUNT_TYPE_ICONS } from "../../constants/account_type";
+
 import {
   accountTypeFormDefaultValues,
   accountTypeFormSchema,
@@ -20,12 +20,13 @@ import {
   LABEL_MAX_LEN,
 } from "../../forms/schemas/accout_type.schemas";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { ICONS } from "../../constants/icons";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
 
   const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
-    ACCOUNT_TYPE_ICONS[0],
+    ICONS.ACCOUNT_TYPE[0],
   );
   const [isSavingAndNewType, setIsSavingAndNewType] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -69,7 +70,7 @@ export default function AccountTypeCreate() {
 
   const formReset = () => {
     reset();
-    setSelectedItem(ACCOUNT_TYPE_ICONS[0]);
+    setSelectedItem(ICONS.ACCOUNT_TYPE[0]);
   };
 
   return (

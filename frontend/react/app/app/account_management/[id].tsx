@@ -22,6 +22,7 @@ import AppButton, {
 } from "../../components/AppButton";
 import { router, useLocalSearchParams } from "expo-router";
 import AppDialog from "../../components/AppDialog";
+import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 
 export default function AccountManagementDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -79,14 +80,6 @@ export default function AccountManagementDetail() {
     router.back();
   };
 
-  const actionBtnSharedProps: Omit<AppButtonProps, "children"> = {
-    labelStyle: { fontSize: 14 },
-    contentStyle: {
-      marginVertical: 0,
-    },
-    style: { borderRadius: 8 },
-  };
-
   useEffect(() => {
     setValues({
       typeId: 1,
@@ -113,13 +106,13 @@ export default function AccountManagementDetail() {
           actionRender={
             <>
               <AppButton
-                {...actionBtnSharedProps}
+                {...DIALOG_COMMON_BTN_PROPS}
                 onPress={() => setShowDialog(false)}
               >
                 No
               </AppButton>
               <AppButton
-                {...actionBtnSharedProps}
+                {...DIALOG_COMMON_BTN_PROPS}
                 variant={ButtonType.ERROR}
                 onPress={() => {
                   setShowDialog(false);

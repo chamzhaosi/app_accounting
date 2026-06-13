@@ -136,7 +136,7 @@ export default function CategoryManagementList() {
 
 function TxnTypeTabView({ cardItems }: { cardItems: AppListCardItemType[] }) {
   const onPress = (item: AppListCardItemType) => {
-    if (!item.isEditable) {
+    if (item.isEditable === false) {
       AppToast.error({
         title: "Not Editable",
         message: "System-created types cannot be edited.",

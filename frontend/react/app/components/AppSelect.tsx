@@ -14,7 +14,7 @@ import {
   SELECT_OPTIONS_ITEM_HEIGHT,
   TEXTINPUT_FONTSIZE,
   TEXTINPUT_HEIGHT,
-} from "../constants/common";
+} from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AccIcon";
 import { FieldError } from "react-hook-form";

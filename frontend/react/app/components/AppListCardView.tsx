@@ -35,6 +35,7 @@ type AppListViewProps = Omit<
   onPress: (item: AppListCardItemType) => void;
   numberItemInRow?: number;
   isShowNoMoreData?: boolean;
+  parentWidth?: number;
 };
 
 export default function AppListCardView({
@@ -50,6 +51,8 @@ export default function AppListCardView({
   isShowNoMoreData,
   numberItemInRow,
   onScroll,
+  parentWidth,
+  contentContainerStyle,
   ...props
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
@@ -58,8 +61,9 @@ export default function AppListCardView({
   const gapSize = 16;
   const itemNumInRow = numberItemInRow ?? (isShowIconOnly ? 6 : 4);
   const itemSize = Math.floor(
-    (width - gapSize * (itemNumInRow + 1)) / itemNumInRow,
+    ((parentWidth ?? width) - gapSize * (itemNumInRow + 1)) / itemNumInRow,
   );
+  const isEmpty = data.length === 0;
 
   const genListRenderItem = ({ item }: { item: AppListCardItemType }) => {
     const isItemSelected = item.icon === selectedItem;
@@ -135,7 +139,10 @@ export default function AppListCardView({
       data={data}
       numColumns={itemNumInRow}
       columnWrapperStyle={defaultStyle.columnWrapperStyle}
-      contentContainerStyle={defaultStyle.contentContainerStyle}
+      contentContainerStyle={[
+        defaultStyle.contentContainerStyle,
+        contentContainerStyle,
+      ]}
       renderItem={genListRenderItem}
       ListEmptyComponent={<AppEmpty />}
       ListFooterComponent={isShowNoMoreData ? genNoMoreData : undefined}
@@ -143,15 +150,6 @@ export default function AppListCardView({
       enableOnAndroid
       extraScrollHeight={extraScrollHeight ?? 40}
       keyboardShouldPersistTaps="handled"
-      // onScrollBeginDrag={() => {
-      //   console.log("user start scrolling");
-      // }}
-      // onScrollEndDrag={() => {
-      //   console.log("user stop dragging");
-      // }}
-      // onMomentumScrollEnd={() => {
-      //   console.log("scroll fully stopped");
-      // }}
       {...props}
     />
   );

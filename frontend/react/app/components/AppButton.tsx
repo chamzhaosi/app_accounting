@@ -48,25 +48,26 @@ export default function AppButton({
   return (
     <Button
       mode="contained"
-      style={[
-        disabled
-          ? {
-              backgroundColor: THEME.surfaceDisabled,
-            }
-          : {},
-      ]}
+      // style={[
+      //   disabled
+      //     ? {
+      //         backgroundColor: THEME.surfaceDisabled,
+      //       }
+      //     : {},
+      // ]}
       contentStyle={[
         defaultStyle.contentStyle,
-        variantContentStyle,
+        ...(!disabled ? [variantContentStyle] : []),
         contentStyle,
-        disabled ? { backgroundColor: THEME.surfaceDisabled } : {},
+        // disabled ? { backgroundColor: THEME.surfaceDisabled } : {},
       ]}
       labelStyle={[
         defaultStyle.labelStyle,
-        variantLabelStyle,
+        ...(!disabled ? [variantLabelStyle] : []),
         labelStyle,
-        disabled ? { color: THEME.onSurfaceDisabled } : {},
+        // disabled ? { color: THEME.onSurfaceDisabled } : {},
       ]}
+      disabled={disabled}
       {...props}
     />
   );
