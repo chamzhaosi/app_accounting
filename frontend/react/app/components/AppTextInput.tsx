@@ -50,21 +50,25 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
             ? {
                 secureTextEntry: !showValue,
                 setShowValue,
-                right: (
-                  <TextInput.Icon
-                    color={THEME.onSurface}
-                    icon={showValue ? "eye-off" : "eye"}
-                    onPressIn={() => setShowValue(true)}
-                    onPressOut={() => setShowValue(false)}
-                    forceTextInputFocus={false}
-                  />
-                ),
               }
             : {})}
           right={
-            showClear &&
-            value?.length && (
-              <TextInput.Icon icon="close" onPress={() => onChangeText?.("")} />
+            isMaskValue ? (
+              <TextInput.Icon
+                color={THEME.onSurface}
+                icon={showValue ? "eye-off" : "eye"}
+                onPressIn={() => setShowValue(true)}
+                onPressOut={() => setShowValue(false)}
+                forceTextInputFocus={false}
+              />
+            ) : (
+              showClear &&
+              value?.length && (
+                <TextInput.Icon
+                  icon="close"
+                  onPress={() => onChangeText?.("")}
+                />
+              )
             )
           }
           placeholder="Please enter"

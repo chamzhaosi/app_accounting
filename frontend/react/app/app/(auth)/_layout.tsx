@@ -29,6 +29,10 @@ export default function StackLayout() {
             name="otp"
             options={{ title: "OTP", headerShown: false }}
           />
+          <Stack.Screen
+            name="forget_password"
+            options={{ title: "Forget Password", headerShown: false }}
+          />
         </Stack>
       </AppView>
     </TouchableWithoutFeedback>

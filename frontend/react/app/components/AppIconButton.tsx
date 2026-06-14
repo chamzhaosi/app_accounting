@@ -1,5 +1,5 @@
 import { Pressable, PressableProps, StyleSheet } from "react-native";
-import AppIcon, { AppIconProps } from "./AccIcon";
+import AppIcon, { AppIconProps } from "./AppIcon";
 import { useThemeStore } from "../stores/useThemeStore";
 
 type AppIconButton = PressableProps & {

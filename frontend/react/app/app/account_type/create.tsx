@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import AppIcon, { AppIconProps } from "../../components/AccIcon";
+import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import AccTypeIconsList from "./_components/AccTypeIconsList";
 import AppButton, {
   ButtonType,
@@ -18,7 +18,7 @@ import {
   accountTypeFormSchema,
   AccountTypeFormType,
   LABEL_MAX_LEN,
-} from "../../forms/schemas/accout_type.schemas";
+} from "../../forms/schemas/accout_type.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { ICONS } from "../../constants/icons";
 
@@ -136,7 +136,7 @@ export default function AccountTypeCreate() {
               style={{ flex: 1, borderRadius: 8 }}
               {...SUBMIT_BTN_CONTENT_STYLE}
             >
-              Save & New Type
+              Save & New
             </AppButton>
           </View>
 

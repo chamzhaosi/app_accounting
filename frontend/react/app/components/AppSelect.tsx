@@ -16,7 +16,7 @@ import {
   TEXTINPUT_HEIGHT,
 } from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
-import AppIcon, { AppIconProps } from "./AccIcon";
+import AppIcon, { AppIconProps } from "./AppIcon";
 import { FieldError } from "react-hook-form";
 import AppText, { TextTypEnum } from "./AppText";
 import AppDivider from "./AppDivider";

@@ -4,7 +4,7 @@ import { Keyboard, StyleSheet } from "react-native";
 import { TouchableRipple, TouchableRippleProps } from "react-native-paper";
 import { TEXTINPUT_FONTSIZE } from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
-import AppIcon, { AppIconProps } from "./AccIcon";
+import AppIcon, { AppIconProps } from "./AppIcon";
 import AppIconModal from "./AppIconModal";
 import AppText, { TextTypEnum } from "./AppText";
 

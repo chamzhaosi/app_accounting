@@ -6,7 +6,7 @@ import {
   AccountManagementFormType,
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
-} from "../../forms/schemas/account_management.schemas";
+} from "../../forms/schemas/account_management.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AppSelect, { SelectOptionType } from "../../components/AppSelect";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";

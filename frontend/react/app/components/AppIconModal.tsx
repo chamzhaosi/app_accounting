@@ -1,7 +1,7 @@
 import { StyleSheet, useWindowDimensions } from "react-native";
 import { Modal, ModalProps, Portal } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
-import { AppIconProps } from "./AccIcon";
+import { AppIconProps } from "./AppIcon";
 import AppIconButton from "./AppIconButton";
 import AppListCardView, { AppListCardItemType } from "./AppListCardView";
 

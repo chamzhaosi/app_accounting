@@ -48,24 +48,15 @@ export default function AppButton({
   return (
     <Button
       mode="contained"
-      // style={[
-      //   disabled
-      //     ? {
-      //         backgroundColor: THEME.surfaceDisabled,
-      //       }
-      //     : {},
-      // ]}
       contentStyle={[
         defaultStyle.contentStyle,
         ...(!disabled ? [variantContentStyle] : []),
         contentStyle,
-        // disabled ? { backgroundColor: THEME.surfaceDisabled } : {},
       ]}
       labelStyle={[
         defaultStyle.labelStyle,
         ...(!disabled ? [variantLabelStyle] : []),
         labelStyle,
-        // disabled ? { color: THEME.onSurfaceDisabled } : {},
       ]}
       disabled={disabled}
       {...props}
@@ -80,6 +71,7 @@ const defaultStyle = StyleSheet.create({
   },
   labelStyle: {
     fontSize: 28,
+    fontWeight: 700,
   },
 });
 
@@ -90,5 +82,15 @@ export const SUBMIT_BTN_CONTENT_STYLE = {
   },
   labelStyle: {
     fontSize: 18,
+  },
+};
+
+export const AUTH_SUBMIT_BTN_CONTENT_STYLE = {
+  style: { borderRadius: 4 },
+  contentStyle: {
+    marginVertical: 4,
+  },
+  labelStyle: {
+    fontSize: 20,
   },
 };

@@ -3,7 +3,7 @@ export const SWITCH_LABEL_FONTSIZE = 18;
 export const LIST_ITEM_TITLE_FONTSIZE = 18;
 export const LIST_ITEM_DESCRIPTION_FONTSIZE = 16;
 
-export const TEXTINPUT_HEIGHT = 55;
+export const TEXTINPUT_HEIGHT = 50;
 export const TEXTINPUT_FONTSIZE = 18;
 
 export const SELECT_OPTIONS_ITEM_HEIGHT = 45;

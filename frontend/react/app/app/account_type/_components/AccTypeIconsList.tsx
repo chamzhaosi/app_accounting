@@ -1,6 +1,6 @@
 import { ICONS } from "../../../constants/icons";
 import { cn } from "../../../utils/common";
-import { AppIconProps } from "../../../components/AccIcon";
+import { AppIconProps } from "../../../components/AppIcon";
 import AppListCardView, {
   AppListCardItemType,
 } from "../../../components/AppListCardView";

@@ -7,7 +7,7 @@ import {
 import { Surface, Tooltip, TouchableRipple } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
-import AppIcon, { AppIconProps } from "./AccIcon";
+import AppIcon, { AppIconProps } from "./AppIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
 import AppEmpty from "./AppEmpty";

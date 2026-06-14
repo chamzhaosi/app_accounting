@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { useThemeStore } from "../stores/useThemeStore";
-import AppIcon from "./AccIcon";
+import AppIcon from "./AppIcon";
 import AppText from "./AppText";
 import { cn } from "../utils/common";
 

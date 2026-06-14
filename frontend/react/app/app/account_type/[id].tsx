@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import AppIcon, { AppIconProps } from "../../components/AccIcon";
+import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import AccTypeIconsList from "./_components/AccTypeIconsList";
 import AppButton, {
   AppButtonProps,
@@ -20,7 +20,7 @@ import {
   accountTypeFormSchema,
   AccountTypeFormType,
   LABEL_MAX_LEN,
-} from "../../forms/schemas/accout_type.schemas";
+} from "../../forms/schemas/accout_type.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { ICONS } from "../../constants/icons";
 import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";

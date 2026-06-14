@@ -2,7 +2,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { Keyboard } from "react-native";
-import AppButton from "../../components/AppButton";
+import AppButton, {
+  AUTH_SUBMIT_BTN_CONTENT_STYLE,
+} from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
 import AppText, { TextTypEnum } from "../../components/AppText";
@@ -47,9 +49,11 @@ export default function OTP() {
     setRspErrorMsg("Invalid OTP. Please try again.");
   };
 
+  const isFormError = Object.keys(errors).length > 0;
+
   return (
     <AppScrollView className="pt-8 rounded-t-[50]">
-      <AppView className="w-[90%] self-center bg-inherit">
+      <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
           VERIFICATION
         </AppText>
@@ -86,26 +90,19 @@ export default function OTP() {
 
         <AppButton
           onPress={() => {
-            Keyboard.dismiss();
+            !isFormError && Keyboard.dismiss();
             handleSubmit(onSubmit, onError)();
           }}
           disabled={isSubmitting}
           loading={isSubmitting}
           uppercase
-          contentStyle={{
-            marginVertical: 6,
-          }}
-          labelStyle={{
-            fontSize: 24,
-          }}
+          {...AUTH_SUBMIT_BTN_CONTENT_STYLE}
         >
           Verify
         </AppButton>
         {rspErrorMsg && (
           <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
         )}
-
-        <AppSpacer height={20} />
       </AppView>
     </AppScrollView>
   );

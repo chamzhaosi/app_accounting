@@ -3,7 +3,10 @@ import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
-import AppButton, { ButtonType } from "../../components/AppButton";
+import AppButton, {
+  AUTH_SUBMIT_BTN_CONTENT_STYLE,
+  ButtonType,
+} from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
 import AppText, { TextTypEnum } from "../../components/AppText";
@@ -49,9 +52,11 @@ export default function Loign() {
     router.push("/(auth)/otp");
   };
 
+  const isFormError = Object.keys(errors).length > 0;
+
   return (
     <AppScrollView className="pt-8 rounded-t-[50]">
-      <AppView className="w-[90%] self-center bg-inherit">
+      <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
           SIGN IN
         </AppText>
@@ -76,13 +81,10 @@ export default function Loign() {
               value={value}
               submitBehavior="submit"
               onSubmitEditing={() => setFocus("password")}
+              errorField={errors.email}
             />
           )}
         />
-
-        {errors.email && (
-          <AppText type={TextTypEnum.ERROR}>{errors.email.message}</AppText>
-        )}
 
         <AppSpacer height={10} />
 
@@ -101,30 +103,27 @@ export default function Loign() {
               value={value}
               isMaskValue
               onSubmitEditing={handleSubmit(onSubmit)}
+              errorField={errors.password}
             />
           )}
         />
-        {errors.password && (
-          <AppText type={TextTypEnum.ERROR}>{errors.password.message}</AppText>
-        )}
 
-        <AppSpacer height={20} />
+        <Link href={"/(auth)/forget_password"} style={{ marginBlock: 12 }}>
+          <AppText style={{ color: THEME.outline }}>
+            {"Forget Your Password?"}
+          </AppText>
+        </Link>
 
         <AppButton
           onPress={() => {
-            Keyboard.dismiss();
+            !isFormError && Keyboard.dismiss();
             handleSubmit(onSubmit, onError)();
           }}
           variant={ButtonType.PRIMARY}
           disabled={isSubmitting}
           loading={isSubmitting}
           uppercase
-          contentStyle={{
-            marginVertical: 6,
-          }}
-          labelStyle={{
-            fontSize: 24,
-          }}
+          {...AUTH_SUBMIT_BTN_CONTENT_STYLE}
         >
           LOGIN
         </AppButton>
@@ -136,7 +135,7 @@ export default function Loign() {
 
         <View className="w-full justify-center items-center flex flex-row">
           <AppText>{"Don't have an account yet?"}</AppText>
-          <Link href={"/(auth)/register"} style={{ marginStart: 4 }}>
+          <Link href={"/(auth)/register"} style={{ marginStart: 8 }}>
             <AppText type={TextTypEnum.LINK}>{"Sign Up"}</AppText>
           </Link>
         </View>
