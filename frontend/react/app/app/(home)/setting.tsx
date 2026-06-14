@@ -31,7 +31,12 @@ export default function Setting() {
       onPress: () => router.push("/category_management/list"),
     },
     // { id: "4", label: "Budget Management", icon: HandCoins },
-    // { id: "5", label: "Reset Password", icon: RotateCcwKey },
+    {
+      id: 5,
+      label: "Reset Password",
+      icon: "RotateCcwKey",
+      onPress: () => router.push("/reset_password"),
+    },
   ];
 
   return (

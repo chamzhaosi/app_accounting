@@ -20,7 +20,7 @@ import {
   forgetPasswordResetFormDefaultValues,
   forgetPasswordResetFormSchema,
   ForgetPasswordResetFormType,
-} from "../../forms/schemas/auth/fortget_password.schema";
+} from "../../forms/schemas/auth/forget_password.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 
 enum ForgetPasswordStepEnum {

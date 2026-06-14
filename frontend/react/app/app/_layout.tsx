@@ -83,7 +83,7 @@ export default function StackLayout() {
         <AppStack>
           {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
-          <Stack.Screen name="(home)" options={{ headerShown: false }} />
+          {/* <Stack.Screen name="(home)" options={{ headerShown: false }} />
           <Stack.Screen name="account_type" options={{ headerShown: false }} />
           <Stack.Screen
             name="account_management"
@@ -92,6 +92,10 @@ export default function StackLayout() {
           <Stack.Screen
             name="category_management"
             options={{ headerShown: false }}
+          /> */}
+          <Stack.Screen
+            name="reset_password"
+            options={{ title: "Reset Password" }}
           />
         </AppStack>
         <Toast
