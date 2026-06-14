@@ -19,7 +19,7 @@ import {
   AccountManagementFormType,
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
-} from "../../forms/schemas/account_management.schemas";
+} from "../../forms/schemas/account_management.schema";
 
 export default function AccountManagementCreate() {
   const [isSavingAndNewAcc, setIsSavingAndNewAcc] = useState<boolean>(false);
@@ -210,7 +210,7 @@ export default function AccountManagementCreate() {
             style={{ flex: 1, borderRadius: 8 }}
             {...SUBMIT_BTN_CONTENT_STYLE}
           >
-            Save & New Account
+            Save & New
           </AppButton>
         </View>
       </AppScrollView>

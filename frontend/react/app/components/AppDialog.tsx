@@ -2,7 +2,7 @@ import { ReactElement } from "react";
 import { View } from "react-native";
 import { Dialog, Portal } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
-import AppIcon, { AppIconProps } from "./AccIcon";
+import AppIcon, { AppIconProps } from "./AppIcon";
 import AppText from "./AppText";
 
 type AppDialogProps = {

@@ -1,5 +1,5 @@
 import { Key } from "react";
-import { AppIconProps } from "../components/AccIcon";
+import { AppIconProps } from "../components/AppIcon";
 
 const ICON_KEYS = ["ACCOUNT_TYPE", "CATEGORY_ICONS"] as const;
 

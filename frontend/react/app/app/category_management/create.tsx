@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import { AppIconProps } from "../../components/AccIcon";
+import { AppIconProps } from "../../components/AppIcon";
 import AppButton, {
   ButtonType,
   SUBMIT_BTN_CONTENT_STYLE,
@@ -22,7 +22,7 @@ import {
   CategoryManagementFormType,
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
-} from "../../forms/schemas/category_management.schemas";
+} from "../../forms/schemas/category_management.schema";
 
 export default function CategoryManagementCreate() {
   const { type } = useLocalSearchParams<{ type: string }>();
@@ -226,7 +226,7 @@ export default function CategoryManagementCreate() {
                 style={{ flex: 1, borderRadius: 8 }}
                 {...SUBMIT_BTN_CONTENT_STYLE}
               >
-                Save & New Account
+                Save & New
               </AppButton>
             </View>
             {rspErrorMsg && (

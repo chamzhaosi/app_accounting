@@ -4,7 +4,7 @@ import { List } from "react-native-paper";
 import { FONTS } from "../constants/fonts";
 import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
-import AppIcon, { AppIconProps } from "./AccIcon";
+import AppIcon, { AppIconProps } from "./AppIcon";
 import {
   LIST_ITEM_TITLE_FONTSIZE,
   LIST_ITEM_DESCRIPTION_FONTSIZE,

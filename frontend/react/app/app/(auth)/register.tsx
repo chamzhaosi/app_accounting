@@ -3,7 +3,9 @@ import { Link } from "expo-router";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TextInput, View } from "react-native";
-import AppButton from "../../components/AppButton";
+import AppButton, {
+  AUTH_SUBMIT_BTN_CONTENT_STYLE,
+} from "../../components/AppButton";
 import AppScrollView from "../../components/AppScrollView";
 import AppSpacer from "../../components/AppSpacer";
 import AppText, { TextTypEnum } from "../../components/AppText";
@@ -47,9 +49,11 @@ export default function Register() {
     setRspErrorMsg("Email has beed resgister");
   };
 
+  const isFormError = Object.keys(errors).length > 0;
+
   return (
     <AppScrollView className="pt-8 rounded-t-[50]">
-      <AppView className="w-[90%] self-center bg-inherit">
+      <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
           SIGN UP
         </AppText>
@@ -74,13 +78,10 @@ export default function Register() {
               value={value}
               submitBehavior="submit"
               onSubmitEditing={() => setFocus("password")}
+              errorField={errors.email}
             />
           )}
         />
-
-        {errors.email && (
-          <AppText type={TextTypEnum.ERROR}>{errors.email.message}</AppText>
-        )}
 
         <AppSpacer height={10} />
 
@@ -100,12 +101,10 @@ export default function Register() {
               submitBehavior="submit"
               isMaskValue
               onSubmitEditing={() => setFocus("cfmPassword")}
+              errorField={errors.password}
             />
           )}
         />
-        {errors.password && (
-          <AppText type={TextTypEnum.ERROR}>{errors.password.message}</AppText>
-        )}
 
         <AppSpacer height={10} />
 
@@ -124,31 +123,22 @@ export default function Register() {
               value={value}
               isMaskValue
               onSubmitEditing={handleSubmit(loginSubmitter)}
+              errorField={errors.cfmPassword}
             />
           )}
         />
-        {errors.cfmPassword && (
-          <AppText type={TextTypEnum.ERROR}>
-            {errors.cfmPassword.message}
-          </AppText>
-        )}
 
         <AppSpacer height={20} />
 
         <AppButton
           onPress={() => {
-            Keyboard.dismiss();
+            !isFormError && Keyboard.dismiss();
             handleSubmit(loginSubmitter)();
           }}
           disabled={isSubmitting}
           loading={isSubmitting}
           uppercase
-          contentStyle={{
-            marginVertical: 6,
-          }}
-          labelStyle={{
-            fontSize: 24,
-          }}
+          {...AUTH_SUBMIT_BTN_CONTENT_STYLE}
         >
           Register
         </AppButton>
@@ -160,7 +150,7 @@ export default function Register() {
 
         <View className="w-full justify-center items-center flex flex-row">
           <AppText>Already have an account?</AppText>
-          <Link href={"/(auth)/login"} style={{ marginStart: 4 }}>
+          <Link href={"/(auth)/login"} style={{ marginStart: 8 }}>
             <AppText type={TextTypEnum.LINK}>Log In</AppText>
           </Link>
         </View>
