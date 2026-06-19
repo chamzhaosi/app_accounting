@@ -23,8 +23,10 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useToastStore } from "../stores/useToastStore";
 import { AppStack } from "../components/AppStack";
+import { AppToast } from "../components/AppToast";
+import { useToastStore } from "../stores/useToastStore";
+import { authenticate } from "../auth/local_auth";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -67,9 +69,22 @@ export default function StackLayout() {
   const userAuthChecking = async () => {
     startLoading();
     await new Promise((res) => setTimeout(res, 2000));
-    stopLoading();
-    // router.replace("/(auth)/login");
-    // router.push("/(home)/dashboard");
+    try {
+      const result = await authenticate();
+
+      if (result.success) {
+        router.replace("/(home)/dashboard");
+        return;
+      }
+
+      if (result.error !== "user_cancel") {
+        AppToast.info({ message: result.message });
+      }
+
+      router.replace("/(auth)/login");
+    } finally {
+      stopLoading();
+    }
   };
 
   if (!loaded) {
@@ -81,8 +96,8 @@ export default function StackLayout() {
       <PaperProvider theme={theme}>
         <StatusBar style="auto" />
         <AppStack>
-          {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
+          <Stack.Screen name="landing" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           {/* <Stack.Screen name="(home)" options={{ headerShown: false }} />
           <Stack.Screen name="account_type" options={{ headerShown: false }} />
           <Stack.Screen
@@ -93,10 +108,10 @@ export default function StackLayout() {
             name="category_management"
             options={{ headerShown: false }}
           /> */}
-          <Stack.Screen
+          {/* <Stack.Screen
             name="reset_password"
             options={{ title: "Reset Password" }}
-          />
+          /> */}
         </AppStack>
         <Toast
           config={toastConfig(THEME, insets)}
