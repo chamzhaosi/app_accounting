@@ -4,11 +4,13 @@ import { useThemeStore } from "../stores/useThemeStore";
 
 type AppIconButton = PressableProps & {
   iconName: AppIconProps["name"];
+  iconSize?: number;
 };
 
 export default function AppIconButton({
   iconName,
   style,
+  iconSize,
   ...props
 }: AppIconButton) {
   const { THEME } = useThemeStore();
@@ -23,7 +25,7 @@ export default function AppIconButton({
         },
       ]}
     >
-      <AppIcon name={iconName} />
+      <AppIcon name={iconName} size={iconSize} />
     </Pressable>
   );
 }

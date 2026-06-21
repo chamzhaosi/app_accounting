@@ -4,6 +4,7 @@ export type ResetPasswordFormType = z.infer<typeof resetPasswordFormSchema>;
 
 export const resetPasswordFormSchema = z
   .object({
+    oldPassword: z.string().trim().min(1, "Please enter your current password"),
     password: z
       .string()
       .trim()
@@ -31,6 +32,7 @@ export const resetPasswordFormSchema = z
   });
 
 export const resetPasswordFormDefaultValues: ResetPasswordFormType = {
+  oldPassword: "",
   password: "",
   cfmPassword: "",
 };

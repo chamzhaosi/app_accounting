@@ -26,7 +26,7 @@ import {
 import { AppStack } from "../components/AppStack";
 import { AppToast } from "../components/AppToast";
 import { useToastStore } from "../stores/useToastStore";
-import { authenticate } from "../auth/local_auth";
+import { getEnabledAuthLocks } from "../local/auth";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -63,29 +63,17 @@ export default function StackLayout() {
 
   useEffect(() => {
     if (!loaded) return;
-    userAuthChecking();
+    // userAuthChecking();
   }, [loaded]);
 
-  const userAuthChecking = async () => {
-    startLoading();
-    await new Promise((res) => setTimeout(res, 2000));
-    try {
-      const result = await authenticate();
+  // const userAuthChecking = async () => {
+  //   startLoading();
+  //   await new Promise((res) => setTimeout(res, 2000));
+  //   // const enabledAuthLocks = await getEnabledAuthLocks();
+  //   stopLoading();
 
-      if (result.success) {
-        router.replace("/(home)/dashboard");
-        return;
-      }
-
-      if (result.error !== "user_cancel") {
-        AppToast.info({ message: result.message });
-      }
-
-      router.replace("/(auth)/login");
-    } finally {
-      stopLoading();
-    }
-  };
+  //   router.push("/(home)/setting");
+  // };
 
   if (!loaded) {
     return null;
@@ -98,8 +86,8 @@ export default function StackLayout() {
         <AppStack>
           <Stack.Screen name="landing" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          {/* <Stack.Screen name="(home)" options={{ headerShown: false }} />
-          <Stack.Screen name="account_type" options={{ headerShown: false }} />
+          <Stack.Screen name="(home)" options={{ headerShown: false }} />
+          {/* <Stack.Screen name="account_type" options={{ headerShown: false }} /> */}
           <Stack.Screen
             name="account_management"
             options={{ headerShown: false }}
@@ -107,11 +95,8 @@ export default function StackLayout() {
           <Stack.Screen
             name="category_management"
             options={{ headerShown: false }}
-          /> */}
-          {/* <Stack.Screen
-            name="reset_password"
-            options={{ title: "Reset Password" }}
-          /> */}
+          />
+          <Stack.Screen name="security" options={{ headerShown: false }} />
         </AppStack>
         <Toast
           config={toastConfig(THEME, insets)}
