@@ -22,6 +22,7 @@ import { checkPin, clearAppPINLock, createPin } from "../../local/auth";
 import {
   APP_PIN_HASH_KEY,
   APP_PIN_LOCK_KEY,
+  BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY,
   BIOMETRIC_LOCK_KEY,
   getStoredItem,
   PIN_PATTERN_LOCK_KEY,
@@ -29,7 +30,12 @@ import {
 } from "../../local/secureStore";
 
 export default function AppPin() {
-  const { localAuthType } = useLocalSearchParams<{ localAuthType: string }>();
+  const { localAuthType, canUseBiometricLock, isBiometricLockEnabled } =
+    useLocalSearchParams<{
+      localAuthType: string;
+      canUseBiometricLock: string;
+      isBiometricLockEnabled: string;
+    }>();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -87,25 +93,36 @@ export default function AppPin() {
           message: "App PIN created successfully.",
         });
         localAuthType && (await setStoredItem(localAuthType, "true"));
-      }
 
-      router.back();
+        if (
+          localAuthType !== PIN_PATTERN_LOCK_KEY ||
+          canUseBiometricLock !== "true" ||
+          isBiometricLockEnabled === "true"
+        )
+          return;
+
+        await setStoredItem(BIOMETRIC_LOCK_KEY, "true");
+        await setStoredItem(BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY, "true");
+      }
     } catch (e) {
       console.error("Error when set/ change app PIN", e);
       setErrorMsg("Error when setting or changing app PIN");
     } finally {
       setIsSubmitting(false);
+      router.back();
     }
   };
 
   const handleAppPINChange = async (value: boolean) => {
     try {
       setIsAppPINEnabled(value);
-      if (!value) {
+      if (!value && hasHashPIN) {
         setIsReqUnenableAppPIN(true);
         setError("currentPin", {
           message: "Current PIN is required to unenable the APP PIN.",
         });
+      } else if (!value) {
+        await clearAppPINLock();
       }
     } catch (e) {
       console.error("Error when changing app pin swtich", e);
@@ -153,12 +170,11 @@ export default function AppPin() {
           value={isAppPINEnabled}
           onValueChange={handleAppPINChange}
         />
-        <View className="-mt-4 mb-4 pl-2 flex flex-col gap-1">
-          <AppText>Create an App PIN to protect your Finora account.</AppText>
-
+        <View className="-mt-4 mb-4 flex flex-col gap-1">
           <AppText>
-            You can also enable biometric or device authentication for quicker
-            access.
+            {isDeviceLockEnabled
+              ? "Use this PIN if your device's biometric or screen lock authentication becomes unavailable."
+              : "Set an App PIN to protect your Finora account."}
           </AppText>
         </View>
 

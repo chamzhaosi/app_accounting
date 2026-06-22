@@ -1,10 +1,12 @@
 import { router } from "expo-router";
 import AppFloatingButton from "../../components/AppFloatingButton";
-import AppListCardView, {
-  AppListCardItemType,
-} from "../../components/AppListCardView";
-import AppView from "../../components/AppView";
+import { AppListCardItemType } from "../../components/AppListCardView";
 import AppListView, { AppListItemType } from "../../components/AppListView";
+import AppView from "../../components/AppView";
+import {
+  ACCOUNT_MANAGEMENT_BASE_URL,
+  ACCOUNT_MANAGEMENT_CREATE_URL,
+} from "../../constants/urls";
 
 export default function AccountManagementList() {
   const data: AppListItemType[] = [
@@ -33,13 +35,13 @@ export default function AccountManagementList() {
       id: 5,
       icon: "CreditCard",
       label: "Maybank - Master Card",
-      onPress: () => router.push("/account_management/1"),
+      onPress: () => router.push(`${ACCOUNT_MANAGEMENT_BASE_URL}/1`),
     },
   ];
 
   const onPress = (item: AppListCardItemType) => {
     // router.push({
-    //   pathname: "/account_management/[id]",
+    //   pathname: CATEGORY_MANAGEMENT_DETAIL_URL
     //   params: { id: item.id },
     // });
   };
@@ -48,11 +50,13 @@ export default function AccountManagementList() {
     <AppView className="relative">
       <AppListView
         data={data}
-        onPress={(item) => router.push(`/account_management/${item.id}`)}
+        onPress={(item) =>
+          router.push(`${ACCOUNT_MANAGEMENT_BASE_URL}/${item.id}`)
+        }
       />
       <AppFloatingButton
         icon="plus"
-        onPress={() => router.push("/account_management/create")}
+        onPress={() => router.push(ACCOUNT_MANAGEMENT_CREATE_URL)}
       />
     </AppView>
   );

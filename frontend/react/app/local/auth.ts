@@ -190,8 +190,8 @@ export async function checkPin(pin: string): Promise<boolean> {
 export const clearAppPINLock = async () => {
   try {
     await clearStoredItem(APP_PIN_HASH_KEY);
-    // await clearStoredItem(APP_PIN_SALT_KEY);
-    // await clearStoredItem(APP_PIN_LOCK_KEY);
+    await clearStoredItem(APP_PIN_SALT_KEY);
+    await clearStoredItem(APP_PIN_LOCK_KEY);
   } catch (error) {
     console.error("Error clearing app lock data", error);
   }

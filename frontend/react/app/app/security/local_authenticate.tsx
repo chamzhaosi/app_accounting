@@ -13,17 +13,22 @@ import {
 } from "../../local/auth";
 import {
   APP_PIN_LOCK_KEY,
+  BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY,
   BIOMETRIC_LOCK_KEY,
   getStoredItem,
   PIN_PATTERN_LOCK_KEY,
   setStoredItem,
 } from "../../local/secureStore";
+import { APP_PIN_SETUP_URL } from "../../constants/urls";
 
 export default function Security() {
   const [isBiometricLockEnabled, setIsBiometricLockEnabled] =
     useState<boolean>(false);
+  const [isBiometricEnabledByPIN, setIsBiomertricEnabledByPIN] =
+    useState<boolean>(false);
   const [isPinPatternLockEnabled, setIsPinPatternLockEnabled] =
     useState<boolean>(false);
+
   const [localAuthStatus, setLocalAuthStatus] =
     useState<LocalAuthStatus | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -33,13 +38,19 @@ export default function Security() {
     useCallback(() => {
       const loadSecuritySettings = async () => {
         try {
-          const [biometricStoredValue, pinPatternStoredValue, authStatus] =
-            await Promise.all([
-              getStoredItem(BIOMETRIC_LOCK_KEY),
-              getStoredItem(PIN_PATTERN_LOCK_KEY),
-              getLocalAuthStatus(),
-            ]);
+          const [
+            biometricStoredValue,
+            biomertricEnabledByPIN,
+            pinPatternStoredValue,
+            authStatus,
+          ] = await Promise.all([
+            getStoredItem(BIOMETRIC_LOCK_KEY),
+            getStoredItem(BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY),
+            getStoredItem(PIN_PATTERN_LOCK_KEY),
+            getLocalAuthStatus(),
+          ]);
 
+          setIsBiomertricEnabledByPIN(biomertricEnabledByPIN === "true");
           setLocalAuthStatus(authStatus);
           setIsBiometricLockEnabled(
             authStatus.canUseBiometricLock && biometricStoredValue === "true",
@@ -68,9 +79,12 @@ export default function Security() {
         const isAppPINEnabled = await getStoredItem(APP_PIN_LOCK_KEY);
         if (!isAppPINEnabled) {
           router.push({
-            pathname: "/security/app_pin",
+            pathname: APP_PIN_SETUP_URL,
             params: {
               localAuthType: key,
+              canUseBiometricLock:
+                localAuthStatus?.canUseBiometricLock.toString(),
+              isBiometricLockEnabled: isBiometricLockEnabled.toString(),
             },
           });
           return;
@@ -79,12 +93,33 @@ export default function Security() {
 
       setIsSaving(true);
       await setStoredItem(key, value.toString());
+      autoOnChangeBiometricLock(key, value);
     } catch (error) {
       console.error(`Failed to save setting for ${key}`, error);
       fallbackCn();
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const autoOnChangeBiometricLock = async (
+    authType: string,
+    value: boolean,
+  ) => {
+    if (
+      authType !== PIN_PATTERN_LOCK_KEY ||
+      !localAuthStatus?.canUseBiometricLock ||
+      (isBiometricLockEnabled && !isBiometricEnabledByPIN)
+    )
+      return;
+
+    await setStoredItem(BIOMETRIC_LOCK_KEY, value.toString());
+    await setStoredItem(
+      BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY,
+      value.toString(),
+    );
+    setIsBiometricLockEnabled(value);
+    setIsBiomertricEnabledByPIN(value);
   };
 
   const handleBiometricLockChange = async (value: boolean) => {
@@ -126,7 +161,11 @@ export default function Security() {
       <AppSwitch
         label="Biometric Lock"
         disabled={
-          isLoading || isSaving || !localAuthStatus?.canUseBiometricLock
+          isLoading ||
+          isSaving ||
+          !localAuthStatus?.canUseBiometricLock ||
+          isBiometricEnabledByPIN ||
+          (isBiometricLockEnabled && isPinPatternLockEnabled)
         }
         value={isBiometricLockEnabled}
         onValueChange={handleBiometricLockChange}
@@ -135,6 +174,14 @@ export default function Security() {
         <AppText style={defaultStyles.description}>
           {localAuthStatus?.biometricDescription ??
             "Checking biometric lock support..."}
+        </AppText>
+      )}
+
+      {(isBiometricEnabledByPIN ||
+        (isBiometricLockEnabled && isPinPatternLockEnabled)) && (
+        <AppText style={defaultStyles.description}>
+          Biometric authentication will always be used first when available,
+          even if PIN or Pattern Lock is enabled.
         </AppText>
       )}
 
@@ -154,9 +201,13 @@ export default function Security() {
       )}
 
       <SectionItem
-        label="Set/ Change App PIN"
-        desciption="Use this PIN if your device's biometric or screen lock authentication becomes unavailable."
-        onPress={() => router.push("/security/app_pin")}
+        label="Set/ Update App PIN"
+        desciption={
+          isBiometricLockEnabled || isPinPatternLockEnabled
+            ? "Use this PIN if your device's biometric or screen lock authentication becomes unavailable."
+            : "Set an App PIN to protect your Finora account."
+        }
+        onPress={() => router.push(APP_PIN_SETUP_URL)}
       />
     </ScrollView>
   );

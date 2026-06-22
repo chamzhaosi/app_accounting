@@ -1,10 +1,10 @@
 import dayjs from "dayjs";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 import AppIconButton from "../components/AppIconButton";
-import AppText, { TextTypEnum } from "../components/AppText";
+import AppText from "../components/AppText";
 import AppView from "../components/AppView";
 import {
   authenticateWithLocalAuth,
@@ -12,6 +12,7 @@ import {
   getEnabledAuthLocks,
 } from "../local/auth";
 import {
+  BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY,
   BIOMETRIC_LOCK_KEY,
   PIN_PATTERN_LOCK_KEY,
   setStoredItem,
@@ -22,6 +23,7 @@ import {
   useLocalAuthStore,
 } from "../stores/useLocalAuthStore";
 import { useThemeStore } from "../stores/useThemeStore";
+import { APP_PIN_LOGIN_URL, DASHBOARD_URL } from "../constants/urls";
 
 export default function Landing() {
   const { THEME } = useThemeStore();
@@ -70,7 +72,7 @@ export default function Landing() {
     const fetchEnabledAuthLocks = async () => {
       const authLocks = await getEnabledAuthLocks();
       setEnabledAuthLocks(authLocks);
-      // loadAuthLockPage(authLocks);
+      loadAuthLockPage(authLocks);
     };
 
     fetchEnabledAuthLocks();
@@ -84,7 +86,7 @@ export default function Landing() {
       );
 
       if (isAuthenticated) {
-        router.replace("/(home)/dashboard");
+        router.replace(DASHBOARD_URL);
       }
     } catch (error) {
       console.error("Failed to authenticate with local auth", error);
@@ -93,7 +95,7 @@ export default function Landing() {
     }
   };
 
-  const loadAuthLockPage = (authLocks: EnabledAuthLock) => {
+  const loadAuthLockPage = async (authLocks: EnabledAuthLock) => {
     if (isAccountFrozen) return;
 
     const {
@@ -119,20 +121,21 @@ export default function Landing() {
       (!hasDeviceAuthEnabled && isEnabledAppPinAuth);
 
     if (shouldGoDashboard) {
-      router.replace("/(home)/dashboard");
+      router.replace(DASHBOARD_URL);
       return;
     }
 
     if (shouldGoAppPinLogin) {
       if (isEnabledBiometricAuth) {
-        setStoredItem(BIOMETRIC_LOCK_KEY, "false");
+        await setStoredItem(BIOMETRIC_LOCK_KEY, "false");
+        await setStoredItem(BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY, "false");
       }
 
       if (isEnabledPinPatternAuth) {
-        setStoredItem(PIN_PATTERN_LOCK_KEY, "false");
+        await setStoredItem(PIN_PATTERN_LOCK_KEY, "false");
       }
 
-      router.push("/(auth)/app_pin_login");
+      router.push(APP_PIN_LOGIN_URL);
       return;
     }
 
@@ -156,32 +159,46 @@ export default function Landing() {
               iconSize={60}
               disabled={isLoading || isAuthenticating || isAccountFrozen}
               onPress={() => loadAuthLockPage(enabledAuthLocks)}
-              style={{
-                opacity: isAccountFrozen ? 0.2 : 1,
-                borderRadius: 10,
-                padding: 10,
-                backgroundColor: THEME.surfaceContainer,
-                alignItems: "center",
-              }}
+              style={[
+                defaultStyle.iconBtn,
+                {
+                  opacity: isAccountFrozen ? 0.2 : 1,
+                  backgroundColor: THEME.surfaceContainer,
+                },
+              ]}
             />
           ) : (
             <View
               className="py-4 px-8"
-              style={{
-                backgroundColor: THEME.errorContainer,
-                borderRadius: 4,
-              }}
+              style={[
+                defaultStyle.accFrozenContainer,
+                {
+                  backgroundColor: THEME.errorContainer,
+                },
+              ]}
             >
               <AppText
-                style={{ fontSize: 18, color: THEME.onErrorContainer }}
+                style={[
+                  defaultStyle.accFrozenLabel,
+                  { color: THEME.onErrorContainer },
+                ]}
                 className="self-center"
               >
                 Too many incorrect PIN attempts.
               </AppText>
-              <AppText style={{ fontSize: 18, color: THEME.onErrorContainer }}>
+              <AppText
+                style={[
+                  defaultStyle.accFrozenLabel,
+                  { color: THEME.onErrorContainer },
+                ]}
+              >
                 <>Please try again in </>
                 <AppText
-                  style={{ fontSize: 22, color: THEME.onErrorContainer }}
+                  style={[
+                    ,
+                    defaultStyle.accFrozenTime,
+                    { color: THEME.onErrorContainer },
+                  ]}
                 >
                   {remainingTime}
                 </AppText>
@@ -200,3 +217,20 @@ export default function Landing() {
     </AppView>
   );
 }
+
+const defaultStyle = StyleSheet.create({
+  iconBtn: {
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "center",
+  },
+  accFrozenContainer: {
+    borderRadius: 4,
+  },
+  accFrozenLabel: {
+    fontSize: 18,
+  },
+  accFrozenTime: {
+    fontSize: 22,
+  },
+});

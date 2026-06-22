@@ -18,6 +18,7 @@ import {
   loginSchema,
 } from "../../forms/schemas/auth/login.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { OTP_URL } from "../../constants/urls";
 
 export default function Loign() {
   const { THEME } = useThemeStore();
@@ -49,7 +50,7 @@ export default function Loign() {
     await new Promise((res) => setTimeout(res, 2000));
     setIsSubmitting(false);
     // setRspErrorMsg("Email or password is invalid. Please try again.");
-    router.push("/(auth)/otp");
+    router.push(OTP_URL);
   };
 
   const isFormError = Object.keys(errors).length > 0;

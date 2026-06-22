@@ -9,6 +9,12 @@ import {
   Wallet,
 } from "lucide-react-native";
 import { router } from "expo-router";
+import {
+  ACCOUNT_MANAGEMENT_LIST_URL,
+  ACCOUNT_TYPE_LIST_URL,
+  CATEGORY_MANAGEMENT_LIST_URL,
+  LOCAL_AUTHENTICATE_URL,
+} from "../../constants/urls";
 
 export default function Setting() {
   const data: AppListItemType[] = [
@@ -16,19 +22,19 @@ export default function Setting() {
       id: 1,
       label: "Account Type",
       icon: "Wallet",
-      onPress: () => router.push("/account_type/list"),
+      onPress: () => router.push(ACCOUNT_TYPE_LIST_URL),
     },
     {
       id: 2,
       label: "Account Management",
       icon: "Vault",
-      onPress: () => router.push("/account_management/list"),
+      onPress: () => router.push(ACCOUNT_MANAGEMENT_LIST_URL),
     },
     {
       id: 3,
       label: "Category Management",
       icon: "BookOpenCheck",
-      onPress: () => router.push("/category_management/list"),
+      onPress: () => router.push(CATEGORY_MANAGEMENT_LIST_URL),
     },
     // { id: "4", label: "Budget Management", icon: HandCoins },
     // {
@@ -41,7 +47,7 @@ export default function Setting() {
       id: 5,
       label: "Security",
       icon: "Lock",
-      onPress: () => router.push("/security/local_authenticate"),
+      onPress: () => router.push(LOCAL_AUTHENTICATE_URL),
     },
   ];
 

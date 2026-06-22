@@ -25,6 +25,7 @@ import {
   MAX_AUTH_ATTEMPTS,
   useLocalAuthStore,
 } from "../../stores/useLocalAuthStore";
+import { DASHBOARD_URL, LANDING_URL } from "../../constants/urls";
 
 export default function AppPINLogin() {
   const { THEME } = useThemeStore();
@@ -74,13 +75,13 @@ export default function AppPINLogin() {
         setLastErrorAuthDateTime(dayjs());
 
         if (errorCounter >= MAX_AUTH_ATTEMPTS) {
-          router.dismissTo("/landing");
+          router.dismissTo(LANDING_URL);
           return;
         }
       } else {
         authErrorCounter && setAuthErrorCounter(0);
         lastErrorAuthDateTime && setLastErrorAuthDateTime(null);
-        router.dismissTo("/(home)/dashboard");
+        router.dismissTo(DASHBOARD_URL);
       }
     } catch (e) {
       console.error("Error when checking app pin hash", e);

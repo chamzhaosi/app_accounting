@@ -1,5 +1,5 @@
 import { useFonts } from "expo-font";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
@@ -24,9 +24,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { AppStack } from "../components/AppStack";
-import { AppToast } from "../components/AppToast";
 import { useToastStore } from "../stores/useToastStore";
-import { getEnabledAuthLocks } from "../local/auth";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -60,20 +58,6 @@ export default function StackLayout() {
   useEffect(() => {
     toggleTheme(colorScheme);
   }, [colorScheme]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    // userAuthChecking();
-  }, [loaded]);
-
-  // const userAuthChecking = async () => {
-  //   startLoading();
-  //   await new Promise((res) => setTimeout(res, 2000));
-  //   // const enabledAuthLocks = await getEnabledAuthLocks();
-  //   stopLoading();
-
-  //   router.push("/(home)/setting");
-  // };
 
   if (!loaded) {
     return null;

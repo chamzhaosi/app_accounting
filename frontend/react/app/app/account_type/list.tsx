@@ -5,6 +5,10 @@ import AppListCardView, {
 } from "../../components/AppListCardView";
 import { AppToast } from "../../components/AppToast";
 import AppView from "../../components/AppView";
+import {
+  ACCOUNT_TYPE_CREATE_URL,
+  ACCOUNT_TYPE_DETAIL_URL,
+} from "../../constants/urls";
 
 export default function AccountTypeList() {
   const data: AppListCardItemType[] = [
@@ -42,7 +46,7 @@ export default function AccountTypeList() {
     }
 
     router.push({
-      pathname: "/account_type/[id]",
+      pathname: ACCOUNT_TYPE_DETAIL_URL,
       params: { id: item.id },
     });
   };
@@ -52,7 +56,7 @@ export default function AccountTypeList() {
       <AppListCardView data={data} onPress={onPress} extraCardHeight={20} />
       <AppFloatingButton
         icon="plus"
-        onPress={() => router.push("/account_type/create")}
+        onPress={() => router.push(ACCOUNT_TYPE_CREATE_URL)}
       />
     </AppView>
   );

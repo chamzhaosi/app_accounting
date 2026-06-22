@@ -33,7 +33,6 @@ export const createAppPinFormSchema = ({
           : z.string().trim().min(0).optional(),
       });
 
-  console.log({ isReqUnenabled });
   return schema.superRefine((data, ctx) => {
     if (!isReqUnenabled && data.pin !== data.cfmPin) {
       ctx.addIssue({
