@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import AppSwitch from "../../components/AppSwitch";
 import AppText from "../../components/AppText";
 
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { TouchableRipple } from "react-native-paper";
 import { SWITCH_LABEL_FONTSIZE } from "../../constants/size";
-import { getLocalAuthStatus, LocalAuthStatus } from "../../local/auth";
+import {
+  authenticateWithLocalAuth,
+  getLocalAuthStatus,
+  LocalAuthStatus,
+} from "../../local/auth";
 import {
   APP_PIN_LOCK_KEY,
   BIOMETRIC_LOCK_KEY,
@@ -14,12 +18,8 @@ import {
   PIN_PATTERN_LOCK_KEY,
   setStoredItem,
 } from "../../local/secureStore";
-import { useLocalAuthStore } from "../../stores/useLocalAuthStore";
 
-// TODO: when unenable the swtich need to auth one more time
 export default function Security() {
-  const { localAuthType, setLocalAuthType } = useLocalAuthStore();
-
   const [isBiometricLockEnabled, setIsBiometricLockEnabled] =
     useState<boolean>(false);
   const [isPinPatternLockEnabled, setIsPinPatternLockEnabled] =
@@ -29,51 +29,39 @@ export default function Security() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  useEffect(() => {
-    const loadSecuritySettings = async () => {
-      try {
-        const [biometricStoredValue, pinPatternStoredValue, authStatus] =
-          await Promise.all([
-            getStoredItem(BIOMETRIC_LOCK_KEY),
-            getStoredItem(PIN_PATTERN_LOCK_KEY),
-            getLocalAuthStatus(),
-          ]);
+  useFocusEffect(
+    useCallback(() => {
+      const loadSecuritySettings = async () => {
+        try {
+          const [biometricStoredValue, pinPatternStoredValue, authStatus] =
+            await Promise.all([
+              getStoredItem(BIOMETRIC_LOCK_KEY),
+              getStoredItem(PIN_PATTERN_LOCK_KEY),
+              getLocalAuthStatus(),
+            ]);
 
-        setLocalAuthStatus(authStatus);
-        setIsBiometricLockEnabled(
-          authStatus.canUseBiometricLock && biometricStoredValue === "true",
-        );
-        setIsPinPatternLockEnabled(
-          authStatus.canUsePinPatternLock && pinPatternStoredValue === "true",
-        );
-      } catch (error) {
-        console.error("Failed to load security settings", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+          setLocalAuthStatus(authStatus);
+          setIsBiometricLockEnabled(
+            authStatus.canUseBiometricLock && biometricStoredValue === "true",
+          );
+          setIsPinPatternLockEnabled(
+            authStatus.canUsePinPatternLock && pinPatternStoredValue === "true",
+          );
+        } catch (error) {
+          console.error("Failed to load security settings", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-    loadSecuritySettings();
-  }, []);
-
-  useEffect(() => {
-    if (!localAuthType || !localAuthStatus) return;
-
-    switch (localAuthType) {
-      case BIOMETRIC_LOCK_KEY:
-        handleBiometricLockChange(true);
-        break;
-      case PIN_PATTERN_LOCK_KEY:
-        handlePinPatternLockChange(true);
-        break;
-    }
-    setLocalAuthType(null);
-  }, [localAuthType, localAuthStatus]);
+      loadSecuritySettings();
+    }, []),
+  );
 
   const handleStoredToggleChange = async (
     key: string,
     value: boolean,
-    setValue: (value: boolean) => void,
+    fallbackCn: () => void,
   ) => {
     try {
       if (value) {
@@ -82,7 +70,7 @@ export default function Security() {
           router.push({
             pathname: "/security/app_pin",
             params: {
-              lock_type: key,
+              localAuthType: key,
             },
           });
           return;
@@ -91,9 +79,9 @@ export default function Security() {
 
       setIsSaving(true);
       await setStoredItem(key, value.toString());
-      setValue(value);
     } catch (error) {
       console.error(`Failed to save setting for ${key}`, error);
+      fallbackCn();
     } finally {
       setIsSaving(false);
     }
@@ -101,21 +89,35 @@ export default function Security() {
 
   const handleBiometricLockChange = async (value: boolean) => {
     if (!localAuthStatus?.canUseBiometricLock) return;
+    setIsBiometricLockEnabled(value);
 
-    await handleStoredToggleChange(
-      BIOMETRIC_LOCK_KEY,
-      value,
-      setIsBiometricLockEnabled,
+    if (!value) {
+      const success = await authenticateWithLocalAuth(true);
+      if (!success) {
+        setIsBiometricLockEnabled(!value);
+        return;
+      }
+    }
+
+    await handleStoredToggleChange(BIOMETRIC_LOCK_KEY, value, () =>
+      setIsBiometricLockEnabled(!value),
     );
   };
 
   const handlePinPatternLockChange = async (value: boolean) => {
     if (!localAuthStatus?.canUsePinPatternLock) return;
+    setIsPinPatternLockEnabled(value);
 
-    await handleStoredToggleChange(
-      PIN_PATTERN_LOCK_KEY,
-      value,
-      setIsPinPatternLockEnabled,
+    if (!value) {
+      const success = await authenticateWithLocalAuth(true);
+      if (!success) {
+        setIsPinPatternLockEnabled(!value);
+        return;
+      }
+    }
+
+    await handleStoredToggleChange(PIN_PATTERN_LOCK_KEY, value, () =>
+      setIsPinPatternLockEnabled(!value),
     );
   };
 

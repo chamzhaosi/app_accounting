@@ -11,6 +11,7 @@ export default function AppIconButton({
   iconName,
   style,
   iconSize,
+  disabled,
   ...props
 }: AppIconButton) {
   const { THEME } = useThemeStore();
@@ -24,8 +25,13 @@ export default function AppIconButton({
           ...style,
         },
       ]}
+      disabled={disabled}
     >
-      <AppIcon name={iconName} size={iconSize} />
+      <AppIcon
+        name={iconName}
+        size={iconSize}
+        color={disabled ? THEME.surfaceDisabled : THEME.primary}
+      />
     </Pressable>
   );
 }

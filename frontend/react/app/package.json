@@ -6,6 +6,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.4.0",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.21",
     "expo": "~56.0.5",
     "expo-constants": "~56.0.16",
     "expo-crypto": "~56.0.4",

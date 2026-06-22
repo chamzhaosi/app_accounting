@@ -17,15 +17,20 @@ export default function AppButton({
   contentStyle,
   variant = ButtonType.PRIMARY,
   disabled,
+  style,
   ...props
 }: AppButtonProps) {
   const { THEME } = useThemeStore();
 
+  let variantStyle: StyleProp<ViewStyle> = {};
   let variantContentStyle: StyleProp<ViewStyle> = {};
   let variantLabelStyle: StyleProp<TextStyle> = {};
 
   switch (variant) {
     case ButtonType.ERROR:
+      variantStyle = {
+        backgroundColor: THEME.error,
+      };
       variantContentStyle = {
         backgroundColor: THEME.error,
       };
@@ -58,6 +63,7 @@ export default function AppButton({
         ...(!disabled ? [variantLabelStyle] : []),
         labelStyle,
       ]}
+      style={[...(!disabled ? [variantStyle] : []), style]}
       disabled={disabled}
       {...props}
     />

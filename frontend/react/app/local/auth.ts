@@ -22,6 +22,8 @@ export type LocalAuthStatus = {
 export type EnabledAuthLock = {
   isEnabledPinPatternAuth: boolean;
   isEnabledBiometricAuth: boolean;
+  isEnabledAppPinAuth: boolean;
+  localAuthStatus: LocalAuthStatus;
 };
 
 const getAuthenticationTypeLabel = (authenticationType: number): string => {
@@ -124,12 +126,7 @@ export const getLocalAuthStatus = async (): Promise<LocalAuthStatus> => {
   };
 };
 
-export const getEnabledAuthLocks = async (): Promise<{
-  isEnabledPinPatternAuth: boolean;
-  isEnabledBiometricAuth: boolean;
-  isEnabledAppPinAuth: boolean;
-  localAuthStatus: LocalAuthStatus;
-}> => {
+export const getEnabledAuthLocks = async (): Promise<EnabledAuthLock> => {
   const [
     biometricStoredValue,
     pinPatternStoredValue,
@@ -193,8 +190,8 @@ export async function checkPin(pin: string): Promise<boolean> {
 export const clearAppPINLock = async () => {
   try {
     await clearStoredItem(APP_PIN_HASH_KEY);
-    await clearStoredItem(APP_PIN_SALT_KEY);
-    await clearStoredItem(APP_PIN_LOCK_KEY);
+    // await clearStoredItem(APP_PIN_SALT_KEY);
+    // await clearStoredItem(APP_PIN_LOCK_KEY);
   } catch (error) {
     console.error("Error clearing app lock data", error);
   }

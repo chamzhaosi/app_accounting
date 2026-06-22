@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Keyboard } from "react-native";
 import AppButton, {
   AUTH_SUBMIT_BTN_CONTENT_STYLE,
@@ -10,24 +10,30 @@ import AppSpacer from "../../components/AppSpacer";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
-import {
-  otpFormDefaultValues,
-  OtpFormType,
-  otpSchema,
-} from "../../forms/schemas/auth/otp.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 
+import dayjs from "dayjs";
+import { router } from "expo-router";
 import {
   appPinLoginFormDefaultValues,
   AppPinLoginFormType,
   appPinLoginSchema,
 } from "../../forms/schemas/auth/app_pin_login.schema";
-import { APP_PIN_HASH_KEY, getStoredItem } from "../../local/secureStore";
 import { checkPin } from "../../local/auth";
-import { router } from "expo-router";
+import {
+  AUTH_ERROR_RESET_MINUTES,
+  MAX_AUTH_ATTEMPTS,
+  useLocalAuthStore,
+} from "../../stores/useLocalAuthStore";
 
 export default function AppPINLogin() {
   const { THEME } = useThemeStore();
+  const {
+    authErrorCounter,
+    lastErrorAuthDateTime,
+    setAuthErrorCounter,
+    setLastErrorAuthDateTime,
+  } = useLocalAuthStore();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
@@ -45,10 +51,37 @@ export default function AppPINLogin() {
 
   const onSubmit = async (data: AppPinLoginFormType) => {
     try {
+      setErrorMsg("");
       setIsSubmitting(true);
       const isValid = await checkPin(data.pin);
-      if (!isValid) setErrorMsg("Incorrect PIN");
-      else router.dismissTo("/(home)/dashboard");
+      if (!isValid) {
+        setErrorMsg("Incorrect PIN");
+        let errorCounter = authErrorCounter;
+
+        if (lastErrorAuthDateTime) {
+          const minutesSinceLastError = dayjs().diff(
+            lastErrorAuthDateTime,
+            "minute",
+          );
+
+          if (minutesSinceLastError >= AUTH_ERROR_RESET_MINUTES) {
+            errorCounter = 0;
+          }
+        }
+
+        errorCounter += 1;
+        setAuthErrorCounter(errorCounter);
+        setLastErrorAuthDateTime(dayjs());
+
+        if (errorCounter >= MAX_AUTH_ATTEMPTS) {
+          router.dismissTo("/landing");
+          return;
+        }
+      } else {
+        authErrorCounter && setAuthErrorCounter(0);
+        lastErrorAuthDateTime && setLastErrorAuthDateTime(null);
+        router.dismissTo("/(home)/dashboard");
+      }
     } catch (e) {
       console.error("Error when checking app pin hash", e);
     } finally {

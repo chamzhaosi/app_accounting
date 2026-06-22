@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
 import AppButton, {
   AUTH_SUBMIT_BTN_CONTENT_STYLE,
+  ButtonType,
 } from "../../components/AppButton";
 import AppSpacer from "../../components/AppSpacer";
 import AppSwitch from "../../components/AppSwitch";
@@ -26,25 +27,19 @@ import {
   PIN_PATTERN_LOCK_KEY,
   setStoredItem,
 } from "../../local/secureStore";
-import {
-  LocalAuthType,
-  useLocalAuthStore,
-} from "../../stores/useLocalAuthStore";
 
-// TODO: when unenable the swtich need to auth one more time
 export default function AppPin() {
-  const { lock_type } = useLocalSearchParams<{
-    lock_type: string;
-  }>();
-
-  const { setLocalAuthType } = useLocalAuthStore();
+  const { localAuthType } = useLocalSearchParams<{ localAuthType: string }>();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSwitchChanging, setIsSwitchChanging] = useState<boolean>(false);
   const [isDeviceLockEnabled, setIsDeviceLockEnabled] =
     useState<boolean>(false);
-  const [isAppPINEnabled, setIsAppPINEnabled] = useState<boolean>(!!lock_type);
+  const [isAppPINEnabled, setIsAppPINEnabled] =
+    useState<boolean>(!!localAuthType);
+  const [isReqUnenableAppPIN, setIsReqUnenableAppPIN] =
+    useState<boolean>(false);
 
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [hasHashPIN, setHasHashPIN] = useState<boolean>(false);
@@ -56,7 +51,12 @@ export default function AppPin() {
     setError,
     formState: { errors },
   } = useForm<CreateAppPinFormType>({
-    resolver: zodResolver(createAppPinFormSchema(hasHashPIN)),
+    resolver: zodResolver(
+      createAppPinFormSchema({
+        isUpdate: hasHashPIN,
+        isReqUnenabled: isReqUnenableAppPIN,
+      }),
+    ),
     mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: createAppPinFormDefaultValues,
@@ -75,12 +75,20 @@ export default function AppPin() {
         }
       }
 
-      await createPin(data.pin);
-      await setStoredItem(APP_PIN_LOCK_KEY, "true");
-      AppToast.success({
-        message: "PIN create successfully.",
-      });
-      lock_type && setLocalAuthType(lock_type as LocalAuthType);
+      if (isReqUnenableAppPIN) {
+        await clearAppPINLock();
+        AppToast.success({
+          message: "App PIN removed successfully.",
+        });
+      } else {
+        await createPin(data.pin!);
+        await setStoredItem(APP_PIN_LOCK_KEY, "true");
+        AppToast.success({
+          message: "App PIN created successfully.",
+        });
+        localAuthType && (await setStoredItem(localAuthType, "true"));
+      }
+
       router.back();
     } catch (e) {
       console.error("Error when set/ change app PIN", e);
@@ -92,12 +100,13 @@ export default function AppPin() {
 
   const handleAppPINChange = async (value: boolean) => {
     try {
-      if (!value) {
-        setIsSwitchChanging(true);
-        await clearAppPINLock();
-      }
-
       setIsAppPINEnabled(value);
+      if (!value) {
+        setIsReqUnenableAppPIN(true);
+        setError("currentPin", {
+          message: "Current PIN is required to unenable the APP PIN.",
+        });
+      }
     } catch (e) {
       console.error("Error when changing app pin swtich", e);
     } finally {
@@ -138,7 +147,8 @@ export default function AppPin() {
             isSubmitting ||
             isSwitchChanging ||
             isDeviceLockEnabled ||
-            !!lock_type
+            !!localAuthType ||
+            isReqUnenableAppPIN
           }
           value={isAppPINEnabled}
           onValueChange={handleAppPINChange}
@@ -152,7 +162,7 @@ export default function AppPin() {
           </AppText>
         </View>
 
-        {isAppPINEnabled && (
+        {(isAppPINEnabled || isReqUnenableAppPIN) && (
           <>
             {hasHashPIN && (
               <>
@@ -183,53 +193,57 @@ export default function AppPin() {
               </>
             )}
 
-            <Controller
-              control={control}
-              name="pin"
-              render={({ field: { value, onChange, onBlur, ref } }) => (
-                <AppTextInput
-                  ref={ref}
-                  mode="outlined"
-                  placeholder="PIN"
-                  label={"PIN"}
-                  editable={!isSubmitting}
-                  disabled={isSubmitting || isLoading}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  submitBehavior="submit"
-                  isMaskValue
-                  onSubmitEditing={() => setFocus("cfmPin")}
-                  errorField={errors.pin}
+            {!isReqUnenableAppPIN && (
+              <>
+                <Controller
+                  control={control}
+                  name="pin"
+                  render={({ field: { value, onChange, onBlur, ref } }) => (
+                    <AppTextInput
+                      ref={ref}
+                      mode="outlined"
+                      placeholder="PIN"
+                      label={"PIN"}
+                      editable={!isSubmitting}
+                      disabled={isSubmitting || isLoading}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      value={value}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      submitBehavior="submit"
+                      isMaskValue
+                      onSubmitEditing={() => setFocus("cfmPin")}
+                      errorField={errors.pin}
+                    />
+                  )}
                 />
-              )}
-            />
-            <AppSpacer height={12} />
-            <Controller
-              control={control}
-              name="cfmPin"
-              render={({ field: { value, onChange, onBlur, ref } }) => (
-                <AppTextInput
-                  ref={ref}
-                  mode="outlined"
-                  placeholder="Confirm PIN"
-                  label={"Confirm Password"}
-                  editable={!isSubmitting}
-                  disabled={isSubmitting}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  value={value}
-                  isMaskValue
-                  onSubmitEditing={handleSubmit(onSubmit)}
-                  errorField={errors.cfmPin}
+                <AppSpacer height={12} />
+                <Controller
+                  control={control}
+                  name="cfmPin"
+                  render={({ field: { value, onChange, onBlur, ref } }) => (
+                    <AppTextInput
+                      ref={ref}
+                      mode="outlined"
+                      placeholder="Confirm PIN"
+                      label={"Confirm PIN"}
+                      editable={!isSubmitting}
+                      disabled={isSubmitting}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      value={value}
+                      isMaskValue
+                      onSubmitEditing={handleSubmit(onSubmit)}
+                      errorField={errors.cfmPin}
+                    />
+                  )}
                 />
-              )}
-            />
-            <AppSpacer />
+                <AppSpacer />
+              </>
+            )}
             <AppButton
               onPress={() => {
                 !isFormError && Keyboard.dismiss();
@@ -238,9 +252,12 @@ export default function AppPin() {
               disabled={isSubmitting}
               loading={isSubmitting}
               uppercase
+              variant={
+                isReqUnenableAppPIN ? ButtonType.ERROR : ButtonType.PRIMARY
+              }
               {...AUTH_SUBMIT_BTN_CONTENT_STYLE}
             >
-              {`${hasHashPIN ? "Update" : "Create"} PIN`}
+              {`${isReqUnenableAppPIN ? "Remove" : hasHashPIN ? "Update" : "Create"} PIN`}
             </AppButton>
             {errorMsg && <AppText type={TextTypEnum.ERROR}>{errorMsg}</AppText>}
           </>

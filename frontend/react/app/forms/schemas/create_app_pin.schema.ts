@@ -8,15 +8,34 @@ const baseAppPinFormSchema = z.object({
     .min(6, "Confirmation PIN must be at least 6 characters"),
 });
 
-export const createAppPinFormSchema = (requireCurrentPin: boolean) => {
-  const schema = baseAppPinFormSchema.extend({
-    currentPin: requireCurrentPin
-      ? z.string().trim().min(6, "Current PIN must be at least 6 characters")
-      : z.string().trim().min(0).optional(),
-  });
+export const createAppPinFormSchema = ({
+  isUpdate,
+  isReqUnenabled,
+}: {
+  isUpdate: boolean;
+  isReqUnenabled: boolean;
+}) => {
+  const schema = isReqUnenabled
+    ? z.object({
+        currentPin: z
+          .string()
+          .trim()
+          .min(6, "Current PIN must be at least 6 characters"),
+        pin: z.string().optional(),
+        cfmPin: z.string().optional(),
+      })
+    : baseAppPinFormSchema.extend({
+        currentPin: isUpdate
+          ? z
+              .string()
+              .trim()
+              .min(6, "Current PIN must be at least 6 characters")
+          : z.string().trim().min(0).optional(),
+      });
 
+  console.log({ isReqUnenabled });
   return schema.superRefine((data, ctx) => {
-    if (data.pin !== data.cfmPin) {
+    if (!isReqUnenabled && data.pin !== data.cfmPin) {
       ctx.addIssue({
         code: "custom",
         path: ["cfmPin"],
