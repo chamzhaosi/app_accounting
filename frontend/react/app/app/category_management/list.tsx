@@ -9,6 +9,10 @@ import AppListCardView, {
 import { AppToast } from "../../components/AppToast";
 import AppView from "../../components/AppView";
 import { useThemeStore } from "../../stores/useThemeStore";
+import {
+  CATEGORY_MANAGEMENT_CREATE_URL,
+  CATEGORY_MANAGEMENT_DETAIL_URL,
+} from "../../constants/urls";
 
 type TabRoute = Route & {
   key: "inc" | "exp";
@@ -112,7 +116,7 @@ export default function CategoryManagementList() {
           icon="plus"
           onPress={() =>
             router.push({
-              pathname: "/category_management/create",
+              pathname: CATEGORY_MANAGEMENT_CREATE_URL,
               params: {
                 type: route.key,
               },
@@ -145,7 +149,7 @@ function TxnTypeTabView({ cardItems }: { cardItems: AppListCardItemType[] }) {
     }
 
     router.push({
-      pathname: "/category_management/[id]",
+      pathname: CATEGORY_MANAGEMENT_DETAIL_URL,
       params: { id: item.id },
     });
   };

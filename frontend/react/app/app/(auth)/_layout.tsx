@@ -22,6 +22,10 @@ export default function StackLayout() {
             options={{ title: "Login", headerShown: false }}
           />
           <Stack.Screen
+            name="app_pin_login"
+            options={{ title: "App PIN Login", headerShown: false }}
+          />
+          <Stack.Screen
             name="register"
             options={{ title: "Register", headerShown: false }}
           />

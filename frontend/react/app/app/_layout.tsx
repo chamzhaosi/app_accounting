@@ -1,5 +1,5 @@
 import { useFonts } from "expo-font";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
@@ -23,8 +23,8 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useToastStore } from "../stores/useToastStore";
 import { AppStack } from "../components/AppStack";
+import { useToastStore } from "../stores/useToastStore";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -59,19 +59,6 @@ export default function StackLayout() {
     toggleTheme(colorScheme);
   }, [colorScheme]);
 
-  useEffect(() => {
-    if (!loaded) return;
-    userAuthChecking();
-  }, [loaded]);
-
-  const userAuthChecking = async () => {
-    startLoading();
-    await new Promise((res) => setTimeout(res, 2000));
-    stopLoading();
-    // router.replace("/(auth)/login");
-    // router.push("/(home)/dashboard");
-  };
-
   if (!loaded) {
     return null;
   }
@@ -81,10 +68,10 @@ export default function StackLayout() {
       <PaperProvider theme={theme}>
         <StatusBar style="auto" />
         <AppStack>
-          {/* <Stack.Screen name="landing" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
-          {/* <Stack.Screen name="(home)" options={{ headerShown: false }} />
-          <Stack.Screen name="account_type" options={{ headerShown: false }} />
+          <Stack.Screen name="landing" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(home)" options={{ headerShown: false }} />
+          {/* <Stack.Screen name="account_type" options={{ headerShown: false }} /> */}
           <Stack.Screen
             name="account_management"
             options={{ headerShown: false }}
@@ -92,11 +79,8 @@ export default function StackLayout() {
           <Stack.Screen
             name="category_management"
             options={{ headerShown: false }}
-          /> */}
-          <Stack.Screen
-            name="reset_password"
-            options={{ title: "Reset Password" }}
           />
+          <Stack.Screen name="security" options={{ headerShown: false }} />
         </AppStack>
         <Toast
           config={toastConfig(THEME, insets)}
