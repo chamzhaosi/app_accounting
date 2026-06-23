@@ -17,7 +17,7 @@ import {
   PaperProvider,
 } from "react-native-paper";
 import { DARK, LIGHT } from "../constants/colors";
-
+import * as SQLite from "expo-sqlite";
 import { StatusBar } from "expo-status-bar";
 import {
   SafeAreaProvider,
@@ -25,6 +25,7 @@ import {
 } from "react-native-safe-area-context";
 import { AppStack } from "../components/AppStack";
 import { useToastStore } from "../stores/useToastStore";
+import { initDB } from "../sql/db/database";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -56,6 +57,12 @@ export default function StackLayout() {
   });
 
   useEffect(() => {
+    const init = async () => {
+      const db = await SQLite.openDatabaseAsync("finora-db");
+      console.log(db);
+    };
+
+    init();
     toggleTheme(colorScheme);
   }, [colorScheme]);
 
