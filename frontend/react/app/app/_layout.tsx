@@ -57,12 +57,7 @@ export default function StackLayout() {
   });
 
   useEffect(() => {
-    const init = async () => {
-      const db = await SQLite.openDatabaseAsync("finora-db");
-      console.log(db);
-    };
-
-    init();
+    initDB();
     toggleTheme(colorScheme);
   }, [colorScheme]);
 

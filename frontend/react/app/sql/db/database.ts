@@ -1,18 +1,35 @@
 import * as SQLite from "expo-sqlite";
 import { runMigrations } from "./migrations";
+import { getOrCreateDBKey } from "./common";
 
-export const db = await SQLite.openDatabaseAsync("finora-db");
+let db: SQLite.SQLiteDatabase | null = null;
 
-export const initDB = async () => {
-  const db = await SQLite.openDatabaseAsync("finora-db");
+export const getDB = async () => {
+  if (!db) {
+    db = await SQLite.openDatabaseAsync("finora-db");
+  }
 
-  // await initDBSetup();
-  // await runMigrations();
+  return db;
 };
 
-const initDBSetup = async () => {
-  await db.withTransactionAsync(async () => {
+export const initDB = async () => {
+  try {
+    const db = await getDB();
+    await initDBSetup(db);
+    await runMigrations(db);
+  } catch (e) {
+    console.error("Error when initial DB", e);
+  }
+};
+
+const initDBSetup = async (db: SQLite.SQLiteDatabase) => {
+  try {
     await db.execAsync(`PRAGMA journal_mode = WAL`);
-    await db.execAsync(`PRAGMA key = 'password'`);
-  });
+
+    const dbKey = await getOrCreateDBKey();
+    console.log(dbKey);
+    await db.execAsync(`PRAGMA key = '${12312313123123}'`);
+  } catch (e) {
+    console.error("Error when setup DB", e);
+  }
 };

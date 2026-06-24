@@ -6,6 +6,7 @@ export const APP_PIN_HASH_KEY = "app_pin_hash";
 export const APP_PIN_SALT_KEY = "app_pin_salt";
 export const BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY =
   "biometric_lock_enabled_by_pin_pattern";
+export const DB_KEY = "finora-db-key";
 
 export const setStoredItem = async (
   key: string,
