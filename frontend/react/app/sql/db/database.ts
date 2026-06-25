@@ -27,8 +27,7 @@ const initDBSetup = async (db: SQLite.SQLiteDatabase) => {
     await db.execAsync(`PRAGMA journal_mode = WAL`);
 
     const dbKey = await getOrCreateDBKey();
-    console.log(dbKey);
-    await db.execAsync(`PRAGMA key = '${12312313123123}'`);
+    await db.execAsync(`PRAGMA key = '${dbKey}'`);
   } catch (e) {
     console.error("Error when setup DB", e);
   }
