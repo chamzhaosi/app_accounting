@@ -11,21 +11,20 @@ import "../global.css";
 import { useLoadingStore } from "../stores/useLoadingStore";
 import { ThemeType, useThemeStore } from "../stores/useThemeStore";
 
+import { StatusBar } from "expo-status-bar";
 import {
   MD3DarkTheme as DefaultDarkTheme,
   MD3LightTheme as DefaultLightTheme,
   PaperProvider,
 } from "react-native-paper";
-import { DARK, LIGHT } from "../constants/colors";
-import * as SQLite from "expo-sqlite";
-import { StatusBar } from "expo-status-bar";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { AppStack } from "../components/AppStack";
-import { useToastStore } from "../stores/useToastStore";
+import { DARK, LIGHT } from "../constants/colors";
 import { initDB } from "../sql/db/database";
+import { useToastStore } from "../stores/useToastStore";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -73,7 +72,7 @@ export default function StackLayout() {
           <Stack.Screen name="landing" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(home)" options={{ headerShown: false }} />
-          {/* <Stack.Screen name="account_type" options={{ headerShown: false }} /> */}
+          <Stack.Screen name="account_type" options={{ headerShown: false }} />
           <Stack.Screen
             name="account_management"
             options={{ headerShown: false }}

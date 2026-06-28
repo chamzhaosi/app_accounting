@@ -1,5 +1,7 @@
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import AppFloatingButton from "../../components/AppFloatingButton";
+import { AppIconProps } from "../../components/AppIcon";
 import AppListCardView, {
   AppListCardItemType,
 } from "../../components/AppListCardView";
@@ -9,32 +11,34 @@ import {
   ACCOUNT_TYPE_CREATE_URL,
   ACCOUNT_TYPE_DETAIL_URL,
 } from "../../constants/urls";
+import { getAccTypeList } from "../../sql/service/accTypeService";
 
 export default function AccountTypeList() {
-  const data: AppListCardItemType[] = [
-    {
-      id: 1,
-      icon: "Banknote",
-      label: "Cash",
-      isEditable: false,
-    },
-    { id: 2, icon: "Landmark", label: "Bank", isEditable: false },
-    {
-      id: 3,
-      icon: "WalletMinimal",
-      label: "Wallet",
-      isEditable: false,
-    },
-    { id: 4, icon: "CreditCard", label: "Card", isEditable: false },
-    {
-      id: 5,
-      icon: "Landmark",
-      label:
-        "Card - in card drawer, my friend put de, dont take it Card - in card drawer, my friend put de, dont take it",
-      isEditable: true,
-    },
-    { id: 6, icon: "CreditCard", label: "Other", isEditable: false },
-  ];
+  const [accTypeList, setAccTypeList] = useState<AppListCardItemType[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getAccTypeList()
+      .then((data) => {
+        if (!data || data.length === 0) return;
+
+        setAccTypeList(
+          data.map((d) => {
+            return {
+              id: d.id,
+              label: d.label,
+              icon: d.icon as AppIconProps["name"],
+              isEditable: !Boolean(d.is_system),
+            };
+          }),
+        );
+      })
+      .catch((e) => {
+        console.error("Error when getting account type list", e);
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const onPress = (item: AppListCardItemType) => {
     if (!item.isEditable) {
@@ -51,9 +55,16 @@ export default function AccountTypeList() {
     });
   };
 
+  // TODO: pull refresh, tanstack react query, loading sekeleton
+
   return (
     <AppView className="relative">
-      <AppListCardView data={data} onPress={onPress} extraCardHeight={20} />
+      <AppListCardView
+        data={accTypeList}
+        onPress={onPress}
+        extraCardHeight={20}
+        isLoading={isLoading}
+      />
       <AppFloatingButton
         icon="plus"
         onPress={() => router.push(ACCOUNT_TYPE_CREATE_URL)}

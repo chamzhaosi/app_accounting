@@ -7,15 +7,13 @@ import {
 import { Surface, Tooltip, TouchableRipple } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
+import AppEmpty from "./AppEmpty";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
-import AppEmpty from "./AppEmpty";
-import { useFocusEffect } from "expo-router";
-import { useCallback } from "react";
 
 export type AppListCardItemType = {
-  id: number;
+  id: string;
   icon: AppIconProps["name"];
   label: string;
   description?: string;
@@ -36,6 +34,7 @@ type AppListViewProps = Omit<
   numberItemInRow?: number;
   isShowNoMoreData?: boolean;
   parentWidth?: number;
+  isLoading?: boolean;
 };
 
 export default function AppListCardView({
@@ -53,6 +52,7 @@ export default function AppListCardView({
   onScroll,
   parentWidth,
   contentContainerStyle,
+  isLoading,
   ...props
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
@@ -63,7 +63,6 @@ export default function AppListCardView({
   const itemSize = Math.floor(
     ((parentWidth ?? width) - gapSize * (itemNumInRow + 1)) / itemNumInRow,
   );
-  const isEmpty = data.length === 0;
 
   const genListRenderItem = ({ item }: { item: AppListCardItemType }) => {
     const isItemSelected = item.icon === selectedItem;
@@ -130,6 +129,8 @@ export default function AppListCardView({
       ----- No more data -----
     </AppText>
   );
+
+  if (isLoading) return <AppText>Loading</AppText>;
 
   return (
     <KeyboardAwareFlatList

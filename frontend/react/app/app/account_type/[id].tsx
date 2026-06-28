@@ -3,18 +3,18 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import AppIcon, { AppIconProps } from "../../components/AppIcon";
-import AccTypeIconsList from "./_components/AccTypeIconsList";
 import AppButton, {
-  AppButtonProps,
   ButtonType,
   SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
 import AppDialog from "../../components/AppDialog";
 import AppDivider from "../../components/AppDivider";
+import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
+import { ICONS } from "../../constants/icons";
+import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 import {
   accountTypeFormDefaultValues,
   accountTypeFormSchema,
@@ -22,8 +22,14 @@ import {
   LABEL_MAX_LEN,
 } from "../../forms/schemas/accout_type.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { ICONS } from "../../constants/icons";
-import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
+import AccTypeIconsList from "./_components/AccTypeIconsList";
+import {
+  deleteAccType,
+  getAccTypeById,
+  updateAccType,
+} from "../../sql/service/accTypeService";
+import { AppToast } from "../../components/AppToast";
+import { toTitleCase } from "../../utils/common";
 
 export default function AccountTypeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +40,7 @@ export default function AccountTypeDetail() {
   );
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
   const [showDialog, setShowDialog] = useState<boolean>(false);
   const isSubmitting = isDeleting || isSaving;
@@ -46,29 +53,69 @@ export default function AccountTypeDetail() {
   });
 
   const onSubmit = async (value: AccountTypeFormType) => {
-    const data = { ...value, icon: selectedItem };
-    setRspErrorMsg("");
-    console.log(data);
-    setIsSaving(true);
-    await new Promise((res) => setTimeout(res, 2000));
-    setIsSaving(false);
-    router.back();
+    const data = {
+      ...value,
+      id: id,
+      label: toTitleCase(value.label),
+      icon: selectedItem,
+    };
+
+    try {
+      setRspErrorMsg("");
+      setIsSaving(true);
+      const exist = await updateAccType(data);
+      if (exist) {
+        setRspErrorMsg(exist);
+      } else {
+        AppToast.success({
+          message: `Account type updated successfully`,
+        });
+        router.back();
+      }
+    } catch (e) {
+      console.error("Error when updating account type", e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const onDelete = async () => {
-    setIsDeleting(true);
-    await new Promise((res) => setTimeout(res, 2000));
-    setIsDeleting(false);
-    router.back();
+    try {
+      setIsDeleting(true);
+      await deleteAccType(id);
+      AppToast.success({
+        message: `Account type deleted successfully`,
+      });
+      router.back();
+    } catch (e) {
+      console.error("Error when deleting account type", e);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   useEffect(() => {
-    setValues({
-      label:
-        "Card - in card drawer, my friend put de, dont take it Card - in card drawer, my friend put de, dont take it",
-      icon: "CreditCard",
-    });
-    setSelectedItem("CreditCard");
+    if (!id) return;
+
+    setIsLoading(true);
+    getAccTypeById(id)
+      .then((data) => {
+        if (!data) {
+          AppToast.error({ message: "Accout type id not found" });
+          return;
+        }
+        setValues({
+          label: data.label,
+          icon: data.icon,
+        });
+        setSelectedItem(data.icon as AppIconProps["name"]);
+      })
+      .catch((e) => {
+        console.error("Error when getting account type by id", e);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [id]);
 
   return (
@@ -160,7 +207,7 @@ export default function AccountTypeDetail() {
               style={{ flex: 0.4, borderRadius: 8 }}
               {...SUBMIT_BTN_CONTENT_STYLE}
             >
-              Save
+              Update
             </AppButton>
           </View>
 

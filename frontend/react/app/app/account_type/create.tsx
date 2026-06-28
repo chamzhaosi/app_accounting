@@ -21,6 +21,10 @@ import {
 } from "../../forms/schemas/accout_type.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { ICONS } from "../../constants/icons";
+import { createNewAccType } from "../../sql/service/accTypeService";
+import { AppToast } from "../../components/AppToast";
+import { router } from "expo-router";
+import { toTitleCase } from "../../utils/common";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
@@ -49,23 +53,31 @@ export default function AccountTypeCreate() {
     value: AccountTypeFormType,
     saveAnotherType: boolean,
   ) => {
-    const data = { ...value, icon: selectedItem };
+    const data = {
+      ...value,
+      label: toTitleCase(value.label),
+      icon: selectedItem,
+    };
     const setLoading = saveAnotherType ? setIsSavingAndNewType : setIsSaving;
 
-    setRspErrorMsg("");
-    console.log(data);
-    setLoading(true);
-    // await new Promise((res) =>
-    //   setTimeout(() => {
-    //     res("success");
-    //     AppToast.success({ message: "Add account type successfully" });
-    //   }, 2000),
-    // );
-    // setLoading(false);
-    // saveAnotherType ? formReset() : router.back();
-    await new Promise((res) => setTimeout(res, 200));
-    setLoading(false);
-    setRspErrorMsg("Account type already added.");
+    try {
+      setRspErrorMsg("");
+      setLoading(true);
+      const errMsg = await createNewAccType(data);
+      if (errMsg) {
+        setRspErrorMsg(errMsg);
+      } else {
+        AppToast.success({
+          message: `${value.label} account type created successfully`,
+        });
+        formReset();
+      }
+      !saveAnotherType && router.back();
+    } catch (e) {
+      console.error("Error when create new account type", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formReset = () => {
@@ -111,7 +123,7 @@ export default function AccountTypeCreate() {
           </View>
         </View>
 
-        <View className="m-4 mt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+        <View className="p-4 pt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View className="flex-row items-center justify-center gap-4 mt-4">
             <AppButton
               disabled={isSubmitting}
