@@ -4,13 +4,19 @@ import {
   KeyboardAwareFlatList,
   KeyboardAwareFlatListProps,
 } from "react-native-keyboard-aware-scroll-view";
-import { Surface, Tooltip, TouchableRipple } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Surface,
+  Tooltip,
+  TouchableRipple,
+} from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
 import AppEmpty from "./AppEmpty";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type AppListCardItemType = {
   id: string;
@@ -57,6 +63,7 @@ export default function AppListCardView({
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const gapSize = 16;
   const itemNumInRow = numberItemInRow ?? (isShowIconOnly ? 6 : 4);
@@ -130,11 +137,10 @@ export default function AppListCardView({
     </AppText>
   );
 
-  if (isLoading) return <AppText>Loading</AppText>;
-
   return (
     <KeyboardAwareFlatList
       className={cn(className)}
+      style={{ marginBottom: insets.bottom }}
       refreshing={false}
       onRefresh={onRefresh}
       data={data}
@@ -146,7 +152,13 @@ export default function AppListCardView({
       ]}
       renderItem={genListRenderItem}
       ListEmptyComponent={<AppEmpty />}
-      ListFooterComponent={isShowNoMoreData ? genNoMoreData : undefined}
+      ListFooterComponent={
+        isLoading ? (
+          <ActivityIndicator className="my-4" size={30} />
+        ) : isShowNoMoreData ? (
+          genNoMoreData
+        ) : undefined
+      }
       keyExtractor={(item) => item.id}
       enableOnAndroid
       extraScrollHeight={extraScrollHeight ?? 40}

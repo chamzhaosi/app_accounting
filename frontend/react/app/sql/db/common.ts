@@ -1,6 +1,10 @@
+import * as Crypto from "expo-crypto";
 import * as SQLite from "expo-sqlite";
 import { DB_KEY, getStoredItem, setStoredItem } from "../../local/secureStore";
-import * as Crypto from "expo-crypto";
+import { OrderBy } from "../types/common";
+
+export const DEFAULT_PAGE_SIZE = 20;
+export const DEFAULT_CURRENT_PAGE = 1;
 
 export const checkCurrentDBVersion = async (db: SQLite.SQLiteDatabase) => {
   return await db.getFirstAsync<{ user_version: number }>(
@@ -27,4 +31,19 @@ export const getOrCreateDBKey = async () => {
   } catch (e) {
     console.error("Error when getting or creating db key", e);
   }
+};
+
+export const buildOrderBy = (orderBy?: OrderBy | OrderBy[]) => {
+  if (!orderBy) {
+    return "ORDER BY id DESC";
+  }
+
+  const orders = Array.isArray(orderBy) ? orderBy : [orderBy];
+
+  return (
+    "ORDER BY " +
+    orders
+      .map(({ column, direction = "ASC" }) => `${column} ${direction}`)
+      .join(", ")
+  );
 };

@@ -30,6 +30,8 @@ import {
 } from "../../sql/service/accTypeService";
 import { AppToast } from "../../components/AppToast";
 import { toTitleCase } from "../../utils/common";
+import { ActivityIndicator } from "react-native-paper";
+import { ACCOUNT_TYPE_LIST_URL } from "../../constants/urls";
 
 export default function AccountTypeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -117,6 +119,13 @@ export default function AccountTypeDetail() {
         setIsLoading(false);
       });
   }, [id]);
+
+  if (isLoading)
+    return (
+      <View className="h-full justify-center items-center">
+        <ActivityIndicator size={"large"} />
+      </View>
+    );
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>

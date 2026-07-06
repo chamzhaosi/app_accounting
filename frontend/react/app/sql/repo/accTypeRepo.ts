@@ -1,4 +1,9 @@
 import { DB_SYNC_STATUS } from "../../constants/enum";
+import {
+  buildOrderBy,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_CURRENT_PAGE,
+} from "../db/common";
 import { getDB } from "../db/database";
 import {
   AccTypCreateReqType,
@@ -6,15 +11,26 @@ import {
   AccTypUpdateReqType,
 } from "../types/accTypType";
 import { randomUUID } from "expo-crypto";
+import { SQLQueryOptions } from "../types/common";
 
-export const getAccTypeListFromDB = async () => {
+export const getAccTypeListFromDB = async ({
+  orderBy,
+  pageSize = DEFAULT_PAGE_SIZE,
+  curPage = DEFAULT_CURRENT_PAGE,
+}: SQLQueryOptions) => {
   try {
+    const offset = (curPage - 1) * pageSize;
     const db = await getDB();
 
-    const result = await db.getAllAsync<AccTypRspType>(`
-    SELECT * FROM account_types WHERE deleted_at IS NULL;  
-  `);
-    return result;
+    const sql = `
+      SELECT *
+      FROM account_types
+      WHERE deleted_at IS NULL
+      ${buildOrderBy(orderBy)}
+      LIMIT ? OFFSET ?;
+    `;
+
+    return await db.getAllAsync<AccTypRspType>(sql, [pageSize, offset]);
   } catch (e) {
     console.error("Error when getting account type from db", e);
     throw e;

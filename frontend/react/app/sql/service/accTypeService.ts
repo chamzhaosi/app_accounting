@@ -12,9 +12,19 @@ import {
   AccTypUpdateReqType,
 } from "../types/accTypType";
 
-export const getAccTypeList = async (): Promise<AccTypRspType[]> => {
+export const getAccTypeList = async (
+  curPage: number,
+  pageSize: number,
+): Promise<AccTypRspType[]> => {
   try {
-    return await getAccTypeListFromDB();
+    return await getAccTypeListFromDB({
+      orderBy: {
+        column: "created_at",
+        direction: "DESC",
+      },
+      curPage,
+      pageSize,
+    });
   } catch (e) {
     throw e;
   }
