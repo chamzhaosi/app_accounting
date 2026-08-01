@@ -60,7 +60,7 @@ export default function CategoryManagementCreate() {
       TXN_TYPES_OPTIONS.find((t) => t.value === type)?.id ?? 1;
     setValues({
       ...categoryManagementFormDefaultValues,
-      typeId: defaultTxnTypeId,
+      typeId: Number(defaultTxnTypeId),
     });
   };
 

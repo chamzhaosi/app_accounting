@@ -19,7 +19,7 @@ import AppText from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type AppListCardItemType = {
-  id: string;
+  id: number | string;
   icon: AppIconProps["name"];
   label: string;
   description?: string;

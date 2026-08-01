@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react-native";
-import { FlatList, FlatListProps, StyleSheet } from "react-native";
+import { FlatList, FlatListProps, StyleSheet, View } from "react-native";
 import { List } from "react-native-paper";
 import { FONTS } from "../constants/fonts";
 import { useThemeStore } from "../stores/useThemeStore";
@@ -9,9 +9,10 @@ import {
   LIST_ITEM_TITLE_FONTSIZE,
   LIST_ITEM_DESCRIPTION_FONTSIZE,
 } from "../constants/size";
+import AppEmpty from "./AppEmpty";
 
 export type AppListItemType = {
-  id: number;
+  id: number | string;
   icon: AppIconProps["name"];
   label: string;
   descriptions?: string;
@@ -30,6 +31,7 @@ export default function AppListView({
   className,
   itemClassName,
   onPress,
+  contentContainerStyle,
   ...props
 }: AppListViewType) {
   const { THEME } = useThemeStore();
@@ -64,6 +66,15 @@ export default function AppListView({
       data={data}
       keyExtractor={(item) => item.id.toString()}
       renderItem={genFlatListRenderItem}
+      contentContainerStyle={[
+        data.length === 0 && defaultStyle.emptyContentContainer,
+        contentContainerStyle,
+      ]}
+      ListEmptyComponent={
+        <View style={defaultStyle.emptyContainer}>
+          <AppEmpty />
+        </View>
+      }
       {...props}
     />
   );
@@ -83,5 +94,13 @@ const defaultStyle = StyleSheet.create({
   },
   containerStyle: {
     marginInline: 12,
+  },
+  emptyContentContainer: {
+    flexGrow: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

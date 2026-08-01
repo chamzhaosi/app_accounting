@@ -1,7 +1,12 @@
 type OrderDirection = "ASC" | "DESC";
 
 export type OrderBy = {
-  column: "id" | "label" | "created_at" | "updated_at";
+  column:
+    | "id"
+    | "label"
+    | "created_at"
+    | "updated_at"
+    | "accounts.created_at";
   direction?: OrderDirection;
 };
 

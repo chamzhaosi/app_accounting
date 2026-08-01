@@ -22,7 +22,7 @@ import AppText, { TextTypEnum } from "./AppText";
 import AppDivider from "./AppDivider";
 
 export type SelectOptionType = {
-  id: number;
+  id: number | string;
   icon?: AppIconProps["name"];
   label: string;
   value: string;
@@ -32,7 +32,7 @@ type AppSelectProps = TextInputProps & {
   label: string;
   value: string;
   options: SelectOptionType[];
-  onChange: (value: number | null) => void;
+  onChange: (value: number | string | null) => void;
   errorField?: FieldError;
   showClear: boolean;
 };
