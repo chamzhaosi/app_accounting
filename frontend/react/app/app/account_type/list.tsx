@@ -1,5 +1,8 @@
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo } from "react";
+import { View } from "react-native";
+import { ActivityIndicator } from "react-native-paper";
 import AppFloatingButton from "../../components/AppFloatingButton";
 import { AppIconProps } from "../../components/AppIcon";
 import AppListCardView, {
@@ -11,60 +14,59 @@ import {
   ACCOUNT_TYPE_CREATE_URL,
   ACCOUNT_TYPE_DETAIL_URL,
 } from "../../constants/urls";
+import { accountTypeQueryKeys } from "../../constants/queryKeys";
 import { getAccTypeList } from "../../sql/service/accTypeService";
-import { ActivityIndicator } from "react-native-paper";
-import { View } from "react-native";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+
+const PAGE_SIZE = 40;
 
 export default function AccountTypeList() {
-  const pageSize = 40;
-  const isFirstLoad = useRef<boolean>(true);
-  const [page, setPage] = useState<number>(1);
-  const [hasMoreData, setHasMoreData] = useState<boolean>(false);
-  const [accTypeList, setAccTypeList] = useState<AppListCardItemType[]>([]);
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: accountTypeQueryKeys.list({ pageSize: PAGE_SIZE }),
+    queryFn: ({ pageParam }) => getAccTypeList(pageParam, PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length + 1 : undefined,
+  });
+
+  const accTypeList = useMemo<AppListCardItemType[]>(
+    () =>
+      data?.pages
+        .flat()
+        .map((d) => ({
+          id: d.id,
+          label: d.label,
+          icon: d.icon as AppIconProps["name"],
+          isEditable: !Boolean(d.is_system),
+        })) ?? [],
+    [data],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      if (isFirstLoad.current) {
-        isFirstLoad.current = false;
-        fetchAccTypList(1, setIsInitialLoading);
-      } else {
-        fetchAccTypList(1);
-      }
-    }, []),
+      debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Refetching list on focus");
+      refetch();
+    }, [refetch]),
   );
 
-  const fetchAccTypList = async (
-    pageNum: number,
-    setLoading?: React.Dispatch<React.SetStateAction<boolean>>,
-  ) => {
-    if (isLoading || isRefreshing) return;
+  useEffect(() => {
+    if (!error) return;
 
-    try {
-      setLoading?.(true);
-
-      const data = await getAccTypeList(pageNum, pageSize);
-
-      setHasMoreData(data.length === pageSize);
-
-      const fmtData: AppListCardItemType[] = data.map((d) => ({
-        id: d.id,
-        label: d.label,
-        icon: d.icon as AppIconProps["name"],
-        isEditable: !Boolean(d.is_system),
-      }));
-
-      setAccTypeList((prev) => (pageNum > 1 ? [...prev, ...fmtData] : fmtData));
-
-      setPage(pageNum);
-    } catch (e) {
-      console.error("Error when getting account type list", e);
-    } finally {
-      setLoading?.(false);
-    }
-  };
+    console.error(
+      DEBUG_TAG.ACCOUNT_TYPE,
+      "Error when getting account type list",
+      error,
+    );
+  }, [error]);
 
   const onPress = (item: AppListCardItemType) => {
     if (!item.isEditable) {
@@ -82,18 +84,18 @@ export default function AccountTypeList() {
   };
 
   const onLoadMore = () => {
-    if (isLoading || !hasMoreData) return;
+    if (isFetchingNextPage || !hasNextPage) return;
 
-    fetchAccTypList(page + 1, setIsLoading);
+    debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Fetching next list page");
+    fetchNextPage();
   };
 
   const onRefresh = async () => {
-    await fetchAccTypList(1, setIsRefreshing);
+    debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Refreshing list");
+    await refetch();
   };
 
-  // TODO: tanstack react query
-
-  if (isInitialLoading)
+  if (isLoading)
     return (
       <View className="h-full justify-center items-center">
         <ActivityIndicator size={"large"} />
@@ -106,8 +108,8 @@ export default function AccountTypeList() {
         data={accTypeList}
         onPress={onPress}
         extraCardHeight={20}
-        refreshing={isRefreshing}
-        isLoading={isLoading}
+        refreshing={isRefetching && !isFetchingNextPage}
+        isLoading={isFetchingNextPage}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}

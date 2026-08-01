@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
@@ -25,9 +26,12 @@ import { createNewAccType } from "../../sql/service/accTypeService";
 import { AppToast } from "../../components/AppToast";
 import { router } from "expo-router";
 import { toTitleCase } from "../../utils/common";
+import { accountTypeQueryKeys, invalidateQuery } from "../../constants/queryKeys";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
+  const queryClient = useQueryClient();
 
   const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
     ICONS.ACCOUNT_TYPE[0],
@@ -65,8 +69,21 @@ export default function AccountTypeCreate() {
       setLoading(true);
       const errMsg = await createNewAccType(data);
       if (errMsg) {
+        debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Create rejected by service", {
+          label: data.label,
+          reason: errMsg,
+        });
         setRspErrorMsg(errMsg);
+        return;
       } else {
+        await invalidateQuery(queryClient, accountTypeQueryKeys.lists());
+        debugLog(
+          DEBUG_TAG.ACCOUNT_TYPE,
+          "Invalidated account type lists after create",
+          {
+            label: data.label,
+          },
+        );
         AppToast.success({
           message: `${value.label} account type created successfully`,
         });
@@ -74,7 +91,11 @@ export default function AccountTypeCreate() {
       }
       !saveAnotherType && router.back();
     } catch (e) {
-      console.error("Error when create new account type", e);
+      console.error(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Error when create new account type",
+        e,
+      );
     } finally {
       setLoading(false);
     }
@@ -111,7 +132,6 @@ export default function AccountTypeCreate() {
                   autoFocus
                   editable={!isSubmitting}
                   onChangeText={onChange}
-                  onChange={onChange}
                   onBlur={onBlur}
                   value={value}
                   maxLength={LABEL_MAX_LEN}

@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -31,23 +32,34 @@ import {
 import { AppToast } from "../../components/AppToast";
 import { toTitleCase } from "../../utils/common";
 import { ActivityIndicator } from "react-native-paper";
-import { ACCOUNT_TYPE_LIST_URL } from "../../constants/urls";
+import { accountTypeQueryKeys, invalidateQuery } from "../../constants/queryKeys";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 
 export default function AccountTypeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
+  const queryClient = useQueryClient();
 
   const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
     ICONS.ACCOUNT_TYPE[0],
   );
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
   const [showDialog, setShowDialog] = useState<boolean>(false);
   const isSubmitting = isDeleting || isSaving;
 
-  const { control, handleSubmit, setValues } = useForm<AccountTypeFormType>({
+  const {
+    data: accType,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: accountTypeQueryKeys.detail(id),
+    queryFn: () => getAccTypeById(id),
+    enabled: Boolean(id),
+  });
+
+  const { control, handleSubmit, reset } = useForm<AccountTypeFormType>({
     resolver: zodResolver(accountTypeFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
@@ -67,15 +79,35 @@ export default function AccountTypeDetail() {
       setIsSaving(true);
       const exist = await updateAccType(data);
       if (exist) {
+        debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Update rejected by service", {
+          id,
+          label: data.label,
+          reason: exist,
+        });
         setRspErrorMsg(exist);
       } else {
+        await Promise.all([
+          invalidateQuery(queryClient, accountTypeQueryKeys.lists()),
+          invalidateQuery(queryClient, accountTypeQueryKeys.detail(id)),
+        ]);
+        debugLog(
+          DEBUG_TAG.ACCOUNT_TYPE,
+          "Invalidated account type queries after update",
+          {
+            id,
+          },
+        );
         AppToast.success({
           message: `Account type updated successfully`,
         });
         router.back();
       }
     } catch (e) {
-      console.error("Error when updating account type", e);
+      console.error(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Error when updating account type",
+        e,
+      );
     } finally {
       setIsSaving(false);
     }
@@ -85,40 +117,58 @@ export default function AccountTypeDetail() {
     try {
       setIsDeleting(true);
       await deleteAccType(id);
+      await invalidateQuery(queryClient, accountTypeQueryKeys.lists());
+      queryClient.removeQueries({
+        queryKey: accountTypeQueryKeys.detail(id),
+      });
+      debugLog(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Invalidated list and removed detail after delete",
+        {
+          id,
+        },
+      );
       AppToast.success({
         message: `Account type deleted successfully`,
       });
       router.back();
     } catch (e) {
-      console.error("Error when deleting account type", e);
+      console.error(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Error when deleting account type",
+        e,
+      );
     } finally {
       setIsDeleting(false);
     }
   };
 
   useEffect(() => {
-    if (!id) return;
+    if (!accType) return;
 
-    setIsLoading(true);
-    getAccTypeById(id)
-      .then((data) => {
-        if (!data) {
-          AppToast.error({ message: "Accout type id not found" });
-          return;
-        }
-        setValues({
-          label: data.label,
-          icon: data.icon,
-        });
-        setSelectedItem(data.icon as AppIconProps["name"]);
-      })
-      .catch((e) => {
-        console.error("Error when getting account type by id", e);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [id]);
+    reset({
+      label: accType.label,
+      icon: accType.icon,
+    });
+    setSelectedItem(accType.icon as AppIconProps["name"]);
+  }, [accType, reset]);
+
+  useEffect(() => {
+    if (isLoading || accType !== null) return;
+
+    console.warn("Account type id not found", { id });
+    AppToast.error({ message: "Accout type id not found" });
+  }, [accType, id, isLoading]);
+
+  useEffect(() => {
+    if (!error) return;
+
+    console.error(
+      DEBUG_TAG.ACCOUNT_TYPE,
+      "Error when getting account type by id",
+      error,
+    );
+  }, [error]);
 
   if (isLoading)
     return (

@@ -11,6 +11,7 @@ import {
   AccTypRspType,
   AccTypUpdateReqType,
 } from "../types/accTypType";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 
 export const getAccTypeList = async (
   curPage: number,
@@ -35,7 +36,13 @@ export const createNewAccType = async (
 ): Promise<string | void> => {
   try {
     const existData = await getAccTypeByLabelFromDB(data.label);
-    if (existData) return "Same label of account type found.";
+    if (existData) {
+      debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Duplicate label found when creating", {
+        label: data.label,
+        existingId: existData.id,
+      });
+      return "Same label of account type found.";
+    }
 
     await createNewAccTypeToDB(data);
   } catch (e) {
@@ -56,8 +63,14 @@ export const getAccTypeById = async (
 export const updateAccType = async (data: AccTypUpdateReqType) => {
   try {
     const existData = await getAccTypeByLabelFromDB(data.label);
-    if (existData && existData.id !== data.id)
+    if (existData && existData.id !== data.id) {
+      debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Duplicate label found when updating", {
+        id: data.id,
+        label: data.label,
+        existingId: existData.id,
+      });
       return "Same label of account type found.";
+    }
 
     await updateAccTypeToDB(data);
   } catch (e) {
