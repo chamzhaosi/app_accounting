@@ -1,7 +1,11 @@
 import { checkCurrentDBVersion, updateDBVersion } from "./common";
 import * as SQLite from "expo-sqlite";
-import { createAccMgmtTable, createAccTypTable } from "./schemas";
-import { insertAccTypTable } from "./seed";
+import {
+  createAccMgmtTable,
+  createAccTypTable,
+  createCategoryMgmtTable,
+} from "./schemas";
+import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
 
 export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
   const currentVersion = (await checkCurrentDBVersion(db))?.user_version ?? 0;
@@ -10,7 +14,9 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
     await db.withTransactionAsync(async () => {
       await createAccTypTable(db);
       await createAccMgmtTable(db);
+      await createCategoryMgmtTable(db);
       await insertAccTypTable(db);
+      await insertCategoryMgmtTable(db);
       await updateDBVersion(db, 1);
     });
   }

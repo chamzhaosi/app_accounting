@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -9,7 +10,6 @@ import AppButton, {
   SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
 import AppIconSelect from "../../components/AppIconSelect";
-import AppScrollView from "../../components/AppScrollView";
 import AppSelect, { SelectOptionType } from "../../components/AppSelect";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
@@ -17,15 +17,34 @@ import { AppToast } from "../../components/AppToast";
 import AppView from "../../components/AppView";
 import { ICONS } from "../../constants/icons";
 import {
+  categoryManagementQueryKeys,
+  invalidateQuery,
+} from "../../constants/queryKeys";
+import {
   categoryManagementFormDefaultValues,
   categoryManagementFormSchema,
   CategoryManagementFormType,
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
 } from "../../forms/schemas/category_management.schema";
+import { createNewCategoryMgmt } from "../../sql/service/categoryMgmtService";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+
+const TXN_TYPES_OPTIONS: SelectOptionType[] = [
+  { id: 1, label: "Income", value: "inc" },
+  { id: 2, label: "Expense", value: "exp" },
+];
+
+const getInitialValues = (type?: string): CategoryManagementFormType => ({
+  ...categoryManagementFormDefaultValues,
+  typeId: Number(
+    TXN_TYPES_OPTIONS.find((txnType) => txnType.value === type)?.id ?? 1,
+  ),
+});
 
 export default function CategoryManagementCreate() {
   const { type } = useLocalSearchParams<{ type: string }>();
+  const queryClient = useQueryClient();
 
   const [isSavingAndNewAcc, setIsSavingAndNewAcc] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -35,7 +54,6 @@ export default function CategoryManagementCreate() {
   const {
     control,
     handleSubmit,
-    setValues,
     reset,
     setFocus,
     formState: { errors },
@@ -46,27 +64,8 @@ export default function CategoryManagementCreate() {
     defaultValues: categoryManagementFormDefaultValues,
   });
 
-  const TXN_TYPES_OPTIONS: SelectOptionType[] = [
-    {
-      id: 1,
-      label: "Income",
-      value: "inc",
-    },
-    { id: 2, label: "Expense", value: "exp" },
-  ];
-
-  const setInitailValue = () => {
-    const defaultTxnTypeId =
-      TXN_TYPES_OPTIONS.find((t) => t.value === type)?.id ?? 1;
-    setValues({
-      ...categoryManagementFormDefaultValues,
-      typeId: Number(defaultTxnTypeId),
-    });
-  };
-
   const formReset = () => {
-    reset();
-    setInitailValue();
+    reset(getInitialValues(type));
   };
 
   const onSubmit = async (
@@ -74,26 +73,47 @@ export default function CategoryManagementCreate() {
     saveAnotherAcc: boolean,
   ) => {
     const setLoading = saveAnotherAcc ? setIsSavingAndNewAcc : setIsSaving;
+    const data = {
+      ...value,
+      descriptions: value.descriptions?.trim(),
+    };
 
-    setRspErrorMsg("");
-    console.log(value);
-    setLoading(true);
-    await new Promise((res) =>
-      setTimeout(() => {
-        res("success");
-        AppToast.success({ message: "Add category successfully" });
-      }, 2000),
-    );
-    setLoading(false);
-    saveAnotherAcc ? formReset() : router.back();
-    // await new Promise((res) => setTimeout(res, 2000));
-    // setLoading(false);
-    // setRspErrorMsg("Account already added.");
+    try {
+      setRspErrorMsg("");
+      setLoading(true);
+      const errMsg = await createNewCategoryMgmt(data);
+      if (errMsg) {
+        debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT, "Create rejected by service", {
+          typeId: data.typeId,
+          label: data.label,
+          reason: errMsg,
+        });
+        setRspErrorMsg(errMsg);
+        return;
+      }
+
+      await invalidateQuery(queryClient, categoryManagementQueryKeys.lists());
+      debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT, "Invalidated category lists", {
+        typeId: data.typeId,
+        label: data.label,
+      });
+      AppToast.success({ message: "Add category successfully" });
+      if (saveAnotherAcc) formReset();
+      else router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.CATEGORY_MANAGEMENT,
+        "Error when creating category",
+        e,
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    setInitailValue();
-  }, [type]);
+    reset(getInitialValues(type));
+  }, [reset, type]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -108,8 +128,8 @@ export default function CategoryManagementCreate() {
             <AppSelect
               ref={ref}
               label="Transaction Type"
-              value={value.toString()}
-              onChange={onChange}
+              value={value?.toString() ?? ""}
+              onChange={(selected) => onChange(Number(selected ?? 0))}
               onBlur={onBlur}
               options={TXN_TYPES_OPTIONS}
               errorField={error}
@@ -186,7 +206,6 @@ export default function CategoryManagementCreate() {
               editable={!isSubmitting}
               disabled={isSubmitting}
               onChangeText={onChange}
-              onChange={onChange}
               onBlur={onBlur}
               value={value}
               maxLength={DESCRIPTION_MAX_LEN}

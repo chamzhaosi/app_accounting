@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo } from "react";
+import { router } from "expo-router";
+import { useEffect, useMemo } from "react";
 import { View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 import AppFloatingButton from "../../components/AppFloatingButton";
@@ -40,22 +40,13 @@ export default function AccountTypeList() {
 
   const accTypeList = useMemo<AppListCardItemType[]>(
     () =>
-      data?.pages
-        .flat()
-        .map((d) => ({
-          id: d.id,
-          label: d.label,
-          icon: d.icon as AppIconProps["name"],
-          isEditable: !Boolean(d.is_system),
-        })) ?? [],
+      data?.pages.flat().map((d) => ({
+        id: d.id,
+        label: d.label,
+        icon: d.icon as AppIconProps["name"],
+        isEditable: !Boolean(d.is_system),
+      })) ?? [],
     [data],
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Refetching list on focus");
-      refetch();
-    }, [refetch]),
   );
 
   useEffect(() => {
