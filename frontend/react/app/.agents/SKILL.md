@@ -15,6 +15,7 @@ Before changing code under `frontend/react/app`, read the focused skill files th
 - For SQL repository work, use `db-repository-standards/SKILL.md`.
 - For SQLite schema or uniqueness work, use `db-schema-standards/SKILL.md`.
 - For query keys or debug logging tags, use `query-key-and-logging-standards/SKILL.md`.
+- For git commit, use `git-commit/SKILL.md`.
 
 For full module creation or broad module refactors, read all focused skill files.
 
