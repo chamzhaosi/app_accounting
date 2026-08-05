@@ -1,0 +1,126 @@
+import { forwardRef, useState } from "react";
+import { FieldError } from "react-hook-form";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  TextInput as RNTextInput,
+  View,
+} from "react-native";
+import { TextInput, TextInputProps, useTheme } from "react-native-paper";
+import AppTextInput from "./AppTextInput";
+import CustomDatePicker from "./CustomDatePicker";
+
+type AppDatePickerProps = Omit<
+  TextInputProps,
+  "value" | "onChange" | "onChangeText" | "editable" | "onBlur"
+> & {
+  value?: Date;
+  onChange: (date: Date) => void;
+  onBlur?: () => void;
+  errorField?: FieldError;
+};
+
+const formatDate = (date?: Date) => {
+  if (!date || Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
+  ({ value, onChange, errorField, onBlur, disabled, ...props }, ref) => {
+    const [visible, setVisible] = useState(false);
+    const theme = useTheme();
+
+    const openPicker = () => {
+      if (!disabled) setVisible(true);
+    };
+
+    const dismissPicker = () => {
+      setVisible(false);
+      onBlur?.();
+    };
+
+    return (
+      <>
+        <Pressable disabled={disabled} onPress={openPicker}>
+          <AppTextInput
+            {...props}
+            ref={ref}
+            value={formatDate(value)}
+            editable={false}
+            disabled={disabled}
+            showSoftInputOnFocus={false}
+            errorField={errorField}
+            onBlur={dismissPicker}
+            pointerEvents="none"
+            right={
+              <TextInput.Icon
+                icon="calendar"
+                disabled={disabled}
+                forceTextInputFocus={false}
+              />
+            }
+          />
+        </Pressable>
+
+        <Modal
+          animationType="fade"
+          transparent
+          visible={visible}
+          statusBarTranslucent
+          onRequestClose={dismissPicker}
+        >
+          <View style={styles.modalRoot}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss date picker"
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: theme.colors.backdrop },
+              ]}
+              onPress={dismissPicker}
+            />
+
+            <View style={styles.dialog}>
+              <CustomDatePicker
+                value={value}
+                onChange={(date) => {
+                  onChange(date);
+                  dismissPicker();
+                }}
+              />
+            </View>
+          </View>
+        </Modal>
+      </>
+    );
+  },
+);
+
+const styles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  dialog: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: 16,
+    overflow: "hidden",
+    elevation: 8,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+});
+
+AppDatePicker.displayName = "AppDatePicker";
+
+export default AppDatePicker;
