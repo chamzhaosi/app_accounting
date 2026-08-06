@@ -9,6 +9,7 @@ import {
   DESCRIPTION_MAX_LEN as CATEGORY_DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN as CATEGORY_LABEL_MAX_LEN,
 } from "../../forms/schemas/category_management.schema";
+import { DESCRIPTION_MAX_LEN as TRANSACTION_DESCRIPTION_MAX_LEN } from "../../forms/schemas/transaction_management.schema";
 
 export const createAccTypTable = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
@@ -87,6 +88,79 @@ export const createCategoryMgmtTable = async (db: SQLite.SQLiteDatabase) => {
 
       CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_active_type_label
         ON categories(type_id, label)
+        WHERE deleted_at IS NULL;
+    `);
+};
+
+export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id TEXT PRIMARY KEY, -- uuid
+
+        transaction_type VARCHAR(20) NOT NULL
+          CHECK (transaction_type IN ('income', 'expense', 'transfer')),
+
+        category_id TEXT,
+        account_id TEXT,
+        from_account_id TEXT,
+        to_account_id TEXT,
+
+        amount REAL NOT NULL CHECK (amount > 0),
+        descriptions VARCHAR(${TRANSACTION_DESCRIPTION_MAX_LEN}),
+        transaction_date DATE NOT NULL
+          CHECK (
+            date(transaction_date) IS NOT NULL
+            AND transaction_date = date(transaction_date)
+          ),
+
+        is_active BOOLEAN NOT NULL DEFAULT 1,
+
+        sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
+        synced_at DATETIME DEFAULT NULL,
+
+        deleted_at DATETIME DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+
+        FOREIGN KEY (category_id) REFERENCES categories(id),
+        FOREIGN KEY (account_id) REFERENCES accounts(id),
+        FOREIGN KEY (from_account_id) REFERENCES accounts(id),
+        FOREIGN KEY (to_account_id) REFERENCES accounts(id),
+
+        CHECK (
+          (
+            transaction_type IN ('income', 'expense')
+            AND category_id IS NOT NULL
+            AND account_id IS NOT NULL
+            AND from_account_id IS NULL
+            AND to_account_id IS NULL
+          )
+          OR
+          (
+            transaction_type = 'transfer'
+            AND category_id IS NULL
+            AND account_id IS NULL
+            AND from_account_id IS NOT NULL
+            AND to_account_id IS NOT NULL
+            AND from_account_id <> to_account_id
+          )
+        )
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_date
+        ON transactions(transaction_date DESC, created_at DESC)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_account
+        ON transactions(account_id)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_from_account
+        ON transactions(from_account_id)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_to_account
+        ON transactions(to_account_id)
         WHERE deleted_at IS NULL;
     `);
 };

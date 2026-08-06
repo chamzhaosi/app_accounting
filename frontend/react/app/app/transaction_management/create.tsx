@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,12 +16,14 @@ import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import { AppListCardItemType } from "../../components/AppListCardView";
 import { AppListItemType } from "../../components/AppListView";
 import AppScrollView from "../../components/AppScrollView";
-import AppText from "../../components/AppText";
+import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import { AppToast } from "../../components/AppToast";
 import {
   accountManagementQueryKeys,
   categoryManagementQueryKeys,
+  invalidateQuery,
+  transactionManagementQueryKeys,
 } from "../../constants/queryKeys";
 import { TEXTINPUT_HEIGHT } from "../../constants/size";
 import {
@@ -37,8 +39,11 @@ import {
 } from "../../forms/schemas/transaction_management.schema";
 import { getAccMgmtList } from "../../sql/service/accMgmtService";
 import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
+import { createNewTransactionMgmt } from "../../sql/service/transactionMgmtService";
+import { DEBUG_TAG } from "../../utils/debugLog";
 import AccountIdField, { AccountFieldName } from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
+import { TXN_TYPE_ENUM } from "../../constants/enum";
 
 const CATEGORY_PAGE_SIZE = 40;
 const ACCOUNT_PAGE_SIZE = 40;
@@ -47,27 +52,40 @@ const CATEGORY_TYPE_IDS: Record<
   TransactionManagementFormType["transactionType"],
   number | null
 > = {
-  expense: 2,
-  income: 1,
-  transfer: null,
+  [TXN_TYPE_ENUM.EXPENSE]: 2,
+  [TXN_TYPE_ENUM.INCOME]: 1,
+  [TXN_TYPE_ENUM.TRANSFER]: null,
+  [TXN_TYPE_ENUM.ADJUSTMENT]: null,
 };
 
 export default function TransactionManagementCreate() {
+  const queryClient = useQueryClient();
   const [isAccountPickerVisible, setIsAccountPickerVisible] =
     useState<boolean>(false);
   const [activeAccountField, setActiveAccountField] =
     useState<AccountFieldName>("accountId");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingAndNew, setIsSavingAndNew] = useState(false);
+  const [responseError, setResponseError] = useState("");
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
+  const isSubmitting = isSaving || isSavingAndNew;
 
   const today = dayjs().format("YYYY-MM-DD");
-  const { clearErrors, control, handleSubmit, setFocus, setValue, watch } =
-    useForm<TransactionManagementFormType>({
-      resolver: zodResolver(transactionManagementFormSchema),
-      mode: "onChange",
-      reValidateMode: "onChange",
-      defaultValues: getTransactionManagementFormDefaultValues(today),
-    });
+  const {
+    clearErrors,
+    control,
+    handleSubmit,
+    reset,
+    setFocus,
+    setValue,
+    watch,
+  } = useForm<TransactionManagementFormType>({
+    resolver: zodResolver(transactionManagementFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    defaultValues: getTransactionManagementFormDefaultValues(today),
+  });
 
   const transactionType = watch("transactionType");
   const categoryId = watch("categoryId");
@@ -186,16 +204,52 @@ export default function TransactionManagementCreate() {
     }, [refetchAccounts, refetchCategories]),
   );
 
-  const onSubmit = (_value: TransactionManagementFormType) => {
+  const onSubmit = async (
+    value: TransactionManagementFormType,
+    saveAnotherTransaction: boolean,
+  ) => {
     Keyboard.dismiss();
-    AppToast.info({
-      title: "Transaction",
-      message: "Transaction persistence is not implemented. Nothing was saved.",
-    });
+    const setLoading = saveAnotherTransaction ? setIsSavingAndNew : setIsSaving;
+
+    try {
+      setResponseError("");
+      setLoading(true);
+      const errorMessage = await createNewTransactionMgmt({
+        ...value,
+        description: value.description?.trim(),
+      });
+
+      if (errorMessage) {
+        setResponseError(errorMessage);
+        return;
+      }
+
+      await invalidateQuery(
+        queryClient,
+        transactionManagementQueryKeys.lists(),
+      );
+      AppToast.success({ message: "Transaction created successfully" });
+      reset(getTransactionManagementFormDefaultValues(today));
+
+      if (!saveAnotherTransaction) router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.TRANSACTION_MANAGEMENT,
+        "Error when creating transaction",
+        e,
+      );
+      AppToast.error({ message: "Unable to save transaction." });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (isLoadingCategories || categoryError || transactionType === "transfer")
+    if (
+      isLoadingCategories ||
+      categoryError ||
+      transactionType === TXN_TYPE_ENUM.TRANSFER
+    )
       return;
 
     if (!categoryItems.length) {
@@ -236,7 +290,9 @@ export default function TransactionManagementCreate() {
                 onChange(selectedType);
                 setValue("categoryId", "");
 
-                if (selectedType === "transfer") {
+                if (
+                  (selectedType as TXN_TYPE_ENUM) === TXN_TYPE_ENUM.TRANSFER
+                ) {
                   setValue("accountId", "");
                 } else {
                   setValue("fromAccountId", "");
@@ -251,10 +307,18 @@ export default function TransactionManagementCreate() {
                 ]);
               }}
               buttons={[
-                { value: "expense", label: "Expense", icon: "arrow-up" },
-                { value: "income", label: "Income", icon: "arrow-down" },
                 {
-                  value: "transfer",
+                  value: TXN_TYPE_ENUM.EXPENSE,
+                  label: "Expense",
+                  icon: "arrow-up",
+                },
+                {
+                  value: TXN_TYPE_ENUM.INCOME,
+                  label: "Income",
+                  icon: "arrow-down",
+                },
+                {
+                  value: TXN_TYPE_ENUM.TRANSFER,
                   label: "Transfer",
                   icon: "swap-horizontal",
                 },
@@ -402,22 +466,30 @@ export default function TransactionManagementCreate() {
               showClear
               errorField={error}
               submitBehavior="submit"
-              onSubmitEditing={handleSubmit((value) => onSubmit(value))}
+              onSubmitEditing={handleSubmit((value) => onSubmit(value, false))}
             />
           )}
         />
 
+        {responseError && (
+          <AppText type={TextTypEnum.ERROR}>{responseError}</AppText>
+        )}
+
         <View className="flex-row items-center justify-center gap-4 mt-2 mb-4">
           <AppButton
+            disabled={isSubmitting}
+            loading={isSaving}
             variant={ButtonType.SECONDARY}
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSubmit((value) => onSubmit(value, false))}
             style={{ flex: 0.4, borderRadius: 8 }}
             {...SUBMIT_BTN_CONTENT_STYLE}
           >
             Save
           </AppButton>
           <AppButton
-            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+            loading={isSavingAndNew}
+            onPress={handleSubmit((value) => onSubmit(value, true))}
             style={{ flex: 1, borderRadius: 8 }}
             {...SUBMIT_BTN_CONTENT_STYLE}
           >

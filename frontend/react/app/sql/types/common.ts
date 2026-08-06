@@ -6,6 +6,9 @@ export type OrderBy = {
     | "label"
     | "created_at"
     | "updated_at"
+    | "transaction_date"
+    | "transactions.transaction_date"
+    | "transactions.created_at"
     | "accounts.created_at";
   direction?: OrderDirection;
 };

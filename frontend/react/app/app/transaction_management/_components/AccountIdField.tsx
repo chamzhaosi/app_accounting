@@ -86,7 +86,11 @@ export default function AccountIdField({
                 <TextInput
                   ref={ref}
                   label={label}
-                  value={selectedAccount?.label ?? ""}
+                  value={
+                    typeof selectedAccount?.label === "string"
+                      ? selectedAccount.label
+                      : ""
+                  }
                   mode="outlined"
                   placeholder="Please select"
                   showSoftInputOnFocus={false}

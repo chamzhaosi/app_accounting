@@ -5,6 +5,8 @@ export enum DEBUG_TAG {
   ACCOUNT_TYPE_DB = "[AccountType:DB]",
   CATEGORY_MANAGEMENT = "[CategoryManagement]",
   CATEGORY_MANAGEMENT_DB = "[CategoryManagement:DB]",
+  TRANSACTION_MANAGEMENT = "[TransactionManagement]",
+  TRANSACTION_MANAGEMENT_DB = "[TransactionManagement:DB]",
 }
 
 export const debugLog = (...args: unknown[]) => {

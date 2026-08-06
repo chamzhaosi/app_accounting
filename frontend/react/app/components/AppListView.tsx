@@ -10,25 +10,27 @@ import {
   LIST_ITEM_DESCRIPTION_FONTSIZE,
 } from "../constants/size";
 import AppEmpty from "./AppEmpty";
+import { JSX, ReactNode } from "react";
 
 export type AppListItemType = {
   id: number | string;
   icon: AppIconProps["name"];
-  label: string;
+  label: ReactNode | string;
   descriptions?: string;
   onPress?: () => void;
 };
 
-type AppListViewType = Omit<FlatListProps<AppListItemType>, "renderItem"> & {
-  data: AppListItemType[];
+type AppListViewType<T> = Omit<FlatListProps<T>, "renderItem"> & {
+  data: T[];
   className?: string;
   itemClassName?: string;
-  onPress?: (item: AppListItemType) => void;
+  onPress?: (item: T) => void;
   isHideLeftIcon?: boolean;
-  selectedItem?: AppListItemType;
+  selectedItem?: T;
+  genCstmFlatListRenderItem?: (props: { item: T }) => JSX.Element;
 };
 
-export default function AppListView({
+export default function AppListView<T extends AppListItemType>({
   data,
   className,
   itemClassName,
@@ -36,11 +38,12 @@ export default function AppListView({
   contentContainerStyle,
   isHideLeftIcon,
   selectedItem,
+  genCstmFlatListRenderItem,
   ...props
-}: AppListViewType) {
+}: AppListViewType<T>) {
   const { THEME } = useThemeStore();
 
-  const genFlatListRenderItem = ({ item }: { item: AppListItemType }) => {
+  const genFlatListRenderItem = ({ item }: { item: T }) => {
     const isItemSelected = selectedItem ? selectedItem.id === item.id : false;
     return (
       <List.Item
@@ -84,7 +87,7 @@ export default function AppListView({
       className={cn("w-full", className)}
       data={data}
       keyExtractor={(item) => item.id.toString()}
-      renderItem={genFlatListRenderItem}
+      renderItem={genCstmFlatListRenderItem ?? genFlatListRenderItem}
       contentContainerStyle={[
         data.length === 0 && defaultStyle.emptyContentContainer,
         contentContainerStyle,
@@ -113,6 +116,7 @@ const defaultStyle = StyleSheet.create({
   },
   containerStyle: {
     marginInline: 12,
+    alignItems: "center",
   },
   emptyContentContainer: {
     flexGrow: 1,

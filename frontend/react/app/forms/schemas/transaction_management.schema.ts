@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TXN_TYPE_ENUM } from "../../constants/enum";
 
 export const DESCRIPTION_MAX_LEN = 100;
 export const AMOUNT_MAX_LEN = 13;
@@ -6,7 +7,7 @@ export const TRANSACTION_DATE_MAX_LEN = 10;
 
 export const transactionManagementFormSchema = z
   .object({
-    transactionType: z.enum(["expense", "income", "transfer"]),
+    transactionType: z.enum(TXN_TYPE_ENUM),
     categoryId: z.string(),
     accountId: z.string(),
     fromAccountId: z.string(),
@@ -99,7 +100,7 @@ export type TransactionManagementFormType = z.infer<
 export const getTransactionManagementFormDefaultValues = (
   transactionDate: string,
 ): TransactionManagementFormType => ({
-  transactionType: "expense",
+  transactionType: TXN_TYPE_ENUM.EXPENSE,
   categoryId: "",
   accountId: "",
   fromAccountId: "",

@@ -28,6 +28,7 @@ const initDBSetup = async (db: SQLite.SQLiteDatabase) => {
 
     const dbKey = await getOrCreateDBKey();
     await db.execAsync(`PRAGMA key = '${dbKey}'`);
+    await db.execAsync("PRAGMA foreign_keys = ON");
   } catch (e) {
     console.error("Error when setup DB", e);
   }

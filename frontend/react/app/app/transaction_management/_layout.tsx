@@ -4,13 +4,13 @@ import { AppStack } from "../../components/AppStack";
 export default function StackLayout() {
   return (
     <AppStack>
-      {/* <Stack.Screen
+      <Stack.Screen
         name="list"
         options={{
           title: "Transaction Management",
           headerShown: false,
         }}
-      /> */}
+      />
 
       <Stack.Screen
         name="create"

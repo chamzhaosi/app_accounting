@@ -4,6 +4,7 @@ export enum QueryKeyModule {
   ACCOUNT_MANAGEMENT = "accountManagement",
   ACCOUNT_TYPE = "accountType",
   CATEGORY_MANAGEMENT = "categoryManagement",
+  TRANSACTION_MANAGEMENT = "transactionManagement",
 }
 
 export const accountTypeQueryKeys = {
@@ -33,6 +34,16 @@ export const categoryManagementQueryKeys = {
   details: () => [...categoryManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
     [...categoryManagementQueryKeys.details(), id] as const,
+};
+
+export const transactionManagementQueryKeys = {
+  all: [QueryKeyModule.TRANSACTION_MANAGEMENT] as const,
+  lists: () => [...transactionManagementQueryKeys.all, "list"] as const,
+  list: (params: { pageSize: number }) =>
+    [...transactionManagementQueryKeys.lists(), params] as const,
+  details: () => [...transactionManagementQueryKeys.all, "detail"] as const,
+  detail: (id: string) =>
+    [...transactionManagementQueryKeys.details(), id] as const,
 };
 
 export const invalidateQuery = (queryClient: QueryClient, queryKey: QueryKey) =>

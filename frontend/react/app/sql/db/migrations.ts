@@ -4,6 +4,7 @@ import {
   createAccMgmtTable,
   createAccTypTable,
   createCategoryMgmtTable,
+  createTransactionMgmtTable,
 } from "./schemas";
 import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
 
@@ -15,6 +16,7 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
       await createAccTypTable(db);
       await createAccMgmtTable(db);
       await createCategoryMgmtTable(db);
+      await createTransactionMgmtTable(db);
       await insertAccTypTable(db);
       await insertCategoryMgmtTable(db);
       await updateDBVersion(db, 1);
