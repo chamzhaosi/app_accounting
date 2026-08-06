@@ -50,6 +50,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
           <AppTextInput
             {...props}
             ref={ref}
+            style={{ marginBottom: 16 }}
             value={formatDate(value)}
             editable={false}
             disabled={disabled}
@@ -62,6 +63,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
                 icon="calendar"
                 disabled={disabled}
                 forceTextInputFocus={false}
+                onPress={openPicker}
               />
             }
           />

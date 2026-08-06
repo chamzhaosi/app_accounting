@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { router, useRouter } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo } from "react";
 import { useWindowDimensions, View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
@@ -35,9 +35,15 @@ const ROUTES: TabRoute[] = [
 
 export default function CategoryManagementList() {
   const router = useRouter();
+  const { type } = useLocalSearchParams<{ type?: TabRoute["key"] }>();
   const { THEME } = useThemeStore();
   const layout = useWindowDimensions();
-  const [index, setIndex] = React.useState(0);
+  const [index, setIndex] = React.useState(type === "exp" ? 1 : 0);
+
+  useEffect(() => {
+    const requestedIndex = ROUTES.findIndex((route) => route.key === type);
+    if (requestedIndex >= 0) setIndex(requestedIndex);
+  }, [type]);
 
   const renderTabBar = (props: TabBarProps<TabRoute>) => (
     <TabBar

@@ -24,6 +24,8 @@ type AppListViewType = Omit<FlatListProps<AppListItemType>, "renderItem"> & {
   className?: string;
   itemClassName?: string;
   onPress?: (item: AppListItemType) => void;
+  isHideLeftIcon?: boolean;
+  selectedItem?: AppListItemType;
 };
 
 export default function AppListView({
@@ -32,30 +34,47 @@ export default function AppListView({
   itemClassName,
   onPress,
   contentContainerStyle,
+  isHideLeftIcon,
+  selectedItem,
   ...props
 }: AppListViewType) {
   const { THEME } = useThemeStore();
 
   const genFlatListRenderItem = ({ item }: { item: AppListItemType }) => {
+    const isItemSelected = selectedItem ? selectedItem.id === item.id : false;
     return (
       <List.Item
         centered
         onPress={() => (onPress ? onPress(item) : item.onPress?.())}
         title={item.label}
-        titleStyle={[defaultStyle.listItemLabel]}
+        titleStyle={[
+          defaultStyle.listItemLabel,
+          isItemSelected && { color: THEME.onTertiary },
+        ]}
         description={item.descriptions}
-        descriptionStyle={[defaultStyle.listItemDescription]}
+        descriptionStyle={[
+          defaultStyle.listItemDescription,
+          isItemSelected && { color: THEME.onTertiary },
+        ]}
         style={[
           defaultStyle.listItemContainer,
           {
             backgroundColor: THEME.surfaceContainer,
             borderBlockColor: THEME.outline,
           },
+          isItemSelected && { backgroundColor: THEME.tertiary },
         ]}
         rippleColor={THEME.surfaceContainerHighest}
         containerStyle={defaultStyle.containerStyle}
-        left={() => <AppIcon name={item.icon} />}
-        right={() => <ChevronRight color={THEME.onSurface} />}
+        left={() => (
+          <AppIcon
+            name={item.icon}
+            color={isItemSelected ? THEME.onTertiary : undefined}
+          />
+        )}
+        right={() =>
+          isHideLeftIcon ? undefined : <ChevronRight color={THEME.onSurface} />
+        }
       />
     );
   };

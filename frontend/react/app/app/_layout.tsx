@@ -75,6 +75,7 @@ export default function StackLayout() {
             <Stack.Screen name="landing" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(home)" options={{ headerShown: false }} />
+
             <Stack.Screen
               name="account_type"
               options={{ headerShown: false }}
@@ -88,6 +89,10 @@ export default function StackLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen name="security" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="transaction_management"
+              options={{ headerShown: false }}
+            />
           </AppStack>
           <Toast
             config={toastConfig(THEME, insets)}

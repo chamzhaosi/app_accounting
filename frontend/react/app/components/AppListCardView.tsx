@@ -1,5 +1,12 @@
 import { Info, PencilOff } from "lucide-react-native";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  Animated,
+  StyleProp,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from "react-native";
 import {
   KeyboardAwareFlatList,
   KeyboardAwareFlatListProps,
@@ -35,12 +42,15 @@ type AppListViewProps = Omit<
   itemClassName?: string;
   isShowIconOnly?: boolean;
   selectedItem?: AppIconProps["name"];
+  selectedItemId?: AppListCardItemType["id"];
   extraCardHeight?: number;
   onPress: (item: AppListCardItemType) => void;
   numberItemInRow?: number;
   isShowNoMoreData?: boolean;
   parentWidth?: number;
   isLoading?: boolean;
+  elevation?: 0 | 1 | 2 | 3 | 4 | 5 | Animated.Value;
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
 export default function AppListCardView({
@@ -49,6 +59,7 @@ export default function AppListCardView({
   itemClassName,
   isShowIconOnly,
   selectedItem,
+  selectedItemId,
   onPress,
   extraCardHeight = 0,
   extraScrollHeight,
@@ -57,8 +68,10 @@ export default function AppListCardView({
   numberItemInRow,
   onScroll,
   parentWidth,
+  containerStyle,
   contentContainerStyle,
   isLoading,
+  elevation = 3,
   ...props
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
@@ -72,7 +85,10 @@ export default function AppListCardView({
   );
 
   const genListRenderItem = ({ item }: { item: AppListCardItemType }) => {
-    const isItemSelected = item.icon === selectedItem;
+    const isItemSelected =
+      selectedItemId !== undefined
+        ? item.id === selectedItemId
+        : item.icon === selectedItem;
 
     return (
       <Surface
@@ -85,12 +101,12 @@ export default function AppListCardView({
               ? THEME.tertiary
               : THEME.surfaceContainer,
           },
+          containerStyle,
         ]}
-        elevation={3}
+        elevation={elevation}
       >
         <TouchableRipple
           onPress={() => onPress(item)}
-          rippleColor={THEME.surfaceContainerHighest}
           style={defaultStyle.rippleContainer}
         >
           <>
@@ -119,7 +135,10 @@ export default function AppListCardView({
                   variant="bodySmall"
                   className="text-LIGHT-primary dark:text-DARK-primary text-justify"
                   numberOfLines={2}
-                  style={{ fontSize: 14 }}
+                  style={[
+                    isItemSelected && { color: THEME.onTertiary },
+                    { fontSize: 14 },
+                  ]}
                 >
                   {item.label}
                 </AppText>
@@ -151,7 +170,7 @@ export default function AppListCardView({
         contentContainerStyle,
       ]}
       renderItem={genListRenderItem}
-      ListEmptyComponent={<AppEmpty />}
+      ListEmptyComponent={isLoading ? <></> : <AppEmpty />}
       ListFooterComponent={
         isLoading ? (
           <ActivityIndicator className="my-4" size={30} />

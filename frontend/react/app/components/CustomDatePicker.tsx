@@ -99,8 +99,6 @@ export default function CustomDatePicker({
     });
   };
 
-  console.log(`${visibleMonthName} ${visibleYear}`);
-
   const headerLabel =
     pickerView === "days"
       ? `${visibleMonthName} ${visibleYear}`
@@ -196,7 +194,7 @@ export default function CustomDatePicker({
                   style={[
                     styles.cell,
                     selected && {
-                      backgroundColor: theme.colors.primary,
+                      backgroundColor: theme.colors.tertiary,
                       borderRadius: 10,
                     },
                   ]}
