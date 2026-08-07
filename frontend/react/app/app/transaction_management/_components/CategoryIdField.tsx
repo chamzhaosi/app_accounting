@@ -8,6 +8,7 @@ import AppText, { TextTypEnum } from "../../../components/AppText";
 import { TransactionManagementFormType } from "../../../forms/schemas/transaction_management.schema";
 import { useKeyboardVisible } from "../../../hook/useKeyboardVisible";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import { TXN_TYPE_ENUM } from "../../../constants/enum";
 
 type CategoryIdFieldProps = {
   categoryItems: AppListCardItemType[];
@@ -34,7 +35,7 @@ export default function CategoryIdField({
   const { THEME } = useThemeStore();
   const { height: screenHeight } = useWindowDimensions();
 
-  if (transactionType === "transfer") return <></>;
+  if (transactionType === TXN_TYPE_ENUM.TRANSFER) return <></>;
 
   return (
     <Controller

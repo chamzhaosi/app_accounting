@@ -19,12 +19,12 @@ export default function StackLayout() {
         }}
       />
 
-      {/* <Stack.Screen
+      <Stack.Screen
         name="[id]"
         options={{
           title: "Transaction Detail",
         }}
-      /> */}
+      />
     </AppStack>
   );
 }

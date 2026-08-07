@@ -11,6 +11,10 @@ export type TransactionMgmtCreateReqType = {
   transactionDate: string;
 };
 
+export type TransactionMgmtUpdateReqType = TransactionMgmtCreateReqType & {
+  id: string;
+};
+
 export type TransactionMgmtRspType = {
   id: string;
   transaction_type: TXN_TYPE_ENUM;

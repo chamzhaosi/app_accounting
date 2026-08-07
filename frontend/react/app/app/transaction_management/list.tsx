@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Href, router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ActivityIndicator, List, Text } from "react-native-paper";
@@ -6,6 +7,7 @@ import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import AppListView, { AppListItemType } from "../../components/AppListView";
 import { FONTS } from "../../constants/fonts";
 import { transactionManagementQueryKeys } from "../../constants/queryKeys";
+import { TRANSACTION_MANAGEMENT_BASE_URL } from "../../constants/urls";
 import {
   LIST_ITEM_DESCRIPTION_FONTSIZE,
   LIST_ITEM_TITLE_FONTSIZE,
@@ -235,6 +237,11 @@ export default function TransactionManagementList() {
                   <List.Item
                     key={transaction.id.toString()}
                     centered
+                    onPress={() =>
+                      router.push(
+                        `${TRANSACTION_MANAGEMENT_BASE_URL}/${transaction.id}` as Href,
+                      )
+                    }
                     title={transaction.label}
                     titleStyle={defaultStyle.listItemLabel}
                     description={transaction.descriptions}

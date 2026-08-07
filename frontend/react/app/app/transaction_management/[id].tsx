@@ -1,17 +1,22 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
-import { SegmentedButtons } from "react-native-paper";
+import { ActivityIndicator, SegmentedButtons } from "react-native-paper";
 import AppAmtInput from "../../components/AppAmtInput";
 import AppButton, {
   ButtonType,
   SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
 import AppDatePicker from "../../components/AppDatePicker";
+import AppDialog from "../../components/AppDialog";
 import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import { AppListCardItemType } from "../../components/AppListCardView";
 import { AppListItemType } from "../../components/AppListView";
@@ -19,13 +24,17 @@ import AppScrollView from "../../components/AppScrollView";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import { AppToast } from "../../components/AppToast";
+import { TXN_TYPE_ENUM } from "../../constants/enum";
 import {
   accountManagementQueryKeys,
   categoryManagementQueryKeys,
   invalidateQuery,
   transactionManagementQueryKeys,
 } from "../../constants/queryKeys";
-import { TEXTINPUT_HEIGHT } from "../../constants/size";
+import {
+  DIALOG_COMMON_BTN_PROPS,
+  TEXTINPUT_HEIGHT,
+} from "../../constants/size";
 import {
   ACCOUNT_MANAGEMENT_LIST_URL,
   CATEGORY_MANAGEMENT_LIST_URL,
@@ -39,11 +48,14 @@ import {
 } from "../../forms/schemas/transaction_management.schema";
 import { getAccMgmtList } from "../../sql/service/accMgmtService";
 import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
-import { createNewTransactionMgmt } from "../../sql/service/transactionMgmtService";
+import {
+  deleteTransactionMgmt,
+  getTransactionMgmtById,
+  updateTransactionMgmt,
+} from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import AccountIdField, { AccountFieldName } from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
-import { TXN_TYPE_ENUM } from "../../constants/enum";
 
 const CATEGORY_PAGE_SIZE = 40;
 const ACCOUNT_PAGE_SIZE = 40;
@@ -58,20 +70,30 @@ const CATEGORY_TYPE_IDS: Record<
   [TXN_TYPE_ENUM.ADJUSTMENT]: null,
 };
 
-export default function TransactionManagementCreate() {
+export default function TransactionManagementDetail() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const [isAccountPickerVisible, setIsAccountPickerVisible] =
-    useState<boolean>(false);
+  const [isAccountPickerVisible, setIsAccountPickerVisible] = useState(false);
   const [activeAccountField, setActiveAccountField] =
     useState<AccountFieldName>("accountId");
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSavingAndNew, setIsSavingAndNew] = useState(false);
   const [responseError, setResponseError] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
-  const isSubmitting = isSaving || isSavingAndNew;
+  const isSubmitting = isDeleting || isSaving;
 
-  const today = dayjs().format("YYYY-MM-DD");
+  const {
+    data: transaction,
+    error: transactionError,
+    isLoading: isLoadingTransaction,
+  } = useQuery({
+    queryKey: transactionManagementQueryKeys.detail(id),
+    queryFn: () => getTransactionMgmtById(id),
+    enabled: Boolean(id),
+  });
+
   const {
     clearErrors,
     control,
@@ -84,7 +106,9 @@ export default function TransactionManagementCreate() {
     resolver: zodResolver(transactionManagementFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
-    defaultValues: getTransactionManagementFormDefaultValues(today),
+    defaultValues: getTransactionManagementFormDefaultValues(
+      dayjs().format("YYYY-MM-DD"),
+    ),
   });
 
   const transactionType = watch("transactionType");
@@ -142,12 +166,6 @@ export default function TransactionManagementCreate() {
     [categories],
   );
 
-  const onLoadMoreCategories = () => {
-    if (isFetchingNextCategoryPage || !hasNextCategoryPage) return;
-
-    fetchNextCategoryPage();
-  };
-
   const accountItems = useMemo<AppListItemType[]>(
     () =>
       accounts?.pages.flat().map((account) => ({
@@ -159,9 +177,13 @@ export default function TransactionManagementCreate() {
     [accounts],
   );
 
+  const onLoadMoreCategories = () => {
+    if (isFetchingNextCategoryPage || !hasNextCategoryPage) return;
+    fetchNextCategoryPage();
+  };
+
   const onLoadMoreAccounts = () => {
     if (isFetchingNextAccountPage || !hasNextAccountPage) return;
-
     fetchNextAccountPage();
   };
 
@@ -204,45 +226,20 @@ export default function TransactionManagementCreate() {
     }, [refetchAccounts, refetchCategories]),
   );
 
-  const onSubmit = async (
-    value: TransactionManagementFormType,
-    saveAnotherTransaction: boolean,
-  ) => {
-    Keyboard.dismiss();
-    const setLoading = saveAnotherTransaction ? setIsSavingAndNew : setIsSaving;
+  useEffect(() => {
+    if (!transaction) return;
 
-    try {
-      setResponseError("");
-      setLoading(true);
-      const errorMessage = await createNewTransactionMgmt({
-        ...value,
-        description: value.description?.trim(),
-      });
-
-      if (errorMessage) {
-        setResponseError(errorMessage);
-        return;
-      }
-
-      await invalidateQuery(
-        queryClient,
-        transactionManagementQueryKeys.lists(),
-      );
-      AppToast.success({ message: "Transaction created successfully" });
-      reset(getTransactionManagementFormDefaultValues(today));
-
-      if (!saveAnotherTransaction) router.back();
-    } catch (e) {
-      console.error(
-        DEBUG_TAG.TRANSACTION_MANAGEMENT,
-        "Error when creating transaction",
-        e,
-      );
-      AppToast.error({ message: "Unable to save transaction." });
-    } finally {
-      setLoading(false);
-    }
-  };
+    reset({
+      transactionType: transaction.transaction_type,
+      categoryId: transaction.category_id ?? "",
+      accountId: transaction.account_id ?? "",
+      fromAccountId: transaction.from_account_id ?? "",
+      toAccountId: transaction.to_account_id ?? "",
+      amount: transaction.amount.toFixed(2),
+      description: transaction.descriptions ?? "",
+      transactionDate: transaction.transaction_date,
+    });
+  }, [reset, transaction]);
 
   useEffect(() => {
     if (
@@ -272,13 +269,125 @@ export default function TransactionManagementCreate() {
     transactionType,
   ]);
 
+  useEffect(() => {
+    if (!transactionError) return;
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT,
+      "Error when getting transaction detail",
+      transactionError,
+    );
+  }, [transactionError]);
+
+  useEffect(() => {
+    if (isLoadingTransaction || transaction !== null) return;
+    AppToast.error({ message: "Transaction not found." });
+    router.back();
+  }, [isLoadingTransaction, transaction]);
+
+  const onSubmit = async (value: TransactionManagementFormType) => {
+    try {
+      Keyboard.dismiss();
+      setResponseError("");
+      setIsSaving(true);
+      const errorMessage = await updateTransactionMgmt({
+        ...value,
+        id,
+        description: value.description?.trim(),
+      });
+
+      if (errorMessage) {
+        setResponseError(errorMessage);
+        return;
+      }
+
+      await Promise.all([
+        invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, transactionManagementQueryKeys.detail(id)),
+      ]);
+      AppToast.success({ message: "Transaction updated successfully" });
+      router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.TRANSACTION_MANAGEMENT,
+        "Error when updating transaction",
+        e,
+      );
+      AppToast.error({ message: "Unable to update transaction." });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const onDelete = async () => {
+    try {
+      setResponseError("");
+      setIsDeleting(true);
+      const errorMessage = await deleteTransactionMgmt(id);
+
+      if (errorMessage) {
+        setResponseError(errorMessage);
+        return;
+      }
+
+      await invalidateQuery(
+        queryClient,
+        transactionManagementQueryKeys.lists(),
+      );
+      queryClient.removeQueries({
+        queryKey: transactionManagementQueryKeys.detail(id),
+      });
+      AppToast.success({ message: "Transaction deleted successfully" });
+      router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.TRANSACTION_MANAGEMENT,
+        "Error when deleting transaction",
+        e,
+      );
+      AppToast.error({ message: "Unable to delete transaction." });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (isLoadingTransaction) {
+    return (
+      <View className="h-full justify-center items-center">
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <View className="flex flex-1">
-      <View
-        className={
-          "p-4 pb-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer"
+      <AppDialog
+        title="Delete Transaction"
+        description="Are you sure you want to delete this transaction?"
+        showDialog={showDeleteDialog}
+        onDismiss={() => setShowDeleteDialog(false)}
+        actionRender={
+          <>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              onPress={() => setShowDeleteDialog(false)}
+            >
+              No
+            </AppButton>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.ERROR}
+              onPress={() => {
+                setShowDeleteDialog(false);
+                void onDelete();
+              }}
+            >
+              Yes
+            </AppButton>
+          </>
         }
-      >
+      />
+
+      <View className="p-4 pb-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
         <AppText variant="titleMedium" className="mb-2">
           Transaction Type
         </AppText>
@@ -292,9 +401,7 @@ export default function TransactionManagementCreate() {
                 onChange(selectedType);
                 setValue("categoryId", "");
 
-                if (
-                  (selectedType as TXN_TYPE_ENUM) === TXN_TYPE_ENUM.TRANSFER
-                ) {
+                if (selectedType === TXN_TYPE_ENUM.TRANSFER) {
                   setValue("accountId", "");
                 } else {
                   setValue("fromAccountId", "");
@@ -348,11 +455,10 @@ export default function TransactionManagementCreate() {
           }}
         />
       </View>
+
       <AppScrollView
         className="p-4 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer border-0 flex-1"
-        contentContainerStyle={{
-          justifyContent: "flex-start",
-        }}
+        contentContainerStyle={{ justifyContent: "flex-start" }}
       >
         <Controller
           control={control}
@@ -390,14 +496,12 @@ export default function TransactionManagementCreate() {
                 }
                 onOpenPicker={() => openAccountPicker("fromAccountId")}
               />
-
               <View
                 className="px-2 pb-2 items-center justify-center"
                 style={{ height: TEXTINPUT_HEIGHT }}
               >
                 <AppIcon name="MoveRight" size={24} />
               </View>
-
               <AccountIdField
                 {...accountFieldProps}
                 fieldName="toAccountId"
@@ -421,7 +525,11 @@ export default function TransactionManagementCreate() {
             />
           )}
 
-          <View className={transactionType === "transfer" ? "" : "flex-1"}>
+          <View
+            className={
+              transactionType === TXN_TYPE_ENUM.TRANSFER ? "" : "flex-1"
+            }
+          >
             <Controller
               control={control}
               name="amount"
@@ -431,7 +539,7 @@ export default function TransactionManagementCreate() {
               }) => (
                 <AppAmtInput
                   ref={ref}
-                  continerClassName={"mb-4"}
+                  continerClassName="mb-4"
                   mode="outlined"
                   label="Amount"
                   value={value}
@@ -470,7 +578,7 @@ export default function TransactionManagementCreate() {
               showClear
               errorField={error}
               submitBehavior="submit"
-              onSubmitEditing={handleSubmit((value) => onSubmit(value, false))}
+              onSubmitEditing={handleSubmit(onSubmit)}
             />
           )}
         />
@@ -482,22 +590,25 @@ export default function TransactionManagementCreate() {
         <View className="flex-row items-center justify-center gap-4 mt-2 mb-4">
           <AppButton
             disabled={isSubmitting}
+            loading={isDeleting}
+            variant={ButtonType.ERROR}
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowDeleteDialog(true);
+            }}
+            style={{ flex: 1, borderRadius: 8 }}
+            {...SUBMIT_BTN_CONTENT_STYLE}
+          >
+            Delete
+          </AppButton>
+          <AppButton
+            disabled={isSubmitting}
             loading={isSaving}
-            variant={ButtonType.SECONDARY}
-            onPress={handleSubmit((value) => onSubmit(value, false))}
+            onPress={handleSubmit(onSubmit)}
             style={{ flex: 0.4, borderRadius: 8 }}
             {...SUBMIT_BTN_CONTENT_STYLE}
           >
             Save
-          </AppButton>
-          <AppButton
-            disabled={isSubmitting}
-            loading={isSavingAndNew}
-            onPress={handleSubmit((value) => onSubmit(value, true))}
-            style={{ flex: 1, borderRadius: 8 }}
-            {...SUBMIT_BTN_CONTENT_STYLE}
-          >
-            Save & New
           </AppButton>
         </View>
       </AppScrollView>

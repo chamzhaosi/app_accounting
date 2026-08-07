@@ -4,11 +4,15 @@ import { getAccMgmtByIdFromDB } from "../repo/accMgmtRepo";
 import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
 import {
   createNewTransactionMgmtToDB,
+  deleteTransactionMgmtFromDB,
+  getTransactionMgmtByIdFromDB,
   getTransactionMgmtListFromDB,
+  updateTransactionMgmtToDB,
 } from "../repo/transactionMgmtRepo";
 import {
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
+  TransactionMgmtUpdateReqType,
 } from "../types/transactionMgmtType";
 
 const CATEGORY_TYPE_IDS = {
@@ -31,7 +35,11 @@ export const getTransactionMgmtList = async (
     pageSize,
   });
 
-export const createNewTransactionMgmt = async (
+export const getTransactionMgmtById = async (
+  id: string,
+): Promise<TransactionMgmtRspType | null> => getTransactionMgmtByIdFromDB(id);
+
+const validateTransactionMgmt = async (
   data: TransactionMgmtCreateReqType,
 ): Promise<string | void> => {
   if (data.transactionType === TXN_TYPE_ENUM.TRANSFER) {
@@ -45,29 +53,58 @@ export const createNewTransactionMgmt = async (
 
     if (!fromAccount?.is_active) return "From Account is unavailable.";
     if (!toAccount?.is_active) return "To Account is unavailable.";
-  } else {
-    const [account, category] = await Promise.all([
-      getAccMgmtByIdFromDB(data.accountId),
-      getCategoryMgmtByIdFromDB(data.categoryId),
-    ]);
-
-    if (!account?.is_active) return "Selected account is unavailable.";
-    if (!category?.is_active) return "Selected category is unavailable.";
-
-    const expectedCategoryTypeId = CATEGORY_TYPE_IDS[data.transactionType];
-    if (category.type_id !== expectedCategoryTypeId) {
-      debugLog(
-        DEBUG_TAG.TRANSACTION_MANAGEMENT,
-        "Rejected category type mismatch",
-        {
-          categoryId: data.categoryId,
-          categoryTypeId: category.type_id,
-          transactionType: data.transactionType,
-        },
-      );
-      return "Selected category does not match the transaction type.";
-    }
+    return;
   }
 
+  const [account, category] = await Promise.all([
+    getAccMgmtByIdFromDB(data.accountId),
+    getCategoryMgmtByIdFromDB(data.categoryId),
+  ]);
+
+  if (!account?.is_active) return "Selected account is unavailable.";
+  if (!category?.is_active) return "Selected category is unavailable.";
+
+  const expectedCategoryTypeId = CATEGORY_TYPE_IDS[data.transactionType];
+  if (category.type_id !== expectedCategoryTypeId) {
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT,
+      "Rejected category type mismatch",
+      {
+        categoryId: data.categoryId,
+        categoryTypeId: category.type_id,
+        transactionType: data.transactionType,
+      },
+    );
+    return "Selected category does not match the transaction type.";
+  }
+};
+
+export const createNewTransactionMgmt = async (
+  data: TransactionMgmtCreateReqType,
+): Promise<string | void> => {
+  const errorMessage = await validateTransactionMgmt(data);
+  if (errorMessage) return errorMessage;
+
   await createNewTransactionMgmtToDB(data);
+};
+
+export const updateTransactionMgmt = async (
+  data: TransactionMgmtUpdateReqType,
+): Promise<string | void> => {
+  const current = await getTransactionMgmtByIdFromDB(data.id);
+  if (!current) return "Transaction not found.";
+
+  const errorMessage = await validateTransactionMgmt(data);
+  if (errorMessage) return errorMessage;
+
+  await updateTransactionMgmtToDB(data);
+};
+
+export const deleteTransactionMgmt = async (
+  id: string,
+): Promise<string | void> => {
+  const current = await getTransactionMgmtByIdFromDB(id);
+  if (!current) return "Transaction not found.";
+
+  await deleteTransactionMgmtFromDB(id);
 };
