@@ -45,6 +45,7 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         label VARCHAR(${ACCOUNT_LABEL_MAX_LEN}) NOT NULL COLLATE NOCASE,
         descriptions VARCHAR(${ACCOUNT_DESCRIPTION_MAX_LEN}),
         initial_value REAL NOT NULL DEFAULT 0,
+        current_balance REAL NOT NULL DEFAULT 0,
         is_main_account BOOLEAN NOT NULL DEFAULT 0,
 
         is_active BOOLEAN NOT NULL DEFAULT 1,

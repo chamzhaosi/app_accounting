@@ -1,6 +1,7 @@
 import * as Crypto from "expo-crypto";
 import * as SQLite from "expo-sqlite";
 import { DB_KEY, getStoredItem, setStoredItem } from "../../local/secureStore";
+import { DEBUG_TAG } from "../../utils/debugLog";
 import { OrderBy } from "../types/common";
 
 export const DEFAULT_PAGE_SIZE = 20;
@@ -29,7 +30,12 @@ export const getOrCreateDBKey = async () => {
 
     return dbKey;
   } catch (e) {
-    console.error("Error when getting or creating db key", e);
+    console.error(
+      DEBUG_TAG.DATABASE,
+      "Unable to get or create database key",
+      e,
+    );
+    throw e;
   }
 };
 

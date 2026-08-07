@@ -139,6 +139,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
   try {
     const db = await getDB();
     const id = randomUUID();
+    const initialValue = toDbAmount(data.initialValue);
     await db.runAsync(
       `
         INSERT INTO accounts (
@@ -147,15 +148,17 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
           label,
           descriptions,
           initial_value,
+          current_balance,
           is_main_account
-        ) VALUES (?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?);
       `,
       [
         id,
         data.typeId,
         data.label,
         data.descriptions || null,
-        toDbAmount(data.initialValue),
+        initialValue,
+        initialValue,
         data.isMainAccount ? 1 : 0,
       ],
     );
@@ -176,6 +179,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
 export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
   try {
     const db = await getDB();
+    const initialValue = toDbAmount(data.initialValue);
     await db.runAsync(
       `
         UPDATE accounts
@@ -183,6 +187,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           type_id = ?,
           label = ?,
           descriptions = ?,
+          current_balance = ROUND(current_balance + (? - initial_value), 2),
           initial_value = ?,
           is_main_account = ?,
           sync_status = ?,
@@ -194,7 +199,8 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         data.typeId,
         data.label,
         data.descriptions || null,
-        toDbAmount(data.initialValue),
+        initialValue,
+        initialValue,
         data.isMainAccount ? 1 : 0,
         DB_SYNC_STATUS.PENDING,
         data.id,

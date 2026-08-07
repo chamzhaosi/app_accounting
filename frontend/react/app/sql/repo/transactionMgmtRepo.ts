@@ -1,5 +1,5 @@
 import { randomUUID } from "expo-crypto";
-import { DB_SYNC_STATUS } from "../../constants/enum";
+import { DB_SYNC_STATUS, TXN_TYPE_ENUM } from "../../constants/enum";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
   buildOrderBy,
@@ -13,6 +13,27 @@ import {
   TransactionMgmtRspType,
   TransactionMgmtUpdateReqType,
 } from "../types/transactionMgmtType";
+
+type BalanceTransaction = {
+  transactionType: TXN_TYPE_ENUM;
+  accountId: string | null;
+  fromAccountId: string | null;
+  toAccountId: string | null;
+  amount: number;
+};
+
+type StoredTransaction = {
+  transaction_type: TXN_TYPE_ENUM;
+  account_id: string | null;
+  from_account_id: string | null;
+  to_account_id: string | null;
+  amount: number;
+};
+
+type BalanceAdjustment = {
+  accountId: string;
+  amount: number;
+};
 
 const TRANSACTION_DETAIL_SELECT = `
   SELECT
@@ -32,6 +53,116 @@ const TRANSACTION_DETAIL_SELECT = `
   LEFT JOIN accounts AS to_accounts
     ON to_accounts.id = transactions.to_account_id
 `;
+
+const getBalanceTransaction = (
+  data: TransactionMgmtCreateReqType,
+): BalanceTransaction => ({
+  transactionType: data.transactionType,
+  accountId: data.accountId || null,
+  fromAccountId: data.fromAccountId || null,
+  toAccountId: data.toAccountId || null,
+  amount: Number(data.amount),
+});
+
+const getStoredBalanceTransaction = (
+  transaction: StoredTransaction,
+): BalanceTransaction => ({
+  transactionType: transaction.transaction_type,
+  accountId: transaction.account_id,
+  fromAccountId: transaction.from_account_id,
+  toAccountId: transaction.to_account_id,
+  amount: transaction.amount,
+});
+
+const getBalanceAdjustments = (
+  transaction: BalanceTransaction,
+  multiplier = 1,
+): BalanceAdjustment[] => {
+  if (transaction.transactionType === TXN_TYPE_ENUM.INCOME) {
+    if (!transaction.accountId) throw new Error("Income account is required.");
+    return [
+      {
+        accountId: transaction.accountId,
+        amount: transaction.amount * multiplier,
+      },
+    ];
+  }
+
+  if (transaction.transactionType === TXN_TYPE_ENUM.EXPENSE) {
+    if (!transaction.accountId) throw new Error("Expense account is required.");
+    return [
+      {
+        accountId: transaction.accountId,
+        amount: -transaction.amount * multiplier,
+      },
+    ];
+  }
+
+  if (transaction.transactionType === TXN_TYPE_ENUM.TRANSFER) {
+    if (!transaction.fromAccountId || !transaction.toAccountId) {
+      throw new Error("Transfer accounts are required.");
+    }
+
+    return [
+      {
+        accountId: transaction.fromAccountId,
+        amount: -transaction.amount * multiplier,
+      },
+      {
+        accountId: transaction.toAccountId,
+        amount: transaction.amount * multiplier,
+      },
+    ];
+  }
+
+  throw new Error(
+    `Unsupported transaction type: ${transaction.transactionType}`,
+  );
+};
+
+const applyBalanceAdjustments = async (
+  db: Awaited<ReturnType<typeof getDB>>,
+  adjustments: BalanceAdjustment[],
+  requireActiveAccount: boolean,
+) => {
+  for (const adjustment of adjustments) {
+    const result = await db.runAsync(
+      `
+        UPDATE accounts
+        SET
+          current_balance = ROUND(current_balance + ?, 2),
+          sync_status = ?,
+          updated_at = datetime('now')
+        WHERE id = ?
+          ${requireActiveAccount ? "AND is_active = 1 AND deleted_at IS NULL" : ""};
+      `,
+      [adjustment.amount, DB_SYNC_STATUS.PENDING, adjustment.accountId],
+    );
+
+    if (result.changes !== 1) {
+      throw new Error(`Account is unavailable: ${adjustment.accountId}`);
+    }
+  }
+};
+
+const getStoredTransactionForWrite = async (
+  db: Awaited<ReturnType<typeof getDB>>,
+  id: string,
+) =>
+  db.getFirstAsync<StoredTransaction>(
+    `
+      SELECT
+        transaction_type,
+        account_id,
+        from_account_id,
+        to_account_id,
+        amount
+      FROM transactions
+      WHERE id = ?
+        AND deleted_at IS NULL;
+    `,
+    [id],
+  );
 
 export const getTransactionMgmtListFromDB = async ({
   orderBy,
@@ -114,37 +245,48 @@ export const createNewTransactionMgmtToDB = async (
     const db = await getDB();
     const id = randomUUID();
     const isTransfer = data.transactionType === "transfer";
-
-    await db.runAsync(
-      `
-        INSERT INTO transactions (
-          id,
-          transaction_type,
-          category_id,
-          account_id,
-          from_account_id,
-          to_account_id,
-          amount,
-          descriptions,
-          transaction_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-      `,
-      [
-        id,
-        data.transactionType,
-        isTransfer ? null : data.categoryId,
-        isTransfer ? null : data.accountId,
-        isTransfer ? data.fromAccountId : null,
-        isTransfer ? data.toAccountId : null,
-        Number(data.amount),
-        data.description || null,
-        data.transactionDate,
-      ],
+    const balanceAdjustments = getBalanceAdjustments(
+      getBalanceTransaction(data),
     );
-    debugLog(DEBUG_TAG.TRANSACTION_MANAGEMENT_DB, "Created transaction", {
-      id,
-      transactionType: data.transactionType,
+
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(
+        `
+          INSERT INTO transactions (
+            id,
+            transaction_type,
+            category_id,
+            account_id,
+            from_account_id,
+            to_account_id,
+            amount,
+            descriptions,
+            transaction_date
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        `,
+        [
+          id,
+          data.transactionType,
+          isTransfer ? null : data.categoryId,
+          isTransfer ? null : data.accountId,
+          isTransfer ? data.fromAccountId : null,
+          isTransfer ? data.toAccountId : null,
+          Number(data.amount),
+          data.description || null,
+          data.transactionDate,
+        ],
+      );
+      await applyBalanceAdjustments(db, balanceAdjustments, true);
     });
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Created transaction and updated account balances",
+      {
+        id,
+        transactionType: data.transactionType,
+        balanceAdjustments,
+      },
+    );
 
     return id;
   } catch (e) {
@@ -163,41 +305,66 @@ export const updateTransactionMgmtToDB = async (
   try {
     const db = await getDB();
     const isTransfer = data.transactionType === "transfer";
-
-    await db.runAsync(
-      `
-        UPDATE transactions
-        SET
-          transaction_type = ?,
-          category_id = ?,
-          account_id = ?,
-          from_account_id = ?,
-          to_account_id = ?,
-          amount = ?,
-          descriptions = ?,
-          transaction_date = ?,
-          sync_status = ?,
-          updated_at = datetime('now')
-        WHERE id = ?
-          AND deleted_at IS NULL;
-      `,
-      [
-        data.transactionType,
-        isTransfer ? null : data.categoryId,
-        isTransfer ? null : data.accountId,
-        isTransfer ? data.fromAccountId : null,
-        isTransfer ? data.toAccountId : null,
-        Number(data.amount),
-        data.description || null,
-        data.transactionDate,
-        DB_SYNC_STATUS.PENDING,
-        data.id,
-      ],
+    const newBalanceAdjustments = getBalanceAdjustments(
+      getBalanceTransaction(data),
     );
-    debugLog(DEBUG_TAG.TRANSACTION_MANAGEMENT_DB, "Updated transaction", {
-      id: data.id,
-      transactionType: data.transactionType,
+    let reversedBalanceAdjustments: BalanceAdjustment[] = [];
+
+    await db.withTransactionAsync(async () => {
+      const current = await getStoredTransactionForWrite(db, data.id);
+      if (!current) throw new Error(`Transaction not found: ${data.id}`);
+
+      reversedBalanceAdjustments = getBalanceAdjustments(
+        getStoredBalanceTransaction(current),
+        -1,
+      );
+      await applyBalanceAdjustments(db, reversedBalanceAdjustments, false);
+      await applyBalanceAdjustments(db, newBalanceAdjustments, true);
+
+      const result = await db.runAsync(
+        `
+          UPDATE transactions
+          SET
+            transaction_type = ?,
+            category_id = ?,
+            account_id = ?,
+            from_account_id = ?,
+            to_account_id = ?,
+            amount = ?,
+            descriptions = ?,
+            transaction_date = ?,
+            sync_status = ?,
+            updated_at = datetime('now')
+          WHERE id = ?
+            AND deleted_at IS NULL;
+        `,
+        [
+          data.transactionType,
+          isTransfer ? null : data.categoryId,
+          isTransfer ? null : data.accountId,
+          isTransfer ? data.fromAccountId : null,
+          isTransfer ? data.toAccountId : null,
+          Number(data.amount),
+          data.description || null,
+          data.transactionDate,
+          DB_SYNC_STATUS.PENDING,
+          data.id,
+        ],
+      );
+      if (result.changes !== 1) {
+        throw new Error(`Transaction not found: ${data.id}`);
+      }
     });
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Updated transaction and account balances",
+      {
+        id: data.id,
+        transactionType: data.transactionType,
+        reversedBalanceAdjustments,
+        newBalanceAdjustments,
+      },
+    );
   } catch (e) {
     console.error(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
@@ -211,22 +378,38 @@ export const updateTransactionMgmtToDB = async (
 export const deleteTransactionMgmtFromDB = async (id: string) => {
   try {
     const db = await getDB();
-    await db.runAsync(
-      `
-        UPDATE transactions
-        SET
-          deleted_at = datetime('now'),
-          is_active = 0,
-          sync_status = ?,
-          updated_at = datetime('now')
-        WHERE id = ?
-          AND deleted_at IS NULL;
-      `,
-      [DB_SYNC_STATUS.PENDING, id],
-    );
-    debugLog(DEBUG_TAG.TRANSACTION_MANAGEMENT_DB, "Deleted transaction", {
-      id,
+    let reversedBalanceAdjustments: BalanceAdjustment[] = [];
+
+    await db.withTransactionAsync(async () => {
+      const current = await getStoredTransactionForWrite(db, id);
+      if (!current) throw new Error(`Transaction not found: ${id}`);
+
+      reversedBalanceAdjustments = getBalanceAdjustments(
+        getStoredBalanceTransaction(current),
+        -1,
+      );
+      await applyBalanceAdjustments(db, reversedBalanceAdjustments, false);
+
+      const result = await db.runAsync(
+        `
+          UPDATE transactions
+          SET
+            deleted_at = datetime('now'),
+            is_active = 0,
+            sync_status = ?,
+            updated_at = datetime('now')
+          WHERE id = ?
+            AND deleted_at IS NULL;
+        `,
+        [DB_SYNC_STATUS.PENDING, id],
+      );
+      if (result.changes !== 1) throw new Error(`Transaction not found: ${id}`);
     });
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Deleted transaction and reversed account balances",
+      { id, reversedBalanceAdjustments },
+    );
   } catch (e) {
     console.error(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,

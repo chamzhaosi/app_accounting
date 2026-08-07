@@ -6,6 +6,7 @@ export type AccMgmtRspType = {
   label: string;
   descriptions?: string | null;
   initial_value: number;
+  current_balance: number;
   is_main_account: boolean;
   is_active: boolean;
 };

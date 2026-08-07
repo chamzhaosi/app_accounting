@@ -1,4 +1,6 @@
 export enum DEBUG_TAG {
+  APP = "[App]",
+  DATABASE = "[Database]",
   ACCOUNT_MANAGEMENT = "[AccountManagement]",
   ACCOUNT_MANAGEMENT_DB = "[AccountManagement:DB]",
   ACCOUNT_TYPE = "[AccountType]",

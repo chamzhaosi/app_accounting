@@ -224,10 +224,10 @@ export default function TransactionManagementCreate() {
         return;
       }
 
-      await invalidateQuery(
-        queryClient,
-        transactionManagementQueryKeys.lists(),
-      );
+      await Promise.all([
+        invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, accountManagementQueryKeys.all),
+      ]);
       AppToast.success({ message: "Transaction created successfully" });
       reset(getTransactionManagementFormDefaultValues(today));
 
