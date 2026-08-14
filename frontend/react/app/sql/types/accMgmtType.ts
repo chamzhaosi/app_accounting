@@ -5,7 +5,6 @@ export type AccMgmtRspType = {
   type_icon: string;
   label: string;
   descriptions?: string | null;
-  initial_value: number;
   current_balance: number;
   is_main_account: boolean;
   is_active: boolean;
@@ -15,7 +14,7 @@ export type AccMgmtCreateReqType = {
   typeId: string;
   label: string;
   descriptions?: string;
-  initialValue?: string;
+  currentBalance?: string;
   isMainAccount: boolean;
 };
 

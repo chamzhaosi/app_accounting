@@ -12,7 +12,10 @@ import {
   LIST_ITEM_DESCRIPTION_FONTSIZE,
   LIST_ITEM_TITLE_FONTSIZE,
 } from "../../constants/size";
-import { TRANSACTION_MANAGEMENT_BASE_URL } from "../../constants/urls";
+import {
+  ACCOUNT_MANAGEMENT_BASE_URL,
+  TRANSACTION_MANAGEMENT_BASE_URL,
+} from "../../constants/urls";
 import { getTransactionMgmtList } from "../../sql/service/transactionMgmtService";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
@@ -30,6 +33,7 @@ type AppTxnListItemType = {
   subtitle: string;
   fromAccountLabel?: string;
   toAccountLabel?: string;
+  accountId?: string;
   amount: number;
   transactionType: TXN_TYPE_ENUM;
   transactionDate: string;
@@ -144,7 +148,7 @@ export default function TransactionManagementList({
           ? `${transaction.account_label ?? "Account"} \u00b7 ${capitalize(transaction.transaction_type)}`
           : isTransfer
             ? `${transaction.from_account_label ?? "Account"} \u2192 ${transaction.to_account_label ?? "Account"}`
-            : (transaction.account_label ?? "Account");
+            : `${transaction.account_label ?? "Account"} \u00b7 Balance ${transaction.amount > 0 ? "increased" : "decreased"}`;
       const item: AppTxnListItemType = {
         id: transaction.id,
         icon: (transaction.category_icon ??
@@ -159,6 +163,7 @@ export default function TransactionManagementList({
         toAccountLabel: isTransfer
           ? (transaction.to_account_label ?? "Account")
           : undefined,
+        accountId: transaction.account_id ?? undefined,
         amount: transaction.amount,
         transactionType: transaction.transaction_type,
         transactionDate: transaction.transaction_date,
@@ -176,6 +181,9 @@ export default function TransactionManagementList({
         }
         if (item.transactionType === TXN_TYPE_ENUM.EXPENSE) {
           return total - item.amount;
+        }
+        if (item.transactionType === TXN_TYPE_ENUM.ADJUSTMENT) {
+          return total + item.amount;
         }
         return total;
       }, 0),
@@ -297,28 +305,40 @@ export default function TransactionManagementList({
       renderItem={({ item }) => {
         const isExpense = item.transactionType === TXN_TYPE_ENUM.EXPENSE;
         const isIncome = item.transactionType === TXN_TYPE_ENUM.INCOME;
+        const isAdjustment = item.transactionType === TXN_TYPE_ENUM.ADJUSTMENT;
+        const isPositiveAdjustment = isAdjustment && item.amount > 0;
+        const isNegativeAdjustment = isAdjustment && item.amount < 0;
         const amountColor = isExpense
           ? THEME.error
-          : isIncome
+          : isIncome || isPositiveAdjustment
             ? THEME.primary
-            : THEME.onSurface;
+            : isNegativeAdjustment
+              ? THEME.error
+              : THEME.onSurface;
         const iconColor = isExpense
           ? THEME.error
-          : isIncome
+          : isIncome || isPositiveAdjustment
             ? THEME.primary
-            : THEME.onSurfaceVariant;
+            : isNegativeAdjustment
+              ? THEME.error
+              : THEME.onSurfaceVariant;
+        const transactionUrl =
+          isAdjustment && item.accountId
+            ? `${ACCOUNT_MANAGEMENT_BASE_URL}/${item.accountId}`
+            : `${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}`;
+        const displayAmount = formatAmount(item.amount);
 
         return (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${item.title}, ${formatAmount(item.amount)}`}
-            accessibilityHint="Opens transaction details for editing"
-            android_ripple={{ color: THEME.outlineVariant }}
-            onPress={() =>
-              router.push(
-                `${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}` as Href,
-              )
+            accessibilityLabel={`${item.title}, ${displayAmount}`}
+            accessibilityHint={
+              isAdjustment
+                ? "Opens the account for balance editing"
+                : "Opens transaction details for editing"
             }
+            android_ripple={{ color: THEME.outlineVariant }}
+            onPress={() => router.push(transactionUrl as Href)}
             style={({ pressed }) => [
               styles.transactionPressable,
               { backgroundColor: THEME.surfaceContainerLow },
@@ -389,7 +409,7 @@ export default function TransactionManagementList({
               </View>
 
               <Text style={[styles.transactionAmount, { color: amountColor }]}>
-                {formatAmount(item.amount)}
+                {displayAmount}
               </Text>
             </View>
           </Pressable>

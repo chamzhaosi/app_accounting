@@ -10,8 +10,12 @@ import AccountPickerModal from "./AccountPickerModal";
 
 export type AccountFieldName = "accountId" | "fromAccountId" | "toAccountId";
 
+export type AccountPickerItemType = AppListItemType & {
+  inputLabel: string;
+};
+
 type AccountIdFieldProps = {
-  accountItems: AppListItemType[];
+  accountItems: AccountPickerItemType[];
   control: Control<TransactionManagementFormType>;
   error: Error | null;
   isFetchingNextPage: boolean;
@@ -86,11 +90,7 @@ export default function AccountIdField({
                 <TextInput
                   ref={ref}
                   label={label}
-                  value={
-                    typeof selectedAccount?.label === "string"
-                      ? selectedAccount.label
-                      : ""
-                  }
+                  value={selectedAccount?.inputLabel ?? ""}
                   mode="outlined"
                   placeholder="Please select"
                   showSoftInputOnFocus={false}

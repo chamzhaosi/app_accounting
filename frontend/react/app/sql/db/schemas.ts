@@ -44,7 +44,6 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         type_id TEXT NOT NULL,
         label VARCHAR(${ACCOUNT_LABEL_MAX_LEN}) NOT NULL COLLATE NOCASE,
         descriptions VARCHAR(${ACCOUNT_DESCRIPTION_MAX_LEN}),
-        initial_value REAL NOT NULL DEFAULT 0,
         current_balance REAL NOT NULL DEFAULT 0,
         is_main_account BOOLEAN NOT NULL DEFAULT 0,
 
@@ -99,14 +98,16 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         id TEXT PRIMARY KEY, -- uuid
 
         transaction_type VARCHAR(20) NOT NULL
-          CHECK (transaction_type IN ('income', 'expense', 'transfer')),
+          CHECK (
+            transaction_type IN ('income', 'expense', 'transfer', 'adjustment')
+          ),
 
         category_id TEXT,
         account_id TEXT,
         from_account_id TEXT,
         to_account_id TEXT,
 
-        amount REAL NOT NULL CHECK (amount > 0),
+        amount REAL NOT NULL,
         descriptions VARCHAR(${TRANSACTION_DESCRIPTION_MAX_LEN}),
         transaction_date DATE NOT NULL
           CHECK (
@@ -130,6 +131,18 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
 
         CHECK (
           (
+            transaction_type = 'adjustment'
+            AND amount <> 0
+          )
+          OR
+          (
+            transaction_type IN ('income', 'expense', 'transfer')
+            AND amount > 0
+          )
+        ),
+
+        CHECK (
+          (
             transaction_type IN ('income', 'expense')
             AND category_id IS NOT NULL
             AND account_id IS NOT NULL
@@ -144,6 +157,14 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
             AND from_account_id IS NOT NULL
             AND to_account_id IS NOT NULL
             AND from_account_id <> to_account_id
+          )
+          OR
+          (
+            transaction_type = 'adjustment'
+            AND category_id IS NULL
+            AND account_id IS NOT NULL
+            AND from_account_id IS NULL
+            AND to_account_id IS NULL
           )
         )
       );

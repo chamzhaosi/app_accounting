@@ -1,4 +1,4 @@
-import { DB_SYNC_STATUS } from "../../constants/enum";
+import { DB_SYNC_STATUS, TXN_TYPE_ENUM } from "../../constants/enum";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
   buildOrderBy,
@@ -15,6 +15,7 @@ import { SQLQueryOptions } from "../types/common";
 import { randomUUID } from "expo-crypto";
 
 const toDbAmount = (value?: string) => Number(value || 0);
+const roundAmount = (value: number) => Math.round(value * 100) / 100;
 
 export const getMainAccountBalanceFromDB = async (): Promise<number> => {
   try {
@@ -168,7 +169,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
   try {
     const db = await getDB();
     const id = randomUUID();
-    const initialValue = toDbAmount(data.initialValue);
+    const currentBalance = toDbAmount(data.currentBalance);
     await db.runAsync(
       `
         INSERT INTO accounts (
@@ -176,18 +177,16 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
           type_id,
           label,
           descriptions,
-          initial_value,
           current_balance,
           is_main_account
-        ) VALUES (?, ?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?);
       `,
       [
         id,
         data.typeId,
         data.label,
         data.descriptions || null,
-        initialValue,
-        initialValue,
+        currentBalance,
         data.isMainAccount ? 1 : 0,
       ],
     );
@@ -208,36 +207,79 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
 export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
   try {
     const db = await getDB();
-    const initialValue = toDbAmount(data.initialValue);
-    await db.runAsync(
-      `
-        UPDATE accounts
-        SET
-          type_id = ?,
-          label = ?,
-          descriptions = ?,
-          current_balance = ROUND(current_balance + (? - initial_value), 2),
-          initial_value = ?,
-          is_main_account = ?,
-          sync_status = ?,
-          updated_at = datetime('now')
-        WHERE id = ?
-          AND deleted_at IS NULL;
-      `,
-      [
-        data.typeId,
-        data.label,
-        data.descriptions || null,
-        initialValue,
-        initialValue,
-        data.isMainAccount ? 1 : 0,
-        DB_SYNC_STATUS.PENDING,
-        data.id,
-      ],
-    );
+    const currentBalance = toDbAmount(data.currentBalance);
+    let balanceAdjustment = 0;
+
+    await db.withTransactionAsync(async () => {
+      const account = await db.getFirstAsync<{ current_balance: number }>(
+        `
+          SELECT current_balance
+          FROM accounts
+          WHERE id = ?
+            AND deleted_at IS NULL;
+        `,
+        [data.id],
+      );
+      if (!account) throw new Error(`Account not found: ${data.id}`);
+
+      balanceAdjustment = roundAmount(currentBalance - account.current_balance);
+      const result = await db.runAsync(
+        `
+          UPDATE accounts
+          SET
+            type_id = ?,
+            label = ?,
+            descriptions = ?,
+            current_balance = ROUND(?, 2),
+            is_main_account = ?,
+            sync_status = ?,
+            updated_at = datetime('now')
+          WHERE id = ?
+            AND deleted_at IS NULL;
+        `,
+        [
+          data.typeId,
+          data.label,
+          data.descriptions || null,
+          currentBalance,
+          data.isMainAccount ? 1 : 0,
+          DB_SYNC_STATUS.PENDING,
+          data.id,
+        ],
+      );
+      if (result.changes !== 1) {
+        throw new Error(`Account not found: ${data.id}`);
+      }
+
+      if (balanceAdjustment !== 0) {
+        await db.runAsync(
+          `
+            INSERT INTO transactions (
+              id,
+              transaction_type,
+              category_id,
+              account_id,
+              from_account_id,
+              to_account_id,
+              amount,
+              descriptions,
+              transaction_date
+            ) VALUES (?, ?, NULL, ?, NULL, NULL, ?, ?, date('now', 'localtime'));
+          `,
+          [
+            randomUUID(),
+            TXN_TYPE_ENUM.ADJUSTMENT,
+            data.id,
+            balanceAdjustment,
+            "Balance adjustment",
+          ],
+        );
+      }
+    });
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Updated account", {
       id: data.id,
       label: data.label,
+      balanceAdjustment,
     });
   } catch (e) {
     console.error(

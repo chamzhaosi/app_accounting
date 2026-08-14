@@ -41,7 +41,10 @@ import { getAccMgmtList } from "../../sql/service/accMgmtService";
 import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
 import { createNewTransactionMgmt } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
-import AccountIdField, { AccountFieldName } from "./_components/AccountIdField";
+import AccountIdField, {
+  AccountFieldName,
+  AccountPickerItemType,
+} from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
 
@@ -148,12 +151,13 @@ export default function TransactionManagementCreate() {
     fetchNextCategoryPage();
   };
 
-  const accountItems = useMemo<AppListItemType[]>(
+  const accountItems = useMemo<AccountPickerItemType[]>(
     () =>
       accounts?.pages.flat().map((account) => ({
         id: account.id,
         icon: account.type_icon as AppIconProps["name"],
-        label: account.label,
+        label: `${account.label} - ${account.current_balance.toFixed(2)}`,
+        inputLabel: account.label,
         descriptions: account.descriptions ?? undefined,
       })) ?? [],
     [accounts],
@@ -438,10 +442,10 @@ export default function TransactionManagementCreate() {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   maxLength={AMOUNT_MAX_LEN}
-                  keyboardType="decimal-pad"
+                  keyboardType="number-pad"
                   showClear
                   errorField={error}
-                  selectTextOnFocus
+                  fixedDecimalInput
                   returnKeyType="next"
                   onSubmitEditing={() => setFocus("description")}
                 />

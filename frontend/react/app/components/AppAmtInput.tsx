@@ -10,6 +10,12 @@ type AppTextInputProps = TextInputProps & {
   errorField?: FieldError;
   showClear?: boolean;
   continerClassName?: string;
+  fixedDecimalInput?: boolean;
+};
+
+const formatFixedDecimalInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  return (Number(digits || 0) / 100).toFixed(2);
 };
 
 const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
@@ -23,6 +29,9 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
       showClear = false,
       style,
       continerClassName,
+      fixedDecimalInput = false,
+      caretHidden,
+      selection,
       ...props
     },
     ref,
@@ -41,8 +50,12 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
           ]}
           right={
             showClear &&
-            value?.length && (
-              <TextInput.Icon icon="close" onPress={() => onChangeText?.("")} />
+            value?.length &&
+            (!fixedDecimalInput || Number(value) !== 0) && (
+              <TextInput.Icon
+                icon="close"
+                onPress={() => onChangeText?.(fixedDecimalInput ? "0.00" : "")}
+              />
             )
           }
           placeholder="Please enter"
@@ -54,7 +67,17 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
             onChangeText?.(isNaN(num) ? "0.00" : num.toFixed(2));
             onBlur?.(e);
           }}
-          onChangeText={onChangeText}
+          onChangeText={(text) =>
+            onChangeText?.(
+              fixedDecimalInput ? formatFixedDecimalInput(text) : text,
+            )
+          }
+          caretHidden={fixedDecimalInput || caretHidden}
+          selection={
+            fixedDecimalInput
+              ? { start: value?.length ?? 0, end: value?.length ?? 0 }
+              : selection
+          }
           {...props}
         />
 

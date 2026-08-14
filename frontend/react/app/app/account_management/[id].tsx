@@ -6,7 +6,7 @@ import {
   accountManagementFormSchema,
   AccountManagementFormType,
   DESCRIPTION_MAX_LEN,
-  INITIAL_VALUE_MAX_LEN,
+  CURRENT_BALANCE_MAX_LEN,
   LABEL_MAX_LEN,
 } from "../../forms/schemas/account_management.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +28,7 @@ import {
   accountManagementQueryKeys,
   accountTypeQueryKeys,
   invalidateQuery,
+  transactionManagementQueryKeys,
 } from "../../constants/queryKeys";
 import {
   deleteAccMgmt,
@@ -109,6 +110,8 @@ export default function AccountManagementDetail() {
       await Promise.all([
         invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
         invalidateQuery(queryClient, accountManagementQueryKeys.detail(id)),
+        invalidateQuery(queryClient, accountManagementQueryKeys.mainBalance()),
+        invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
       ]);
       debugLog(
         DEBUG_TAG.ACCOUNT_MANAGEMENT,
@@ -132,7 +135,10 @@ export default function AccountManagementDetail() {
     try {
       setIsDeleting(true);
       await deleteAccMgmt(id);
-      await invalidateQuery(queryClient, accountManagementQueryKeys.lists());
+      await Promise.all([
+        invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, accountManagementQueryKeys.mainBalance()),
+      ]);
       queryClient.removeQueries({
         queryKey: accountManagementQueryKeys.detail(id),
       });
@@ -161,7 +167,7 @@ export default function AccountManagementDetail() {
       typeId: account.type_id,
       label: account.label,
       descriptions: account.descriptions ?? "",
-      initialValue: account.initial_value.toFixed(2),
+      currentBalance: account.current_balance.toFixed(2),
       isMainAccount: Boolean(account.is_main_account),
     });
   }, [account, reset]);
@@ -291,14 +297,14 @@ export default function AccountManagementDetail() {
               showClear
               errorField={error}
               submitBehavior="submit"
-              onSubmitEditing={() => setFocus("initialValue")}
+              onSubmitEditing={() => setFocus("currentBalance")}
             />
           )}
         />
 
         <Controller
           control={control}
-          name="initialValue"
+          name="currentBalance"
           render={({
             field: { value, onChange, onBlur, ref },
             fieldState: { error },
@@ -306,14 +312,14 @@ export default function AccountManagementDetail() {
             <AppAmtInput
               ref={ref}
               mode="outlined"
-              label="Capital Value"
+              label="Current Balance"
               disabled={isSubmitting}
               keyboardType="number-pad"
               onChangeText={onChange}
               onChange={onChange}
               onBlur={onBlur}
               value={value}
-              maxLength={INITIAL_VALUE_MAX_LEN}
+              maxLength={CURRENT_BALANCE_MAX_LEN}
               showClear
               errorField={error}
             />
