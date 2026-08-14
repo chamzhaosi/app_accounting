@@ -16,6 +16,35 @@ import { randomUUID } from "expo-crypto";
 
 const toDbAmount = (value?: string) => Number(value || 0);
 
+export const getMainAccountBalanceFromDB = async (): Promise<number> => {
+  try {
+    const db = await getDB();
+    const result = await db.getFirstAsync<{ balance: number }>(
+      `
+        SELECT COALESCE(SUM(current_balance), 0) AS balance
+        FROM accounts
+        WHERE is_main_account = 1
+          AND is_active = 1
+          AND deleted_at IS NULL;
+      `,
+    );
+
+    const balance = result?.balance ?? 0;
+    debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Loaded main account balance", {
+      balance,
+    });
+
+    return balance;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
+      "Error when getting main account balance from db",
+      e,
+    );
+    throw e;
+  }
+};
+
 export const getAccMgmtListFromDB = async ({
   orderBy,
   pageSize = DEFAULT_PAGE_SIZE,

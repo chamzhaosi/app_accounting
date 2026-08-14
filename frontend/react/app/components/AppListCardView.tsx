@@ -87,7 +87,7 @@ export default function AppListCardView({
   const genListRenderItem = ({ item }: { item: AppListCardItemType }) => {
     const isItemSelected =
       selectedItemId !== undefined
-        ? item.id === selectedItemId
+        ? item.id.toString() === selectedItemId.toString()
         : item.icon === selectedItem;
 
     return (
@@ -163,6 +163,7 @@ export default function AppListCardView({
       refreshing={false}
       onRefresh={onRefresh}
       data={data}
+      extraData={selectedItemId ?? selectedItem}
       numColumns={itemNumInRow}
       columnWrapperStyle={defaultStyle.columnWrapperStyle}
       contentContainerStyle={[

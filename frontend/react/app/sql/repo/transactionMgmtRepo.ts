@@ -9,6 +9,7 @@ import {
 import { getDB } from "../db/database";
 import { SQLQueryOptions } from "../types/common";
 import {
+  TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
   TransactionMgmtUpdateReqType,
@@ -53,6 +54,43 @@ const TRANSACTION_DETAIL_SELECT = `
   LEFT JOIN accounts AS to_accounts
     ON to_accounts.id = transactions.to_account_id
 `;
+
+export const getTransactionDateRangeTotalsFromDB = async (
+  startDate: string,
+  endDate: string,
+): Promise<TransactionDateRangeTotalsType> => {
+  try {
+    const db = await getDB();
+    const result = await db.getFirstAsync<TransactionDateRangeTotalsType>(
+      `
+        SELECT
+          COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0) AS income_total,
+          COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0) AS expense_total
+        FROM transactions
+        WHERE deleted_at IS NULL
+          AND transaction_date >= ?
+          AND transaction_date <= ?;
+      `,
+      [startDate, endDate],
+    );
+
+    const totals = result ?? { income_total: 0, expense_total: 0 };
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded transaction date range totals",
+      { startDate, endDate, ...totals },
+    );
+
+    return totals;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when getting transaction date range totals from db",
+      e,
+    );
+    throw e;
+  }
+};
 
 const getBalanceTransaction = (
   data: TransactionMgmtCreateReqType,
@@ -164,11 +202,15 @@ const getStoredTransactionForWrite = async (
     [id],
   );
 
-export const getTransactionMgmtListFromDB = async ({
-  orderBy,
-  pageSize = DEFAULT_PAGE_SIZE,
-  curPage = DEFAULT_CURRENT_PAGE,
-}: SQLQueryOptions): Promise<TransactionMgmtRspType[]> => {
+export const getTransactionMgmtListFromDB = async (
+  {
+    orderBy,
+    pageSize = DEFAULT_PAGE_SIZE,
+    curPage = DEFAULT_CURRENT_PAGE,
+  }: SQLQueryOptions,
+  startDate: string,
+  endDate: string,
+): Promise<TransactionMgmtRspType[]> => {
   try {
     const db = await getDB();
     const offset = (curPage - 1) * pageSize;
@@ -176,25 +218,18 @@ export const getTransactionMgmtListFromDB = async ({
       `
         ${TRANSACTION_DETAIL_SELECT}
         WHERE transactions.deleted_at IS NULL
-          AND transactions.transaction_date >= date(
-            'now',
-            'localtime',
-            'start of month'
-          )
-          AND transactions.transaction_date < date(
-            'now',
-            'localtime',
-            'start of month',
-            '+1 month'
-          )
+          AND transactions.transaction_date >= ?
+          AND transactions.transaction_date <= ?
         ${buildOrderBy(orderBy)}
         LIMIT ? OFFSET ?;
       `,
-      [pageSize, offset],
+      [startDate, endDate, pageSize, offset],
     );
     debugLog(DEBUG_TAG.TRANSACTION_MANAGEMENT_DB, "Loaded transaction page", {
       curPage,
       pageSize,
+      startDate,
+      endDate,
       count: result.length,
     });
 

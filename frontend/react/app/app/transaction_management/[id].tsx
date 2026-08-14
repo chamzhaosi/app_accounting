@@ -112,7 +112,6 @@ export default function TransactionManagementDetail() {
   });
 
   const transactionType = watch("transactionType");
-  const categoryId = watch("categoryId");
   const categoryTypeId = CATEGORY_TYPE_IDS[transactionType];
 
   const {
@@ -155,16 +154,33 @@ export default function TransactionManagementDetail() {
       lastPage.length === ACCOUNT_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
 
-  const categoryItems = useMemo<AppListCardItemType[]>(
-    () =>
+  const categoryItems = useMemo<AppListCardItemType[]>(() => {
+    const items =
       categories?.pages.flat().map((category) => ({
         id: category.id.toString(),
         icon: category.icon as AppIconProps["name"],
         label: category.label,
         description: category.descriptions ?? undefined,
-      })) ?? [],
-    [categories],
-  );
+      })) ?? [];
+    const savedCategoryId = transaction?.category_id;
+
+    if (
+      !savedCategoryId ||
+      transaction.transaction_type !== transactionType ||
+      items.some((category) => category.id.toString() === savedCategoryId)
+    ) {
+      return items;
+    }
+
+    return [
+      {
+        id: savedCategoryId,
+        icon: (transaction.category_icon ?? "Tag") as AppIconProps["name"],
+        label: transaction.category_label ?? "Selected Category",
+      },
+      ...items,
+    ];
+  }, [categories, transaction, transactionType]);
 
   const accountItems = useMemo<AppListItemType[]>(
     () =>
@@ -240,34 +256,6 @@ export default function TransactionManagementDetail() {
       transactionDate: transaction.transaction_date,
     });
   }, [reset, transaction]);
-
-  useEffect(() => {
-    if (
-      isLoadingCategories ||
-      categoryError ||
-      transactionType === TXN_TYPE_ENUM.TRANSFER
-    )
-      return;
-
-    if (!categoryItems.length) {
-      if (categoryId) setValue("categoryId", "", { shouldValidate: true });
-      return;
-    }
-
-    const isSelectedCategoryAvailable = categoryItems.some(
-      (category) => category.id.toString() === categoryId,
-    );
-    if (isSelectedCategoryAvailable) return;
-
-    setValue("categoryId", categoryItems[0].id.toString());
-  }, [
-    categoryError,
-    categoryId,
-    categoryItems,
-    isLoadingCategories,
-    setValue,
-    transactionType,
-  ]);
 
   useEffect(() => {
     if (!transactionError) return;

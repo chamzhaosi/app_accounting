@@ -5,15 +5,23 @@ import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
 import {
   createNewTransactionMgmtToDB,
   deleteTransactionMgmtFromDB,
+  getTransactionDateRangeTotalsFromDB,
   getTransactionMgmtByIdFromDB,
   getTransactionMgmtListFromDB,
   updateTransactionMgmtToDB,
 } from "../repo/transactionMgmtRepo";
 import {
+  TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
   TransactionMgmtUpdateReqType,
 } from "../types/transactionMgmtType";
+
+export const getTransactionDateRangeTotals = async (
+  startDate: string,
+  endDate: string,
+): Promise<TransactionDateRangeTotalsType> =>
+  getTransactionDateRangeTotalsFromDB(startDate, endDate);
 
 const CATEGORY_TYPE_IDS = {
   [TXN_TYPE_ENUM.INCOME]: 1,
@@ -25,15 +33,21 @@ const CATEGORY_TYPE_IDS = {
 export const getTransactionMgmtList = async (
   curPage: number,
   pageSize: number,
+  startDate: string,
+  endDate: string,
 ): Promise<TransactionMgmtRspType[]> =>
-  getTransactionMgmtListFromDB({
-    orderBy: [
-      { column: "transactions.transaction_date", direction: "DESC" },
-      { column: "transactions.created_at", direction: "DESC" },
-    ],
-    curPage,
-    pageSize,
-  });
+  getTransactionMgmtListFromDB(
+    {
+      orderBy: [
+        { column: "transactions.transaction_date", direction: "DESC" },
+        { column: "transactions.created_at", direction: "DESC" },
+      ],
+      curPage,
+      pageSize,
+    },
+    startDate,
+    endDate,
+  );
 
 export const getTransactionMgmtById = async (
   id: string,

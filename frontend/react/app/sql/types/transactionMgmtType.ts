@@ -15,6 +15,11 @@ export type TransactionMgmtUpdateReqType = TransactionMgmtCreateReqType & {
   id: string;
 };
 
+export type TransactionDateRangeTotalsType = {
+  income_total: number;
+  expense_total: number;
+};
+
 export type TransactionMgmtRspType = {
   id: string;
   transaction_type: TXN_TYPE_ENUM;

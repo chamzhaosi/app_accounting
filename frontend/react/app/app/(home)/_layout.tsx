@@ -41,6 +41,13 @@ export default function StackLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="_components/AccountBalanceSummary"
+        options={{
+          href: null,
+          tabBarItemStyle: { display: "none" },
+        }}
+      />
     </Tabs>
   );
 }

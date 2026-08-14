@@ -5,6 +5,7 @@ import {
   getAccMgmtByIdFromDB,
   getAccMgmtByTypeAndLabelFromDB,
   getAccMgmtListFromDB,
+  getMainAccountBalanceFromDB,
   updateAccMgmtToDB,
 } from "../repo/accMgmtRepo";
 import {
@@ -12,6 +13,9 @@ import {
   AccMgmtRspType,
   AccMgmtUpdateReqType,
 } from "../types/accMgmtType";
+
+export const getMainAccountBalance = async (): Promise<number> =>
+  getMainAccountBalanceFromDB();
 
 export const getAccMgmtList = async (
   curPage: number,
