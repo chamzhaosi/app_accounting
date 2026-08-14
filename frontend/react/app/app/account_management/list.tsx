@@ -40,7 +40,7 @@ export default function AccountManagementList() {
       data?.pages.flat().map((item) => ({
         id: item.id,
         icon: item.type_icon as AppIconProps["name"],
-        label: item.label,
+        label: `${item.label} - ${item.current_balance.toFixed(2)}`,
         descriptions: item.descriptions ?? undefined,
       })) ?? [],
     [data],

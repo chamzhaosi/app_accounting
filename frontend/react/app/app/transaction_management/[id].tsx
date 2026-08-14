@@ -54,7 +54,10 @@ import {
   updateTransactionMgmt,
 } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
-import AccountIdField, { AccountFieldName } from "./_components/AccountIdField";
+import AccountIdField, {
+  AccountFieldName,
+  AccountPickerItemType,
+} from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
 
 const CATEGORY_PAGE_SIZE = 40;
@@ -182,12 +185,13 @@ export default function TransactionManagementDetail() {
     ];
   }, [categories, transaction, transactionType]);
 
-  const accountItems = useMemo<AppListItemType[]>(
+  const accountItems = useMemo<AccountPickerItemType[]>(
     () =>
       accounts?.pages.flat().map((account) => ({
         id: account.id,
         icon: account.type_icon as AppIconProps["name"],
-        label: account.label,
+        label: `${account.label} - ${account.current_balance.toFixed(2)}`,
+        inputLabel: account.label,
         descriptions: account.descriptions ?? undefined,
       })) ?? [],
     [accounts],
@@ -535,10 +539,10 @@ export default function TransactionManagementDetail() {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   maxLength={AMOUNT_MAX_LEN}
-                  keyboardType="decimal-pad"
+                  keyboardType="number-pad"
                   showClear
                   errorField={error}
-                  selectTextOnFocus
+                  fixedDecimalInput
                   returnKeyType="next"
                   onSubmitEditing={() => setFocus("description")}
                 />

@@ -6,7 +6,7 @@ export type AccountManagementFormType = z.infer<
 
 export const LABEL_MAX_LEN = 30;
 export const DESCRIPTION_MAX_LEN = 100;
-export const INITIAL_VALUE_MAX_LEN = 13;
+export const CURRENT_BALANCE_MAX_LEN = 13;
 
 export const accountManagementFormSchema = z.object({
   typeId: z.string().min(1, "Please select a type"),
@@ -23,7 +23,7 @@ export const accountManagementFormSchema = z.object({
       `Description must be less than ${DESCRIPTION_MAX_LEN} characters`,
     )
     .optional(),
-  initialValue: z
+  currentBalance: z
     .string()
     .optional()
     .refine((value) => !value || /^\d{1,10}(\.\d{1,2})?$/.test(value), {
@@ -36,6 +36,6 @@ export const accountManagementFormDefaultValues: AccountManagementFormType = {
   typeId: "",
   label: "",
   descriptions: "",
-  initialValue: "",
+  currentBalance: "",
   isMainAccount: true,
 };

@@ -28,7 +28,7 @@ import {
   accountManagementFormSchema,
   AccountManagementFormType,
   DESCRIPTION_MAX_LEN,
-  INITIAL_VALUE_MAX_LEN,
+  CURRENT_BALANCE_MAX_LEN,
   LABEL_MAX_LEN,
 } from "../../forms/schemas/account_management.schema";
 import { createNewAccMgmt } from "../../sql/service/accMgmtService";
@@ -94,7 +94,10 @@ export default function AccountManagementCreate() {
         return;
       }
 
-      await invalidateQuery(queryClient, accountManagementQueryKeys.lists());
+      await Promise.all([
+        invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, accountManagementQueryKeys.mainBalance()),
+      ]);
       debugLog(
         DEBUG_TAG.ACCOUNT_MANAGEMENT,
         "Invalidated account lists after create",
@@ -191,14 +194,14 @@ export default function AccountManagementCreate() {
               showClear
               errorField={error}
               submitBehavior="submit"
-              onSubmitEditing={() => setFocus("initialValue")}
+              onSubmitEditing={() => setFocus("currentBalance")}
             />
           )}
         />
 
         <Controller
           control={control}
-          name="initialValue"
+          name="currentBalance"
           render={({
             field: { value, onChange, onBlur, ref },
             fieldState: { error },
@@ -206,14 +209,14 @@ export default function AccountManagementCreate() {
             <AppAmtInput
               ref={ref}
               mode="outlined"
-              label="Capital Value"
+              label="Current Balance"
               disabled={isSubmitting}
               keyboardType="number-pad"
               onChangeText={onChange}
               onChange={onChange}
               onBlur={onBlur}
               value={value}
-              maxLength={INITIAL_VALUE_MAX_LEN}
+              maxLength={CURRENT_BALANCE_MAX_LEN}
               showClear
               errorField={error}
             />

@@ -106,6 +106,6 @@ export const getTransactionManagementFormDefaultValues = (
   fromAccountId: "",
   toAccountId: "",
   description: "",
-  amount: "",
+  amount: "0.00",
   transactionDate,
 });
