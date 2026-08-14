@@ -1,14 +1,6 @@
-import { useState } from "react";
+import { router } from "expo-router";
 import AppListView, { AppListItemType } from "../../components/AppListView";
 import AppView from "../../components/AppView";
-import {
-  BookOpenCheck,
-  HandCoins,
-  RotateCcwKey,
-  Vault,
-  Wallet,
-} from "lucide-react-native";
-import { router } from "expo-router";
 import {
   ACCOUNT_MANAGEMENT_LIST_URL,
   ACCOUNT_TYPE_LIST_URL,

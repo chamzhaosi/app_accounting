@@ -9,6 +9,7 @@ import AppText, { TextTypEnum } from "./AppText";
 type AppTextInputProps = TextInputProps & {
   errorField?: FieldError;
   showClear?: boolean;
+  continerClassName?: string;
 };
 
 const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
@@ -20,13 +21,15 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
       onBlur,
       maxLength,
       showClear = false,
+      style,
+      continerClassName,
       ...props
     },
     ref,
   ) => {
     const { THEME } = useThemeStore();
     return (
-      <>
+      <View className={continerClassName}>
         <TextInput
           ref={ref}
           style={[
@@ -34,6 +37,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
             {
               backgroundColor: THEME.surfaceContainerHigh,
             },
+            style,
           ]}
           right={
             showClear &&
@@ -61,7 +65,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
             </AppText>
           )}
         </View>
-      </>
+      </View>
     );
   },
 );

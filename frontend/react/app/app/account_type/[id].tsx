@@ -1,20 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import AppIcon, { AppIconProps } from "../../components/AppIcon";
-import AccTypeIconsList from "./_components/AccTypeIconsList";
 import AppButton, {
-  AppButtonProps,
   ButtonType,
   SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
 import AppDialog from "../../components/AppDialog";
 import AppDivider from "../../components/AppDivider";
+import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
+import { ICONS } from "../../constants/icons";
+import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 import {
   accountTypeFormDefaultValues,
   accountTypeFormSchema,
@@ -22,12 +23,22 @@ import {
   LABEL_MAX_LEN,
 } from "../../forms/schemas/accout_type.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { ICONS } from "../../constants/icons";
-import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
+import AccTypeIconsList from "./_components/AccTypeIconsList";
+import {
+  deleteAccType,
+  getAccTypeById,
+  updateAccType,
+} from "../../sql/service/accTypeService";
+import { AppToast } from "../../components/AppToast";
+import { toTitleCase } from "../../utils/common";
+import { ActivityIndicator } from "react-native-paper";
+import { accountTypeQueryKeys, invalidateQuery } from "../../constants/queryKeys";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 
 export default function AccountTypeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
+  const queryClient = useQueryClient();
 
   const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
     ICONS.ACCOUNT_TYPE[0],
@@ -38,7 +49,17 @@ export default function AccountTypeDetail() {
   const [showDialog, setShowDialog] = useState<boolean>(false);
   const isSubmitting = isDeleting || isSaving;
 
-  const { control, handleSubmit, setValues } = useForm<AccountTypeFormType>({
+  const {
+    data: accType,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: accountTypeQueryKeys.detail(id),
+    queryFn: () => getAccTypeById(id),
+    enabled: Boolean(id),
+  });
+
+  const { control, handleSubmit, reset } = useForm<AccountTypeFormType>({
     resolver: zodResolver(accountTypeFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
@@ -46,30 +67,115 @@ export default function AccountTypeDetail() {
   });
 
   const onSubmit = async (value: AccountTypeFormType) => {
-    const data = { ...value, icon: selectedItem };
-    setRspErrorMsg("");
-    console.log(data);
-    setIsSaving(true);
-    await new Promise((res) => setTimeout(res, 2000));
-    setIsSaving(false);
-    router.back();
+    const data = {
+      ...value,
+      id: id,
+      label: toTitleCase(value.label),
+      icon: selectedItem,
+    };
+
+    try {
+      setRspErrorMsg("");
+      setIsSaving(true);
+      const exist = await updateAccType(data);
+      if (exist) {
+        debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Update rejected by service", {
+          id,
+          label: data.label,
+          reason: exist,
+        });
+        setRspErrorMsg(exist);
+      } else {
+        await Promise.all([
+          invalidateQuery(queryClient, accountTypeQueryKeys.lists()),
+          invalidateQuery(queryClient, accountTypeQueryKeys.detail(id)),
+        ]);
+        debugLog(
+          DEBUG_TAG.ACCOUNT_TYPE,
+          "Invalidated account type queries after update",
+          {
+            id,
+          },
+        );
+        AppToast.success({
+          message: `Account type updated successfully`,
+        });
+        router.back();
+      }
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Error when updating account type",
+        e,
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const onDelete = async () => {
-    setIsDeleting(true);
-    await new Promise((res) => setTimeout(res, 2000));
-    setIsDeleting(false);
-    router.back();
+    try {
+      setIsDeleting(true);
+      await deleteAccType(id);
+      await invalidateQuery(queryClient, accountTypeQueryKeys.lists());
+      queryClient.removeQueries({
+        queryKey: accountTypeQueryKeys.detail(id),
+      });
+      debugLog(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Invalidated list and removed detail after delete",
+        {
+          id,
+        },
+      );
+      AppToast.success({
+        message: `Account type deleted successfully`,
+      });
+      router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Error when deleting account type",
+        e,
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   useEffect(() => {
-    setValues({
-      label:
-        "Card - in card drawer, my friend put de, dont take it Card - in card drawer, my friend put de, dont take it",
-      icon: "CreditCard",
+    if (!accType) return;
+
+    reset({
+      label: accType.label,
+      icon: accType.icon,
     });
-    setSelectedItem("CreditCard");
-  }, [id]);
+    setSelectedItem(accType.icon as AppIconProps["name"]);
+  }, [accType, reset]);
+
+  useEffect(() => {
+    if (isLoading || accType !== null) return;
+
+    console.warn("Account type id not found", { id });
+    AppToast.error({ message: "Accout type id not found" });
+  }, [accType, id, isLoading]);
+
+  useEffect(() => {
+    if (!error) return;
+
+    console.error(
+      DEBUG_TAG.ACCOUNT_TYPE,
+      "Error when getting account type by id",
+      error,
+    );
+  }, [error]);
+
+  if (isLoading)
+    return (
+      <View className="h-full justify-center items-center">
+        <ActivityIndicator size={"large"} />
+      </View>
+    );
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -160,7 +266,7 @@ export default function AccountTypeDetail() {
               style={{ flex: 0.4, borderRadius: 8 }}
               {...SUBMIT_BTN_CONTENT_STYLE}
             >
-              Save
+              Update
             </AppButton>
           </View>
 

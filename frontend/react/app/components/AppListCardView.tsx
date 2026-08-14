@@ -1,21 +1,32 @@
 import { Info, PencilOff } from "lucide-react-native";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  Animated,
+  StyleProp,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from "react-native";
 import {
   KeyboardAwareFlatList,
   KeyboardAwareFlatListProps,
 } from "react-native-keyboard-aware-scroll-view";
-import { Surface, Tooltip, TouchableRipple } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Surface,
+  Tooltip,
+  TouchableRipple,
+} from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { cn } from "../utils/common";
+import AppEmpty from "./AppEmpty";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
-import AppEmpty from "./AppEmpty";
-import { useFocusEffect } from "expo-router";
-import { useCallback } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type AppListCardItemType = {
-  id: number;
+  id: number | string;
   icon: AppIconProps["name"];
   label: string;
   description?: string;
@@ -31,11 +42,15 @@ type AppListViewProps = Omit<
   itemClassName?: string;
   isShowIconOnly?: boolean;
   selectedItem?: AppIconProps["name"];
+  selectedItemId?: AppListCardItemType["id"];
   extraCardHeight?: number;
   onPress: (item: AppListCardItemType) => void;
   numberItemInRow?: number;
   isShowNoMoreData?: boolean;
   parentWidth?: number;
+  isLoading?: boolean;
+  elevation?: 0 | 1 | 2 | 3 | 4 | 5 | Animated.Value;
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
 export default function AppListCardView({
@@ -44,6 +59,7 @@ export default function AppListCardView({
   itemClassName,
   isShowIconOnly,
   selectedItem,
+  selectedItemId,
   onPress,
   extraCardHeight = 0,
   extraScrollHeight,
@@ -52,21 +68,27 @@ export default function AppListCardView({
   numberItemInRow,
   onScroll,
   parentWidth,
+  containerStyle,
   contentContainerStyle,
+  isLoading,
+  elevation = 3,
   ...props
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const gapSize = 16;
   const itemNumInRow = numberItemInRow ?? (isShowIconOnly ? 6 : 4);
   const itemSize = Math.floor(
     ((parentWidth ?? width) - gapSize * (itemNumInRow + 1)) / itemNumInRow,
   );
-  const isEmpty = data.length === 0;
 
   const genListRenderItem = ({ item }: { item: AppListCardItemType }) => {
-    const isItemSelected = item.icon === selectedItem;
+    const isItemSelected =
+      selectedItemId !== undefined
+        ? item.id.toString() === selectedItemId.toString()
+        : item.icon === selectedItem;
 
     return (
       <Surface
@@ -79,12 +101,12 @@ export default function AppListCardView({
               ? THEME.tertiary
               : THEME.surfaceContainer,
           },
+          containerStyle,
         ]}
-        elevation={3}
+        elevation={elevation}
       >
         <TouchableRipple
           onPress={() => onPress(item)}
-          rippleColor={THEME.surfaceContainerHighest}
           style={defaultStyle.rippleContainer}
         >
           <>
@@ -113,7 +135,10 @@ export default function AppListCardView({
                   variant="bodySmall"
                   className="text-LIGHT-primary dark:text-DARK-primary text-justify"
                   numberOfLines={2}
-                  style={{ fontSize: 14 }}
+                  style={[
+                    isItemSelected && { color: THEME.onTertiary },
+                    { fontSize: 14 },
+                  ]}
                 >
                   {item.label}
                 </AppText>
@@ -134,9 +159,11 @@ export default function AppListCardView({
   return (
     <KeyboardAwareFlatList
       className={cn(className)}
+      style={{ marginBottom: insets.bottom }}
       refreshing={false}
       onRefresh={onRefresh}
       data={data}
+      extraData={selectedItemId ?? selectedItem}
       numColumns={itemNumInRow}
       columnWrapperStyle={defaultStyle.columnWrapperStyle}
       contentContainerStyle={[
@@ -144,8 +171,14 @@ export default function AppListCardView({
         contentContainerStyle,
       ]}
       renderItem={genListRenderItem}
-      ListEmptyComponent={<AppEmpty />}
-      ListFooterComponent={isShowNoMoreData ? genNoMoreData : undefined}
+      ListEmptyComponent={isLoading ? <></> : <AppEmpty />}
+      ListFooterComponent={
+        isLoading ? (
+          <ActivityIndicator className="my-4" size={30} />
+        ) : isShowNoMoreData ? (
+          genNoMoreData
+        ) : undefined
+      }
       keyExtractor={(item) => item.id}
       enableOnAndroid
       extraScrollHeight={extraScrollHeight ?? 40}

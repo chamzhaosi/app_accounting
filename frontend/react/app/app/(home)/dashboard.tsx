@@ -1,10 +1,53 @@
-import AppText from "../../components/AppText";
+import { router } from "expo-router";
+import { useState } from "react";
+import AppFloatingButton from "../../components/AppFloatingButton";
+import { AppDateRangeValue } from "../../components/AppDateRangePicker";
 import AppView from "../../components/AppView";
+import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../constants/urls";
+import TransactionManagementList from "../transaction_management/list";
+import AccountBalanceSummary from "./_components/AccountBalanceSummary";
+
+const formatDate = (date?: Date) => {
+  if (!date || Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDefaultDateRange = (): AppDateRangeValue => {
+  const today = new Date();
+  return {
+    startDate: new Date(today.getFullYear(), today.getMonth(), 1),
+    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+  };
+};
 
 export default function Dashboard() {
+  const [dateRange, setDateRange] =
+    useState<AppDateRangeValue>(getDefaultDateRange);
+  const startDate = formatDate(dateRange.startDate);
+  const endDate = formatDate(dateRange.endDate);
+
   return (
-    <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow justify-center items-center">
-      <AppText>{"Dashboard Page"}</AppText>
+    <AppView
+      isSafe
+      edges={["top"]}
+      className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow"
+    >
+      <AccountBalanceSummary
+        dateRange={dateRange}
+        startDate={startDate}
+        endDate={endDate}
+        onDateRangeChange={setDateRange}
+      />
+      <TransactionManagementList startDate={startDate} endDate={endDate} />
+
+      <AppFloatingButton
+        icon="plus"
+        onPress={() => router.push(TRANSACTION_MANAGEMENT_CREATE_URL)}
+      />
     </AppView>
   );
 }

@@ -26,6 +26,7 @@ import {
   useLocalAuthStore,
 } from "../../stores/useLocalAuthStore";
 import { DASHBOARD_URL, LANDING_URL } from "../../constants/urls";
+import { getDB } from "../../sql/db/database";
 
 export default function AppPINLogin() {
   const { THEME } = useThemeStore();

@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -10,13 +11,16 @@ import AppButton, {
 } from "../../components/AppButton";
 import AppDialog from "../../components/AppDialog";
 import AppIconSelect from "../../components/AppIconSelect";
-import AppScrollView from "../../components/AppScrollView";
 import AppSelect, { SelectOptionType } from "../../components/AppSelect";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import { AppToast } from "../../components/AppToast";
 import AppView from "../../components/AppView";
 import { ICONS } from "../../constants/icons";
+import {
+  categoryManagementQueryKeys,
+  invalidateQuery,
+} from "../../constants/queryKeys";
 import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 import {
   categoryManagementFormDefaultValues,
@@ -25,9 +29,22 @@ import {
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
 } from "../../forms/schemas/category_management.schema";
+import {
+  deleteCategoryMgmt,
+  getCategoryMgmtById,
+  updateCategoryMgmt,
+} from "../../sql/service/categoryMgmtService";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { ActivityIndicator } from "react-native-paper";
+
+const TXN_TYPES_OPTIONS: SelectOptionType[] = [
+  { id: 1, label: "Income", value: "inc" },
+  { id: 2, label: "Expense", value: "exp" },
+];
 
 export default function CategoryManagementDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -36,9 +53,18 @@ export default function CategoryManagementDetail() {
   const isSubmitting = isDeleting || isSaving;
 
   const {
+    data: category,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: categoryManagementQueryKeys.detail(id),
+    queryFn: () => getCategoryMgmtById(id),
+    enabled: Boolean(id),
+  });
+
+  const {
     control,
     handleSubmit,
-    setValues,
     reset,
     setFocus,
     formState: { errors },
@@ -49,43 +75,121 @@ export default function CategoryManagementDetail() {
     defaultValues: categoryManagementFormDefaultValues,
   });
 
-  const TXN_TYPES_OPTIONS: SelectOptionType[] = [
-    {
-      id: 1,
-      label: "Income",
-      value: "inc",
-    },
-    { id: 2, label: "Expense", value: "exp" },
-  ];
-
   const onDelete = async () => {
-    setIsDeleting(true);
-    await new Promise((res) => setTimeout(res, 2000));
-    setIsDeleting(false);
-    router.back();
+    try {
+      setRspErrorMsg("");
+      setIsDeleting(true);
+      const errMsg = await deleteCategoryMgmt(id);
+      if (errMsg) {
+        debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT, "Delete rejected by service", {
+          id,
+          reason: errMsg,
+        });
+        setRspErrorMsg(errMsg);
+        return;
+      }
+
+      await invalidateQuery(queryClient, categoryManagementQueryKeys.lists());
+      queryClient.removeQueries({
+        queryKey: categoryManagementQueryKeys.detail(id),
+      });
+      debugLog(
+        DEBUG_TAG.CATEGORY_MANAGEMENT,
+        "Invalidated list and removed detail after delete",
+        { id },
+      );
+      AppToast.success({ message: "Category deleted successfully" });
+      router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.CATEGORY_MANAGEMENT,
+        "Error when deleting category",
+        e,
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const onSubmit = async (value: CategoryManagementFormType) => {
-    setRspErrorMsg("");
-    console.log(value);
-    setIsSaving(true);
-    await new Promise((res) =>
-      setTimeout(() => {
-        res("success");
-        AppToast.success({ message: "Update category successfully" });
-      }, 2000),
-    );
-    setIsSaving(false);
-    router.back();
+    const data = {
+      ...value,
+      id,
+      descriptions: value.descriptions?.trim(),
+    };
+
+    try {
+      setRspErrorMsg("");
+      setIsSaving(true);
+      const errMsg = await updateCategoryMgmt(data);
+      if (errMsg) {
+        debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT, "Update rejected by service", {
+          id,
+          typeId: data.typeId,
+          label: data.label,
+          reason: errMsg,
+        });
+        setRspErrorMsg(errMsg);
+        return;
+      }
+
+      await Promise.all([
+        invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, categoryManagementQueryKeys.detail(id)),
+      ]);
+      debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT, "Invalidated category queries", {
+        id,
+      });
+      AppToast.success({ message: "Update category successfully" });
+      router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.CATEGORY_MANAGEMENT,
+        "Error when updating category",
+        e,
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   useEffect(() => {
-    setValues({
-      typeId: 1,
-      label: "Salary",
-      icon: "Users",
+    if (!category) return;
+
+    reset({
+      typeId: category.type_id,
+      label: category.label,
+      icon: category.icon,
+      descriptions: category.descriptions ?? "",
     });
-  }, [id]);
+  }, [category, reset]);
+
+  useEffect(() => {
+    if (isLoading || category !== null) return;
+
+    console.warn(DEBUG_TAG.CATEGORY_MANAGEMENT, "Category id not found", {
+      id,
+    });
+    AppToast.error({ message: "Category id not found" });
+  }, [category, id, isLoading]);
+
+  useEffect(() => {
+    if (!error) return;
+
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT,
+      "Error when getting category by id",
+      error,
+    );
+  }, [error]);
+
+  if (isLoading) {
+    return (
+      <View className="h-full justify-center items-center">
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -128,8 +232,8 @@ export default function CategoryManagementDetail() {
               <AppSelect
                 ref={ref}
                 label="Transaction Type"
-                value={value.toString()}
-                onChange={onChange}
+                value={value?.toString() ?? ""}
+                onChange={(selected) => onChange(Number(selected ?? 0))}
                 onBlur={onBlur}
                 options={TXN_TYPES_OPTIONS}
                 errorField={error}
@@ -206,7 +310,6 @@ export default function CategoryManagementDetail() {
                 editable={!isSubmitting}
                 disabled={isSubmitting}
                 onChangeText={onChange}
-                onChange={onChange}
                 onBlur={onBlur}
                 value={value}
                 maxLength={DESCRIPTION_MAX_LEN}

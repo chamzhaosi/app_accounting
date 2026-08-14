@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
@@ -21,9 +22,16 @@ import {
 } from "../../forms/schemas/accout_type.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { ICONS } from "../../constants/icons";
+import { createNewAccType } from "../../sql/service/accTypeService";
+import { AppToast } from "../../components/AppToast";
+import { router } from "expo-router";
+import { toTitleCase } from "../../utils/common";
+import { accountTypeQueryKeys, invalidateQuery } from "../../constants/queryKeys";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
+  const queryClient = useQueryClient();
 
   const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
     ICONS.ACCOUNT_TYPE[0],
@@ -49,23 +57,48 @@ export default function AccountTypeCreate() {
     value: AccountTypeFormType,
     saveAnotherType: boolean,
   ) => {
-    const data = { ...value, icon: selectedItem };
+    const data = {
+      ...value,
+      label: toTitleCase(value.label),
+      icon: selectedItem,
+    };
     const setLoading = saveAnotherType ? setIsSavingAndNewType : setIsSaving;
 
-    setRspErrorMsg("");
-    console.log(data);
-    setLoading(true);
-    // await new Promise((res) =>
-    //   setTimeout(() => {
-    //     res("success");
-    //     AppToast.success({ message: "Add account type successfully" });
-    //   }, 2000),
-    // );
-    // setLoading(false);
-    // saveAnotherType ? formReset() : router.back();
-    await new Promise((res) => setTimeout(res, 200));
-    setLoading(false);
-    setRspErrorMsg("Account type already added.");
+    try {
+      setRspErrorMsg("");
+      setLoading(true);
+      const errMsg = await createNewAccType(data);
+      if (errMsg) {
+        debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Create rejected by service", {
+          label: data.label,
+          reason: errMsg,
+        });
+        setRspErrorMsg(errMsg);
+        return;
+      } else {
+        await invalidateQuery(queryClient, accountTypeQueryKeys.lists());
+        debugLog(
+          DEBUG_TAG.ACCOUNT_TYPE,
+          "Invalidated account type lists after create",
+          {
+            label: data.label,
+          },
+        );
+        AppToast.success({
+          message: `${value.label} account type created successfully`,
+        });
+        formReset();
+      }
+      !saveAnotherType && router.back();
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.ACCOUNT_TYPE,
+        "Error when create new account type",
+        e,
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formReset = () => {
@@ -99,7 +132,6 @@ export default function AccountTypeCreate() {
                   autoFocus
                   editable={!isSubmitting}
                   onChangeText={onChange}
-                  onChange={onChange}
                   onBlur={onBlur}
                   value={value}
                   maxLength={LABEL_MAX_LEN}
@@ -111,7 +143,7 @@ export default function AccountTypeCreate() {
           </View>
         </View>
 
-        <View className="m-4 mt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+        <View className="p-4 pt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View className="flex-row items-center justify-center gap-4 mt-4">
             <AppButton
               disabled={isSubmitting}

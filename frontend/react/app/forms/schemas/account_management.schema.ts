@@ -6,9 +6,10 @@ export type AccountManagementFormType = z.infer<
 
 export const LABEL_MAX_LEN = 30;
 export const DESCRIPTION_MAX_LEN = 100;
+export const INITIAL_VALUE_MAX_LEN = 13;
 
 export const accountManagementFormSchema = z.object({
-  typeId: z.number().min(1, "Please select a type"),
+  typeId: z.string().min(1, "Please select a type"),
   label: z
     .string()
     .trim()
@@ -32,7 +33,7 @@ export const accountManagementFormSchema = z.object({
 });
 
 export const accountManagementFormDefaultValues: AccountManagementFormType = {
-  typeId: 0,
+  typeId: "",
   label: "",
   descriptions: "",
   initialValue: "",

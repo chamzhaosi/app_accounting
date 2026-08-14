@@ -15,7 +15,7 @@ type AccTypeIconsListType = {
 
 export const iconData: AppListCardItemType[] = ICONS.ACCOUNT_TYPE.map(
   (i, index) => ({
-    id: index,
+    id: `${i}_${index}`,
     label: "",
     icon: i,
   }),

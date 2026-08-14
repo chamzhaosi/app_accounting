@@ -1,0 +1,214 @@
+import { randomUUID } from "expo-crypto";
+import { DB_SYNC_STATUS } from "../../constants/enum";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import {
+  buildOrderBy,
+  DEFAULT_CURRENT_PAGE,
+  DEFAULT_PAGE_SIZE,
+} from "../db/common";
+import { getDB } from "../db/database";
+import {
+  CategoryMgmtCreateReqType,
+  CategoryMgmtRspType,
+  CategoryMgmtUpdateReqType,
+} from "../types/categoryMgmtType";
+import { SQLQueryOptions } from "../types/common";
+
+type CategoryListQueryOptions = SQLQueryOptions & {
+  typeId: number;
+};
+
+export const getCategoryMgmtListFromDB = async ({
+  typeId,
+  orderBy,
+  pageSize = DEFAULT_PAGE_SIZE,
+  curPage = DEFAULT_CURRENT_PAGE,
+}: CategoryListQueryOptions): Promise<CategoryMgmtRspType[]> => {
+  try {
+    const offset = (curPage - 1) * pageSize;
+    const db = await getDB();
+    const result = await db.getAllAsync<CategoryMgmtRspType>(
+      `
+        SELECT *
+        FROM categories
+        WHERE type_id = ?
+          AND deleted_at IS NULL
+        ${buildOrderBy(orderBy)}
+        LIMIT ? OFFSET ?;
+      `,
+      [typeId, pageSize, offset],
+    );
+    debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Loaded category page", {
+      typeId,
+      curPage,
+      pageSize,
+      count: result.length,
+    });
+
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when getting category list from db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const getCategoryMgmtByTypeAndLabelFromDB = async (
+  typeId: number,
+  label: string,
+): Promise<CategoryMgmtRspType | null> => {
+  try {
+    const db = await getDB();
+    const result = await db.getFirstAsync<CategoryMgmtRspType>(
+      `
+        SELECT *
+        FROM categories
+        WHERE type_id = ?
+          AND label = ? COLLATE NOCASE
+          AND deleted_at IS NULL;
+      `,
+      [typeId, label],
+    );
+    debugLog(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Checked category type and label",
+      { typeId, label, found: Boolean(result) },
+    );
+
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when checking category type and label from db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const getCategoryMgmtByIdFromDB = async (
+  id: string,
+): Promise<CategoryMgmtRspType | null> => {
+  try {
+    const db = await getDB();
+    const result = await db.getFirstAsync<CategoryMgmtRspType>(
+      `SELECT * FROM categories WHERE id = ? AND deleted_at IS NULL;`,
+      [id],
+    );
+    debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Loaded category by id", {
+      id,
+      found: Boolean(result),
+    });
+
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when getting category by id from db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const createNewCategoryMgmtToDB = async (
+  data: CategoryMgmtCreateReqType,
+) => {
+  try {
+    const db = await getDB();
+    const id = randomUUID();
+    await db.runAsync(
+      `
+        INSERT INTO categories (id, type_id, label, icon, descriptions)
+        VALUES (?, ?, ?, ?, ?);
+      `,
+      [id, data.typeId, data.label, data.icon, data.descriptions || null],
+    );
+    debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Created category", {
+      id,
+      typeId: data.typeId,
+      label: data.label,
+    });
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when creating category in db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const updateCategoryMgmtToDB = async (
+  data: CategoryMgmtUpdateReqType,
+) => {
+  try {
+    const db = await getDB();
+    await db.runAsync(
+      `
+        UPDATE categories
+        SET
+          type_id = ?,
+          label = ?,
+          icon = ?,
+          descriptions = ?,
+          sync_status = ?,
+          updated_at = datetime('now')
+        WHERE id = ?
+          AND deleted_at IS NULL
+          AND is_system = 0;
+      `,
+      [
+        data.typeId,
+        data.label,
+        data.icon,
+        data.descriptions || null,
+        DB_SYNC_STATUS.PENDING,
+        data.id,
+      ],
+    );
+    debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Updated category", {
+      id: data.id,
+      typeId: data.typeId,
+      label: data.label,
+    });
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when updating category in db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const deleteCategoryMgmtFromDB = async (id: string) => {
+  try {
+    const db = await getDB();
+    await db.runAsync(
+      `
+        UPDATE categories
+        SET
+          deleted_at = datetime('now'),
+          sync_status = ?,
+          is_active = 0,
+          updated_at = datetime('now')
+        WHERE id = ?
+          AND deleted_at IS NULL
+          AND is_system = 0;
+      `,
+      [DB_SYNC_STATUS.PENDING, id],
+    );
+    debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Deleted category", { id });
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when deleting category from db",
+      e,
+    );
+    throw e;
+  }
+};
