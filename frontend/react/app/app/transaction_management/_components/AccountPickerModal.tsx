@@ -1,13 +1,30 @@
+import { Check } from "lucide-react-native";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
-import { ActivityIndicator, Modal, Portal } from "react-native-paper";
+import {
+  ActivityIndicator,
+  List,
+  Modal,
+  Portal,
+  Text,
+} from "react-native-paper";
 import AppFloatingButton from "../../../components/AppFloatingButton";
+import AppIcon from "../../../components/AppIcon";
 import AppIconButton from "../../../components/AppIconButton";
 import AppListView, { AppListItemType } from "../../../components/AppListView";
 import AppText, { TextTypEnum } from "../../../components/AppText";
+import { FONTS } from "../../../constants/fonts";
+import {
+  LIST_ITEM_DESCRIPTION_FONTSIZE,
+  LIST_ITEM_TITLE_FONTSIZE,
+} from "../../../constants/size";
 import { useThemeStore } from "../../../stores/useThemeStore";
 
+type AccountPickerModalItem = AppListItemType & {
+  balance: number;
+};
+
 type AccountPickerModalProps = {
-  accounts: AppListItemType[];
+  accounts: AccountPickerModalItem[];
   error: Error | null;
   isFetchingNextPage: boolean;
   isLoading: boolean;
@@ -16,11 +33,16 @@ type AccountPickerModalProps = {
   onLoadMore: () => void;
   onManageAccounts: () => void;
   onRefresh: () => Promise<unknown>;
-  onSelect: (account: AppListItemType) => void;
+  onSelect: (account: AccountPickerModalItem) => void;
   visible: boolean;
-  selectedItem?: AppListItemType;
+  selectedItem?: AccountPickerModalItem;
   title?: string;
 };
+
+const amountFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export default function AccountPickerModal({
   accounts,
@@ -83,9 +105,62 @@ export default function AccountPickerModal({
                 <ActivityIndicator style={styles.footerLoader} />
               ) : null
             }
-            isHideLeftIcon={true}
             selectedItem={selectedItem}
             contentContainerStyle={styles.listContent}
+            genCstmFlatListRenderItem={({ item }) => {
+              const isSelected = selectedItem?.id === item.id;
+              const textColor = isSelected ? THEME.onTertiary : THEME.onSurface;
+
+              return (
+                <List.Item
+                  centered
+                  title={item.label}
+                  titleStyle={[styles.accountLabel, { color: textColor }]}
+                  description={item.descriptions}
+                  descriptionStyle={[
+                    styles.accountDescription,
+                    {
+                      color: isSelected
+                        ? THEME.onTertiary
+                        : THEME.onSurfaceVariant,
+                    },
+                  ]}
+                  style={[
+                    styles.accountItem,
+                    {
+                      backgroundColor: isSelected
+                        ? THEME.tertiary
+                        : THEME.surfaceContainer,
+                      borderBottomColor: THEME.outlineVariant,
+                    },
+                  ]}
+                  rippleColor={THEME.surfaceContainerHighest}
+                  onPress={() => onSelect(item)}
+                  left={({ style }) => (
+                    <View style={[style, styles.accountIconContainer]}>
+                      <AppIcon
+                        name={item.icon}
+                        color={isSelected ? THEME.onTertiary : undefined}
+                      />
+                    </View>
+                  )}
+                  right={() => (
+                    <View style={styles.accountBalanceContainer}>
+                      <Text
+                        style={[styles.accountBalance, { color: textColor }]}
+                      >
+                        {amountFormatter.format(item.balance)}
+                      </Text>
+                      <View style={styles.selectionIndicator}>
+                        {isSelected && (
+                          <Check color={THEME.onTertiary} size={20} />
+                        )}
+                      </View>
+                    </View>
+                  )}
+                />
+              );
+            }}
           />
         )}
         <AppFloatingButton
@@ -128,6 +203,35 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 80,
+  },
+  accountItem: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingLeft: 8,
+    paddingRight: 4,
+  },
+  accountIconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accountLabel: {
+    fontFamily: FONTS.ROBOTO,
+    fontSize: LIST_ITEM_TITLE_FONTSIZE,
+  },
+  accountDescription: {
+    fontSize: LIST_ITEM_DESCRIPTION_FONTSIZE,
+  },
+  accountBalanceContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  accountBalance: {
+    fontFamily: FONTS.ROBOTO,
+    fontSize: LIST_ITEM_TITLE_FONTSIZE,
+    fontWeight: "700",
+    marginRight: 8,
+  },
+  selectionIndicator: {
+    width: 20,
   },
   manageButton: {
     bottom: 0,

@@ -41,14 +41,38 @@ export const categoryManagementQueryKeys = {
 export const transactionManagementQueryKeys = {
   all: [QueryKeyModule.TRANSACTION_MANAGEMENT] as const,
   lists: () => [...transactionManagementQueryKeys.all, "list"] as const,
-  dateRangeTotals: (params: { startDate: string; endDate: string }) =>
+  dateRangeTotals: (params: {
+    startDate: string;
+    endDate: string;
+    accountId?: string;
+  }) =>
     [
       ...transactionManagementQueryKeys.lists(),
       "dateRangeTotals",
       params,
     ] as const,
-  list: (params: { pageSize: number; startDate: string; endDate: string }) =>
-    [...transactionManagementQueryKeys.lists(), params] as const,
+  accountForwardBalance: (params: { accountId: string; startDate: string }) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "accountForwardBalance",
+      params,
+    ] as const,
+  accountFlowTotals: (params: {
+    accountId: string;
+    startDate: string;
+    endDate: string;
+  }) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "accountFlowTotals",
+      params,
+    ] as const,
+  list: (params: {
+    pageSize: number;
+    startDate: string;
+    endDate: string;
+    accountId?: string;
+  }) => [...transactionManagementQueryKeys.lists(), params] as const,
   details: () => [...transactionManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
     [...transactionManagementQueryKeys.details(), id] as const,

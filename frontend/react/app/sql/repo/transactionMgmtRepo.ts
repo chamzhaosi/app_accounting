@@ -9,6 +9,7 @@ import {
 import { getDB } from "../db/database";
 import { SQLQueryOptions } from "../types/common";
 import {
+  AccountDateRangeFlowTotalsType,
   TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
@@ -55,9 +56,128 @@ const TRANSACTION_DETAIL_SELECT = `
     ON to_accounts.id = transactions.to_account_id
 `;
 
+export const getAccountForwardBalanceFromDB = async (
+  accountId: string,
+  startDate: string,
+): Promise<number> => {
+  try {
+    const db = await getDB();
+    const result = await db.getFirstAsync<{ forward_balance: number }>(
+      `
+        SELECT
+          accounts.current_balance - COALESCE((
+            SELECT SUM(
+              CASE
+                WHEN transaction_type = 'income' AND account_id = ? THEN amount
+                WHEN transaction_type = 'expense' AND account_id = ? THEN -amount
+                WHEN transaction_type = 'adjustment' AND account_id = ? THEN amount
+                WHEN transaction_type = 'transfer' AND from_account_id = ? THEN -amount
+                WHEN transaction_type = 'transfer' AND to_account_id = ? THEN amount
+                ELSE 0
+              END
+            )
+            FROM transactions
+            WHERE deleted_at IS NULL
+              AND transaction_date >= ?
+          ), 0) AS forward_balance
+        FROM accounts
+        WHERE id = ?
+          AND deleted_at IS NULL;
+      `,
+      [
+        accountId,
+        accountId,
+        accountId,
+        accountId,
+        accountId,
+        startDate,
+        accountId,
+      ],
+    );
+
+    const forwardBalance = result?.forward_balance ?? 0;
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded account forward balance",
+      { accountId, startDate, forwardBalance },
+    );
+
+    return forwardBalance;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when getting account forward balance from db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const getAccountDateRangeFlowTotalsFromDB = async (
+  accountId: string,
+  startDate: string,
+  endDate: string,
+): Promise<AccountDateRangeFlowTotalsType> => {
+  try {
+    const db = await getDB();
+    const result = await db.getFirstAsync<AccountDateRangeFlowTotalsType>(
+      `
+        SELECT
+          COALESCE(SUM(
+            CASE
+              WHEN transaction_type = 'income' AND account_id = ? THEN amount
+              WHEN transaction_type = 'adjustment' AND account_id = ? AND amount > 0 THEN amount
+              WHEN transaction_type = 'transfer' AND to_account_id = ? THEN amount
+              ELSE 0
+            END
+          ), 0) AS in_total,
+          COALESCE(SUM(
+            CASE
+              WHEN transaction_type = 'expense' AND account_id = ? THEN amount
+              WHEN transaction_type = 'adjustment' AND account_id = ? AND amount < 0 THEN ABS(amount)
+              WHEN transaction_type = 'transfer' AND from_account_id = ? THEN amount
+              ELSE 0
+            END
+          ), 0) AS out_total
+        FROM transactions
+        WHERE deleted_at IS NULL
+          AND transaction_date >= ?
+          AND transaction_date <= ?;
+      `,
+      [
+        accountId,
+        accountId,
+        accountId,
+        accountId,
+        accountId,
+        accountId,
+        startDate,
+        endDate,
+      ],
+    );
+
+    const totals = result ?? { in_total: 0, out_total: 0 };
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded account flow totals",
+      { accountId, startDate, endDate, ...totals },
+    );
+
+    return totals;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when getting account flow totals from db",
+      e,
+    );
+    throw e;
+  }
+};
+
 export const getTransactionDateRangeTotalsFromDB = async (
   startDate: string,
   endDate: string,
+  accountId?: string,
 ): Promise<TransactionDateRangeTotalsType> => {
   try {
     const db = await getDB();
@@ -69,16 +189,17 @@ export const getTransactionDateRangeTotalsFromDB = async (
         FROM transactions
         WHERE deleted_at IS NULL
           AND transaction_date >= ?
-          AND transaction_date <= ?;
+          AND transaction_date <= ?
+          ${accountId ? "AND account_id = ?" : ""};
       `,
-      [startDate, endDate],
+      accountId ? [startDate, endDate, accountId] : [startDate, endDate],
     );
 
     const totals = result ?? { income_total: 0, expense_total: 0 };
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
       "Loaded transaction date range totals",
-      { startDate, endDate, ...totals },
+      { startDate, endDate, accountId, ...totals },
     );
 
     return totals;
@@ -210,26 +331,46 @@ export const getTransactionMgmtListFromDB = async (
   }: SQLQueryOptions,
   startDate: string,
   endDate: string,
+  accountId?: string,
 ): Promise<TransactionMgmtRspType[]> => {
   try {
     const db = await getDB();
     const offset = (curPage - 1) * pageSize;
+    const accountFilter = accountId
+      ? `
+          AND (
+            transactions.account_id = ?
+            OR (
+              transactions.transaction_type = 'transfer'
+              AND (
+                transactions.from_account_id = ?
+                OR transactions.to_account_id = ?
+              )
+            )
+          )
+        `
+      : "";
+    const params = accountId
+      ? [startDate, endDate, accountId, accountId, accountId, pageSize, offset]
+      : [startDate, endDate, pageSize, offset];
     const result = await db.getAllAsync<TransactionMgmtRspType>(
       `
         ${TRANSACTION_DETAIL_SELECT}
         WHERE transactions.deleted_at IS NULL
           AND transactions.transaction_date >= ?
           AND transactions.transaction_date <= ?
+          ${accountFilter}
         ${buildOrderBy(orderBy)}
         LIMIT ? OFFSET ?;
       `,
-      [startDate, endDate, pageSize, offset],
+      params,
     );
     debugLog(DEBUG_TAG.TRANSACTION_MANAGEMENT_DB, "Loaded transaction page", {
       curPage,
       pageSize,
       startDate,
       endDate,
+      accountId,
       count: result.length,
     });
 

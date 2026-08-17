@@ -11,6 +11,7 @@ import AccountPickerModal from "./AccountPickerModal";
 export type AccountFieldName = "accountId" | "fromAccountId" | "toAccountId";
 
 export type AccountPickerItemType = AppListItemType & {
+  balance: number;
   inputLabel: string;
 };
 
