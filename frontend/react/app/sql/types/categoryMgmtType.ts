@@ -8,6 +8,11 @@ export type CategoryMgmtRspType = {
   is_system: boolean;
 };
 
+export type CategoryPeriodSummaryRspType = CategoryMgmtRspType & {
+  period_total: number;
+  transaction_count: number;
+};
+
 export type CategoryMgmtCreateReqType = {
   typeId: number;
   label: string;

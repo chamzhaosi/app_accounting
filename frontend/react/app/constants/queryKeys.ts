@@ -33,6 +33,12 @@ export const categoryManagementQueryKeys = {
   lists: () => [...categoryManagementQueryKeys.all, "list"] as const,
   list: (params: { typeId: number; pageSize: number }) =>
     [...categoryManagementQueryKeys.lists(), params] as const,
+  periodList: (params: {
+    typeId: number;
+    pageSize: number;
+    startDate: string;
+    endDate: string;
+  }) => [...categoryManagementQueryKeys.lists(), "periodList", params] as const,
   details: () => [...categoryManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
     [...categoryManagementQueryKeys.details(), id] as const,
@@ -67,11 +73,22 @@ export const transactionManagementQueryKeys = {
       "accountFlowTotals",
       params,
     ] as const,
+  categoryDateRangeSummary: (params: {
+    categoryId: string;
+    startDate: string;
+    endDate: string;
+  }) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "categoryDateRangeSummary",
+      params,
+    ] as const,
   list: (params: {
     pageSize: number;
     startDate: string;
     endDate: string;
     accountId?: string;
+    categoryId?: string;
   }) => [...transactionManagementQueryKeys.lists(), params] as const,
   details: () => [...transactionManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
