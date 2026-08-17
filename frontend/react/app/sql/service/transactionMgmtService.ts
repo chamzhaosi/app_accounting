@@ -5,23 +5,39 @@ import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
 import {
   createNewTransactionMgmtToDB,
   deleteTransactionMgmtFromDB,
+  getAccountDateRangeFlowTotalsFromDB,
+  getAccountForwardBalanceFromDB,
   getTransactionDateRangeTotalsFromDB,
   getTransactionMgmtByIdFromDB,
   getTransactionMgmtListFromDB,
   updateTransactionMgmtToDB,
 } from "../repo/transactionMgmtRepo";
 import {
+  AccountDateRangeFlowTotalsType,
   TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
   TransactionMgmtUpdateReqType,
 } from "../types/transactionMgmtType";
 
+export const getAccountForwardBalance = async (
+  accountId: string,
+  startDate: string,
+): Promise<number> => getAccountForwardBalanceFromDB(accountId, startDate);
+
+export const getAccountDateRangeFlowTotals = async (
+  accountId: string,
+  startDate: string,
+  endDate: string,
+): Promise<AccountDateRangeFlowTotalsType> =>
+  getAccountDateRangeFlowTotalsFromDB(accountId, startDate, endDate);
+
 export const getTransactionDateRangeTotals = async (
   startDate: string,
   endDate: string,
+  accountId?: string,
 ): Promise<TransactionDateRangeTotalsType> =>
-  getTransactionDateRangeTotalsFromDB(startDate, endDate);
+  getTransactionDateRangeTotalsFromDB(startDate, endDate, accountId);
 
 const CATEGORY_TYPE_IDS = {
   [TXN_TYPE_ENUM.INCOME]: 1,
@@ -35,6 +51,7 @@ export const getTransactionMgmtList = async (
   pageSize: number,
   startDate: string,
   endDate: string,
+  accountId?: string,
 ): Promise<TransactionMgmtRspType[]> =>
   getTransactionMgmtListFromDB(
     {
@@ -47,6 +64,7 @@ export const getTransactionMgmtList = async (
     },
     startDate,
     endDate,
+    accountId,
   );
 
 export const getTransactionMgmtById = async (

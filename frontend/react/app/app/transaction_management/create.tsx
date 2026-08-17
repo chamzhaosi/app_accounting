@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Keyboard, View } from "react-native";
@@ -62,6 +62,9 @@ const CATEGORY_TYPE_IDS: Record<
 };
 
 export default function TransactionManagementCreate() {
+  const { accountId: initialAccountId } = useLocalSearchParams<{
+    accountId?: string;
+  }>();
   const queryClient = useQueryClient();
   const [isAccountPickerVisible, setIsAccountPickerVisible] =
     useState<boolean>(false);
@@ -87,7 +90,10 @@ export default function TransactionManagementCreate() {
     resolver: zodResolver(transactionManagementFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
-    defaultValues: getTransactionManagementFormDefaultValues(today),
+    defaultValues: {
+      ...getTransactionManagementFormDefaultValues(today),
+      accountId: initialAccountId ?? "",
+    },
   });
 
   const transactionType = watch("transactionType");
@@ -156,7 +162,8 @@ export default function TransactionManagementCreate() {
       accounts?.pages.flat().map((account) => ({
         id: account.id,
         icon: account.type_icon as AppIconProps["name"],
-        label: `${account.label} - ${account.current_balance.toFixed(2)}`,
+        label: account.label,
+        balance: account.current_balance,
         inputLabel: account.label,
         descriptions: account.descriptions ?? undefined,
       })) ?? [],
@@ -233,7 +240,10 @@ export default function TransactionManagementCreate() {
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
       ]);
       AppToast.success({ message: "Transaction created successfully" });
-      reset(getTransactionManagementFormDefaultValues(today));
+      reset({
+        ...getTransactionManagementFormDefaultValues(today),
+        accountId: initialAccountId ?? "",
+      });
 
       if (!saveAnotherTransaction) router.back();
     } catch (e) {

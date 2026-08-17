@@ -35,6 +35,7 @@ type AppTxnListItemType = {
   toAccountLabel?: string;
   accountId?: string;
   amount: number;
+  balanceEffect: number;
   transactionType: TXN_TYPE_ENUM;
   transactionDate: string;
 };
@@ -48,6 +49,7 @@ type TransactionDateSection = {
 type TransactionManagementListProps = {
   startDate: string;
   endDate: string;
+  accountId?: string;
 };
 
 const capitalize = (value: string) =>
@@ -102,6 +104,7 @@ const formatDailyNet = (amount: number) => {
 export default function TransactionManagementList({
   startDate,
   endDate,
+  accountId,
 }: TransactionManagementListProps) {
   const { THEME } = useThemeStore();
 
@@ -119,9 +122,16 @@ export default function TransactionManagementList({
       pageSize: PAGE_SIZE,
       startDate,
       endDate,
+      accountId,
     }),
     queryFn: ({ pageParam }) =>
-      getTransactionMgmtList(pageParam, PAGE_SIZE, startDate, endDate),
+      getTransactionMgmtList(
+        pageParam,
+        PAGE_SIZE,
+        startDate,
+        endDate,
+        accountId,
+      ),
     enabled: Boolean(startDate && endDate),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
@@ -136,6 +146,19 @@ export default function TransactionManagementList({
       const isExpense = transaction.transaction_type === TXN_TYPE_ENUM.EXPENSE;
       const isTransfer =
         transaction.transaction_type === TXN_TYPE_ENUM.TRANSFER;
+      const isOutgoingTransfer =
+        isTransfer && transaction.from_account_id === accountId;
+      const balanceEffect = isIncome
+        ? transaction.amount
+        : isExpense
+          ? -transaction.amount
+          : isTransfer
+            ? accountId
+              ? isOutgoingTransfer
+                ? -transaction.amount
+                : transaction.amount
+              : 0
+            : transaction.amount;
       const title =
         isIncome || isExpense
           ? (transaction.category_label ??
@@ -165,6 +188,7 @@ export default function TransactionManagementList({
           : undefined,
         accountId: transaction.account_id ?? undefined,
         amount: transaction.amount,
+        balanceEffect,
         transactionType: transaction.transaction_type,
         transactionDate: transaction.transaction_date,
       };
@@ -175,21 +199,10 @@ export default function TransactionManagementList({
 
     return Array.from(groups, ([transactionDate, items]) => ({
       transactionDate,
-      netTotal: items.reduce((total, item) => {
-        if (item.transactionType === TXN_TYPE_ENUM.INCOME) {
-          return total + item.amount;
-        }
-        if (item.transactionType === TXN_TYPE_ENUM.EXPENSE) {
-          return total - item.amount;
-        }
-        if (item.transactionType === TXN_TYPE_ENUM.ADJUSTMENT) {
-          return total + item.amount;
-        }
-        return total;
-      }, 0),
+      netTotal: items.reduce((total, item) => total + item.balanceEffect, 0),
       data: items,
     }));
-  }, [data]);
+  }, [accountId, data]);
 
   useEffect(() => {
     if (!error) return;
@@ -303,30 +316,26 @@ export default function TransactionManagementList({
         );
       }}
       renderItem={({ item }) => {
-        const isExpense = item.transactionType === TXN_TYPE_ENUM.EXPENSE;
-        const isIncome = item.transactionType === TXN_TYPE_ENUM.INCOME;
         const isAdjustment = item.transactionType === TXN_TYPE_ENUM.ADJUSTMENT;
-        const isPositiveAdjustment = isAdjustment && item.amount > 0;
-        const isNegativeAdjustment = isAdjustment && item.amount < 0;
-        const amountColor = isExpense
+        const isPositiveEffect = item.balanceEffect > 0;
+        const isNegativeEffect = item.balanceEffect < 0;
+        const amountColor = isNegativeEffect
           ? THEME.error
-          : isIncome || isPositiveAdjustment
+          : isPositiveEffect
             ? THEME.primary
-            : isNegativeAdjustment
-              ? THEME.error
-              : THEME.onSurface;
-        const iconColor = isExpense
+            : THEME.onSurface;
+        const iconColor = isNegativeEffect
           ? THEME.error
-          : isIncome || isPositiveAdjustment
+          : isPositiveEffect
             ? THEME.primary
-            : isNegativeAdjustment
-              ? THEME.error
-              : THEME.onSurfaceVariant;
+            : THEME.onSurfaceVariant;
         const transactionUrl =
           isAdjustment && item.accountId
             ? `${ACCOUNT_MANAGEMENT_BASE_URL}/${item.accountId}`
             : `${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}`;
-        const displayAmount = formatAmount(item.amount);
+        const displayAmount = accountId
+          ? formatDailyNet(item.balanceEffect)
+          : formatAmount(item.amount);
 
         return (
           <Pressable

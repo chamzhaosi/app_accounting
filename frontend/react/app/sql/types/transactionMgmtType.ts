@@ -20,6 +20,11 @@ export type TransactionDateRangeTotalsType = {
   expense_total: number;
 };
 
+export type AccountDateRangeFlowTotalsType = {
+  in_total: number;
+  out_total: number;
+};
+
 export type TransactionMgmtRspType = {
   id: string;
   transaction_type: TXN_TYPE_ENUM;

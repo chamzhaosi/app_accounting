@@ -1,10 +1,14 @@
-import { Tabs } from "expo-router";
-import { Gauge, Settings } from "lucide-react-native";
+import { Tabs, useSegments } from "expo-router";
+import { Gauge, Settings, WalletCards } from "lucide-react-native";
 import { FONTS } from "../../constants/fonts";
 import { useThemeStore } from "../../stores/useThemeStore";
 
 export default function StackLayout() {
   const { THEME } = useThemeStore();
+  const segments = useSegments();
+  const isAccountsList =
+    segments[1] === "accounts" &&
+    (segments[2] === undefined || segments[2] === "list");
 
   return (
     <Tabs
@@ -30,6 +34,16 @@ export default function StackLayout() {
           title: "Dashboard",
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Gauge color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="accounts"
+        options={{
+          title: "Accounts",
+          headerShown: isAccountsList,
+          tabBarIcon: ({ color, size }) => (
+            <WalletCards color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen

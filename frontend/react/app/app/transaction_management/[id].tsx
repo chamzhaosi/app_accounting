@@ -190,7 +190,8 @@ export default function TransactionManagementDetail() {
       accounts?.pages.flat().map((account) => ({
         id: account.id,
         icon: account.type_icon as AppIconProps["name"],
-        label: `${account.label} - ${account.current_balance.toFixed(2)}`,
+        label: account.label,
+        balance: account.current_balance,
         inputLabel: account.label,
         descriptions: account.descriptions ?? undefined,
       })) ?? [],
