@@ -1,14 +1,18 @@
 import { Tabs, useSegments } from "expo-router";
-import { Gauge, Settings, WalletCards } from "lucide-react-native";
+import { Gauge, Settings, Tags, WalletCards } from "lucide-react-native";
 import { FONTS } from "../../constants/fonts";
 import { useThemeStore } from "../../stores/useThemeStore";
 
 export default function StackLayout() {
   const { THEME } = useThemeStore();
   const segments = useSegments();
+  const activeSegments = segments as readonly string[];
   const isAccountsList =
-    segments[1] === "accounts" &&
-    (segments[2] === undefined || segments[2] === "list");
+    activeSegments[1] === "accounts" &&
+    (activeSegments[2] === undefined || activeSegments[2] === "list");
+  const isCategoriesList =
+    activeSegments[1] === "categories" &&
+    (activeSegments[2] === undefined || activeSegments[2] === "list");
 
   return (
     <Tabs
@@ -44,6 +48,14 @@ export default function StackLayout() {
           tabBarIcon: ({ color, size }) => (
             <WalletCards color={color} size={size} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="categories"
+        options={{
+          title: "Categories",
+          headerShown: isCategoriesList,
+          tabBarIcon: ({ color, size }) => <Tags color={color} size={size} />,
         }}
       />
       <Tabs.Screen

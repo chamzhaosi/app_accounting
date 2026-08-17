@@ -9,6 +9,7 @@ import {
 import { getDB } from "../db/database";
 import {
   CategoryMgmtCreateReqType,
+  CategoryPeriodSummaryRspType,
   CategoryMgmtRspType,
   CategoryMgmtUpdateReqType,
 } from "../types/categoryMgmtType";
@@ -50,6 +51,63 @@ export const getCategoryMgmtListFromDB = async ({
     console.error(
       DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
       "Error when getting category list from db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const getCategoryPeriodSummaryListFromDB = async (
+  {
+    typeId,
+    orderBy,
+    pageSize = DEFAULT_PAGE_SIZE,
+    curPage = DEFAULT_CURRENT_PAGE,
+  }: CategoryListQueryOptions,
+  startDate: string,
+  endDate: string,
+): Promise<CategoryPeriodSummaryRspType[]> => {
+  try {
+    const offset = (curPage - 1) * pageSize;
+    const db = await getDB();
+    const result = await db.getAllAsync<CategoryPeriodSummaryRspType>(
+      `
+        SELECT
+          categories.*,
+          SUM(transactions.amount) AS period_total,
+          COUNT(transactions.id) AS transaction_count
+        FROM categories
+        INNER JOIN transactions
+          ON transactions.category_id = categories.id
+          AND transactions.transaction_date >= ?
+          AND transactions.transaction_date <= ?
+          AND transactions.deleted_at IS NULL
+        WHERE categories.type_id = ?
+          AND categories.deleted_at IS NULL
+        GROUP BY categories.id
+        ${buildOrderBy(orderBy)}
+        LIMIT ? OFFSET ?;
+      `,
+      [startDate, endDate, typeId, pageSize, offset],
+    );
+    debugLog(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Loaded category period summary page",
+      {
+        typeId,
+        startDate,
+        endDate,
+        curPage,
+        pageSize,
+        count: result.length,
+      },
+    );
+
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when getting category period summary list from db",
       e,
     );
     throw e;

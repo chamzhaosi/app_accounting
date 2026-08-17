@@ -5,10 +5,12 @@ import {
   getCategoryMgmtByIdFromDB,
   getCategoryMgmtByTypeAndLabelFromDB,
   getCategoryMgmtListFromDB,
+  getCategoryPeriodSummaryListFromDB,
   updateCategoryMgmtToDB,
 } from "../repo/categoryMgmtRepo";
 import {
   CategoryMgmtCreateReqType,
+  CategoryPeriodSummaryRspType,
   CategoryMgmtRspType,
   CategoryMgmtUpdateReqType,
 } from "../types/categoryMgmtType";
@@ -27,6 +29,27 @@ export const getCategoryMgmtList = async (
     curPage,
     pageSize,
   });
+
+export const getCategoryPeriodSummaryList = async (
+  typeId: number,
+  startDate: string,
+  endDate: string,
+  curPage: number,
+  pageSize: number,
+): Promise<CategoryPeriodSummaryRspType[]> =>
+  getCategoryPeriodSummaryListFromDB(
+    {
+      typeId,
+      orderBy: [
+        { column: "period_total", direction: "DESC" },
+        { column: "categories.label", direction: "ASC" },
+      ],
+      curPage,
+      pageSize,
+    },
+    startDate,
+    endDate,
+  );
 
 export const createNewCategoryMgmt = async (
   data: CategoryMgmtCreateReqType,

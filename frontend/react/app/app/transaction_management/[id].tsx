@@ -297,6 +297,7 @@ export default function TransactionManagementDetail() {
         invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
         invalidateQuery(queryClient, transactionManagementQueryKeys.detail(id)),
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
+        invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
       ]);
       AppToast.success({ message: "Transaction updated successfully" });
       router.back();
@@ -326,6 +327,7 @@ export default function TransactionManagementDetail() {
       await Promise.all([
         invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
+        invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
       ]);
       queryClient.removeQueries({
         queryKey: transactionManagementQueryKeys.detail(id),

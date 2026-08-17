@@ -1,5 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -38,7 +42,10 @@ import {
   TransactionManagementFormType,
 } from "../../forms/schemas/transaction_management.schema";
 import { getAccMgmtList } from "../../sql/service/accMgmtService";
-import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
+import {
+  getCategoryMgmtById,
+  getCategoryMgmtList,
+} from "../../sql/service/categoryMgmtService";
 import { createNewTransactionMgmt } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import AccountIdField, {
@@ -62,8 +69,14 @@ const CATEGORY_TYPE_IDS: Record<
 };
 
 export default function TransactionManagementCreate() {
-  const { accountId: initialAccountId } = useLocalSearchParams<{
+  const {
+    accountId: initialAccountId,
+    categoryId: initialCategoryId,
+    transactionType: initialTransactionType,
+  } = useLocalSearchParams<{
     accountId?: string;
+    categoryId?: string;
+    transactionType?: TXN_TYPE_ENUM;
   }>();
   const queryClient = useQueryClient();
   const [isAccountPickerVisible, setIsAccountPickerVisible] =
@@ -93,6 +106,8 @@ export default function TransactionManagementCreate() {
     defaultValues: {
       ...getTransactionManagementFormDefaultValues(today),
       accountId: initialAccountId ?? "",
+      categoryId: initialCategoryId ?? "",
+      transactionType: initialTransactionType ?? TXN_TYPE_ENUM.EXPENSE,
     },
   });
 
@@ -120,6 +135,12 @@ export default function TransactionManagementCreate() {
       lastPage.length === CATEGORY_PAGE_SIZE ? allPages.length + 1 : undefined,
     enabled: categoryTypeId !== null,
   });
+  const { data: initialCategory, isLoading: isLoadingInitialCategory } =
+    useQuery({
+      queryKey: categoryManagementQueryKeys.detail(initialCategoryId ?? ""),
+      queryFn: () => getCategoryMgmtById(initialCategoryId!),
+      enabled: Boolean(initialCategoryId),
+    });
 
   const {
     data: accounts,
@@ -140,16 +161,33 @@ export default function TransactionManagementCreate() {
       lastPage.length === ACCOUNT_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
 
-  const categoryItems = useMemo<AppListCardItemType[]>(
-    () =>
+  const categoryItems = useMemo<AppListCardItemType[]>(() => {
+    const items =
       categories?.pages.flat().map((category) => ({
         id: category.id.toString(),
         icon: category.icon as AppIconProps["name"],
         label: category.label,
         description: category.descriptions ?? undefined,
-      })) ?? [],
-    [categories],
-  );
+      })) ?? [];
+
+    if (
+      !initialCategory ||
+      initialCategory.type_id !== categoryTypeId ||
+      items.some((category) => category.id === initialCategory.id)
+    ) {
+      return items;
+    }
+
+    return [
+      {
+        id: initialCategory.id,
+        icon: initialCategory.icon as AppIconProps["name"],
+        label: initialCategory.label,
+        description: initialCategory.descriptions ?? undefined,
+      },
+      ...items,
+    ];
+  }, [categories, categoryTypeId, initialCategory]);
 
   const onLoadMoreCategories = () => {
     if (isFetchingNextCategoryPage || !hasNextCategoryPage) return;
@@ -238,11 +276,14 @@ export default function TransactionManagementCreate() {
       await Promise.all([
         invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
+        invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
       ]);
       AppToast.success({ message: "Transaction created successfully" });
       reset({
         ...getTransactionManagementFormDefaultValues(today),
         accountId: initialAccountId ?? "",
+        categoryId: initialCategoryId ?? "",
+        transactionType: initialTransactionType ?? TXN_TYPE_ENUM.EXPENSE,
       });
 
       if (!saveAnotherTransaction) router.back();
@@ -261,6 +302,7 @@ export default function TransactionManagementCreate() {
   useEffect(() => {
     if (
       isLoadingCategories ||
+      (initialCategoryId && isLoadingInitialCategory) ||
       categoryError ||
       transactionType === TXN_TYPE_ENUM.TRANSFER
     )
@@ -282,6 +324,8 @@ export default function TransactionManagementCreate() {
     categoryId,
     categoryItems,
     isLoadingCategories,
+    initialCategoryId,
+    isLoadingInitialCategory,
     setValue,
     transactionType,
   ]);

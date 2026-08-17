@@ -9,7 +9,9 @@ export type OrderBy = {
     | "transaction_date"
     | "transactions.transaction_date"
     | "transactions.created_at"
-    | "accounts.created_at";
+    | "accounts.created_at"
+    | "categories.label"
+    | "period_total";
   direction?: OrderDirection;
 };
 

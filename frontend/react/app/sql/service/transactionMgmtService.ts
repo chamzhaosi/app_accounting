@@ -7,6 +7,7 @@ import {
   deleteTransactionMgmtFromDB,
   getAccountDateRangeFlowTotalsFromDB,
   getAccountForwardBalanceFromDB,
+  getCategoryDateRangeSummaryFromDB,
   getTransactionDateRangeTotalsFromDB,
   getTransactionMgmtByIdFromDB,
   getTransactionMgmtListFromDB,
@@ -14,6 +15,7 @@ import {
 } from "../repo/transactionMgmtRepo";
 import {
   AccountDateRangeFlowTotalsType,
+  CategoryDateRangeSummaryType,
   TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
@@ -31,6 +33,13 @@ export const getAccountDateRangeFlowTotals = async (
   endDate: string,
 ): Promise<AccountDateRangeFlowTotalsType> =>
   getAccountDateRangeFlowTotalsFromDB(accountId, startDate, endDate);
+
+export const getCategoryDateRangeSummary = async (
+  categoryId: string,
+  startDate: string,
+  endDate: string,
+): Promise<CategoryDateRangeSummaryType> =>
+  getCategoryDateRangeSummaryFromDB(categoryId, startDate, endDate);
 
 export const getTransactionDateRangeTotals = async (
   startDate: string,
@@ -52,6 +61,7 @@ export const getTransactionMgmtList = async (
   startDate: string,
   endDate: string,
   accountId?: string,
+  categoryId?: string,
 ): Promise<TransactionMgmtRspType[]> =>
   getTransactionMgmtListFromDB(
     {
@@ -65,6 +75,7 @@ export const getTransactionMgmtList = async (
     startDate,
     endDate,
     accountId,
+    categoryId,
   );
 
 export const getTransactionMgmtById = async (

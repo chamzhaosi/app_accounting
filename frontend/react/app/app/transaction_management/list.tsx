@@ -50,6 +50,7 @@ type TransactionManagementListProps = {
   startDate: string;
   endDate: string;
   accountId?: string;
+  categoryId?: string;
 };
 
 const capitalize = (value: string) =>
@@ -105,6 +106,7 @@ export default function TransactionManagementList({
   startDate,
   endDate,
   accountId,
+  categoryId,
 }: TransactionManagementListProps) {
   const { THEME } = useThemeStore();
 
@@ -123,6 +125,7 @@ export default function TransactionManagementList({
       startDate,
       endDate,
       accountId,
+      categoryId,
     }),
     queryFn: ({ pageParam }) =>
       getTransactionMgmtList(
@@ -131,6 +134,7 @@ export default function TransactionManagementList({
         startDate,
         endDate,
         accountId,
+        categoryId,
       ),
     enabled: Boolean(startDate && endDate),
     initialPageParam: 1,

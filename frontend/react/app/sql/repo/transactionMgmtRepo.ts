@@ -10,6 +10,7 @@ import { getDB } from "../db/database";
 import { SQLQueryOptions } from "../types/common";
 import {
   AccountDateRangeFlowTotalsType,
+  CategoryDateRangeSummaryType,
   TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
@@ -174,6 +175,45 @@ export const getAccountDateRangeFlowTotalsFromDB = async (
   }
 };
 
+export const getCategoryDateRangeSummaryFromDB = async (
+  categoryId: string,
+  startDate: string,
+  endDate: string,
+): Promise<CategoryDateRangeSummaryType> => {
+  try {
+    const db = await getDB();
+    const result = await db.getFirstAsync<CategoryDateRangeSummaryType>(
+      `
+        SELECT
+          COALESCE(SUM(amount), 0) AS total_amount,
+          COUNT(*) AS transaction_count
+        FROM transactions
+        WHERE category_id = ?
+          AND transaction_date >= ?
+          AND transaction_date <= ?
+          AND deleted_at IS NULL;
+      `,
+      [categoryId, startDate, endDate],
+    );
+
+    const summary = result ?? { total_amount: 0, transaction_count: 0 };
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded category date range summary",
+      { categoryId, startDate, endDate, ...summary },
+    );
+
+    return summary;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when getting category date range summary from db",
+      e,
+    );
+    throw e;
+  }
+};
+
 export const getTransactionDateRangeTotalsFromDB = async (
   startDate: string,
   endDate: string,
@@ -332,13 +372,18 @@ export const getTransactionMgmtListFromDB = async (
   startDate: string,
   endDate: string,
   accountId?: string,
+  categoryId?: string,
 ): Promise<TransactionMgmtRspType[]> => {
   try {
     const db = await getDB();
     const offset = (curPage - 1) * pageSize;
-    const accountFilter = accountId
-      ? `
-          AND (
+    const filters: string[] = [];
+    const filterParams: (string | number)[] = [];
+
+    if (accountId) {
+      filters.push(
+        `
+          (
             transactions.account_id = ?
             OR (
               transactions.transaction_type = 'transfer'
@@ -348,18 +393,29 @@ export const getTransactionMgmtListFromDB = async (
               )
             )
           )
+        `,
+      );
+      filterParams.push(accountId, accountId, accountId);
+    }
+
+    if (categoryId) {
+      filters.push("transactions.category_id = ?");
+      filterParams.push(categoryId);
+    }
+
+    const transactionFilter = filters.length
+      ? `
+          AND ${filters.join(" AND ")}
         `
       : "";
-    const params = accountId
-      ? [startDate, endDate, accountId, accountId, accountId, pageSize, offset]
-      : [startDate, endDate, pageSize, offset];
+    const params = [startDate, endDate, ...filterParams, pageSize, offset];
     const result = await db.getAllAsync<TransactionMgmtRspType>(
       `
         ${TRANSACTION_DETAIL_SELECT}
         WHERE transactions.deleted_at IS NULL
           AND transactions.transaction_date >= ?
           AND transactions.transaction_date <= ?
-          ${accountFilter}
+          ${transactionFilter}
         ${buildOrderBy(orderBy)}
         LIMIT ? OFFSET ?;
       `,
@@ -371,6 +427,7 @@ export const getTransactionMgmtListFromDB = async (
       startDate,
       endDate,
       accountId,
+      categoryId,
       count: result.length,
     });
 
