@@ -6,15 +6,7 @@ import AppView from "../../components/AppView";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../constants/urls";
 import TransactionManagementList from "../transaction_management/list";
 import AccountBalanceSummary from "./_components/AccountBalanceSummary";
-
-const formatDate = (date?: Date) => {
-  if (!date || Number.isNaN(date.getTime())) return "";
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+import { formatDateValue } from "../../utils/date";
 
 const getDefaultDateRange = (): AppDateRangeValue => {
   const today = new Date();
@@ -27,8 +19,8 @@ const getDefaultDateRange = (): AppDateRangeValue => {
 export default function Dashboard() {
   const [dateRange, setDateRange] =
     useState<AppDateRangeValue>(getDefaultDateRange);
-  const startDate = formatDate(dateRange.startDate);
-  const endDate = formatDate(dateRange.endDate);
+  const startDate = formatDateValue(dateRange.startDate);
+  const endDate = formatDateValue(dateRange.endDate);
 
   return (
     <AppView

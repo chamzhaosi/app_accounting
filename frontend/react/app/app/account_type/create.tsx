@@ -1,122 +1,41 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
-import AppIcon, { AppIconProps } from "../../components/AppIcon";
-import AccTypeIconsList from "./_components/AccTypeIconsList";
 import AppButton, {
   ButtonType,
   SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
 import AppDivider from "../../components/AppDivider";
+import AppIcon from "../../components/AppIcon";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import AppView from "../../components/AppView";
-
-import {
-  accountTypeFormDefaultValues,
-  accountTypeFormSchema,
-  AccountTypeFormType,
-  LABEL_MAX_LEN,
-} from "../../forms/schemas/accout_type.schema";
+import { LABEL_MAX_LEN } from "../../forms/schemas/accout_type.schema";
+import useAccountTypeCreate from "../../hook/account_type/useAccountTypeCreate";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { ICONS } from "../../constants/icons";
-import { createNewAccType } from "../../sql/service/accTypeService";
-import { AppToast } from "../../components/AppToast";
-import { router } from "expo-router";
-import { toTitleCase } from "../../utils/common";
-import { accountTypeQueryKeys, invalidateQuery } from "../../constants/queryKeys";
-import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import AccTypeIconsList from "./_components/AccTypeIconsList";
 
 export default function AccountTypeCreate() {
   const { THEME } = useThemeStore();
-  const queryClient = useQueryClient();
-
-  const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
-    ICONS.ACCOUNT_TYPE[0],
-  );
-  const [isSavingAndNewType, setIsSavingAndNewType] = useState<boolean>(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
-  const isSubmitting = isSavingAndNewType || isSaving;
-
   const {
     control,
+    errors,
     handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<AccountTypeFormType>({
-    resolver: zodResolver(accountTypeFormSchema),
-    mode: "onChange",
-    reValidateMode: "onChange",
-    defaultValues: accountTypeFormDefaultValues,
-  });
-
-  const onSubmit = async (
-    value: AccountTypeFormType,
-    saveAnotherType: boolean,
-  ) => {
-    const data = {
-      ...value,
-      label: toTitleCase(value.label),
-      icon: selectedItem,
-    };
-    const setLoading = saveAnotherType ? setIsSavingAndNewType : setIsSaving;
-
-    try {
-      setRspErrorMsg("");
-      setLoading(true);
-      const errMsg = await createNewAccType(data);
-      if (errMsg) {
-        debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Create rejected by service", {
-          label: data.label,
-          reason: errMsg,
-        });
-        setRspErrorMsg(errMsg);
-        return;
-      } else {
-        await invalidateQuery(queryClient, accountTypeQueryKeys.lists());
-        debugLog(
-          DEBUG_TAG.ACCOUNT_TYPE,
-          "Invalidated account type lists after create",
-          {
-            label: data.label,
-          },
-        );
-        AppToast.success({
-          message: `${value.label} account type created successfully`,
-        });
-        formReset();
-      }
-      !saveAnotherType && router.back();
-    } catch (e) {
-      console.error(
-        DEBUG_TAG.ACCOUNT_TYPE,
-        "Error when create new account type",
-        e,
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formReset = () => {
-    reset();
-    setSelectedItem(ICONS.ACCOUNT_TYPE[0]);
-  };
+    isSaving,
+    isSavingAndNewType,
+    isSubmitting,
+    onSubmit,
+    rspErrorMsg,
+    selectedItem,
+    setSelectedItem,
+  } = useAccountTypeCreate();
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <AppView>
         <View className="flex-row justify-around px-4 pt-2 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
-          <View
-            className="items-center justify-center p-4 rounded-lg mr-4 mt-2 
-            bg-LIGHT-tertiary dark:bg-DARK-tertiary"
-          >
+          <View className="items-center justify-center p-4 rounded-lg mr-4 mt-2 bg-LIGHT-tertiary dark:bg-DARK-tertiary">
             <AppIcon name={selectedItem} size={48} color={THEME.onTertiary} />
           </View>
-
           <View className="flex-1 justify-center">
             <Controller
               control={control}
@@ -128,7 +47,7 @@ export default function AccountTypeCreate() {
                 <AppTextInput
                   ref={ref}
                   mode="outlined"
-                  label={"Label"}
+                  label="Label"
                   autoFocus
                   editable={!isSubmitting}
                   onChangeText={onChange}
@@ -171,14 +90,12 @@ export default function AccountTypeCreate() {
               Save & New
             </AppButton>
           </View>
-
           {rspErrorMsg && (
             <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
           )}
         </View>
 
         <AppDivider />
-
         <AccTypeIconsList
           setSelectedItem={setSelectedItem}
           selectedItem={selectedItem}

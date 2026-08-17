@@ -18,7 +18,7 @@ import {
   TouchableRipple,
 } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
-import { cn } from "../utils/common";
+import { cn } from "../utils/className";
 import AppEmpty from "./AppEmpty";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppSpacer from "./AppSpacer";

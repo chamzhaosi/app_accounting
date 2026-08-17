@@ -1,13 +1,10 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { Href, router } from "expo-router";
-import { useEffect, useMemo } from "react";
 import { Pressable, SectionList, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 import AppEmpty from "../../components/AppEmpty";
-import AppIcon, { AppIconProps } from "../../components/AppIcon";
+import AppIcon from "../../components/AppIcon";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
 import { FONTS } from "../../constants/fonts";
-import { transactionManagementQueryKeys } from "../../constants/queryKeys";
 import {
   LIST_ITEM_DESCRIPTION_FONTSIZE,
   LIST_ITEM_TITLE_FONTSIZE,
@@ -16,45 +13,10 @@ import {
   ACCOUNT_MANAGEMENT_BASE_URL,
   TRANSACTION_MANAGEMENT_BASE_URL,
 } from "../../constants/urls";
-import { getTransactionMgmtList } from "../../sql/service/transactionMgmtService";
+import useTransactionManagementList from "../../hook/transaction_management/useTransactionManagementList";
+import type { TransactionManagementListProps } from "../../hook/transaction_management/useTransactionManagementList";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-
-const PAGE_SIZE = 40;
-const amountFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-type AppTxnListItemType = {
-  id: string;
-  icon: AppIconProps["name"];
-  title: string;
-  subtitle: string;
-  fromAccountLabel?: string;
-  toAccountLabel?: string;
-  accountId?: string;
-  amount: number;
-  balanceEffect: number;
-  transactionType: TXN_TYPE_ENUM;
-  transactionDate: string;
-};
-
-type TransactionDateSection = {
-  transactionDate: string;
-  netTotal: number;
-  data: AppTxnListItemType[];
-};
-
-type TransactionManagementListProps = {
-  startDate: string;
-  endDate: string;
-  accountId?: string;
-  categoryId?: string;
-};
-
-const capitalize = (value: string) =>
-  `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+import { formatAbsoluteAmount, formatSignedAmount } from "../../utils/number";
 
 const formatDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -80,10 +42,10 @@ const formatSectionDate = (dateValue: string) => {
   });
 
   if (dateValue === formatDateKey(today)) {
-    return `Today \u00b7 ${calendarDate}`;
+    return `Today · ${calendarDate}`;
   }
   if (dateValue === formatDateKey(yesterday)) {
-    return `Yesterday \u00b7 ${calendarDate}`;
+    return `Yesterday · ${calendarDate}`;
   }
 
   return date.toLocaleDateString("en-US", {
@@ -94,144 +56,19 @@ const formatSectionDate = (dateValue: string) => {
   });
 };
 
-const formatAmount = (amount: number) =>
-  amountFormatter.format(Math.abs(amount));
-
-const formatDailyNet = (amount: number) => {
-  const prefix = amount > 0 ? "+" : amount < 0 ? "-" : "";
-  return `${prefix}${amountFormatter.format(Math.abs(amount))}`;
-};
-
-export default function TransactionManagementList({
-  startDate,
-  endDate,
-  accountId,
-  categoryId,
-}: TransactionManagementListProps) {
+export default function TransactionManagementList(
+  props: TransactionManagementListProps,
+) {
+  const { accountId } = props;
   const { THEME } = useThemeStore();
-
   const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
     isFetchingNextPage,
     isLoading,
     isRefetching,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: transactionManagementQueryKeys.list({
-      pageSize: PAGE_SIZE,
-      startDate,
-      endDate,
-      accountId,
-      categoryId,
-    }),
-    queryFn: ({ pageParam }) =>
-      getTransactionMgmtList(
-        pageParam,
-        PAGE_SIZE,
-        startDate,
-        endDate,
-        accountId,
-        categoryId,
-      ),
-    enabled: Boolean(startDate && endDate),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === PAGE_SIZE ? allPages.length + 1 : undefined,
-  });
-
-  const transactionSections = useMemo<TransactionDateSection[]>(() => {
-    const groups = new Map<string, AppTxnListItemType[]>();
-
-    data?.pages.flat().forEach((transaction) => {
-      const isIncome = transaction.transaction_type === TXN_TYPE_ENUM.INCOME;
-      const isExpense = transaction.transaction_type === TXN_TYPE_ENUM.EXPENSE;
-      const isTransfer =
-        transaction.transaction_type === TXN_TYPE_ENUM.TRANSFER;
-      const isOutgoingTransfer =
-        isTransfer && transaction.from_account_id === accountId;
-      const balanceEffect = isIncome
-        ? transaction.amount
-        : isExpense
-          ? -transaction.amount
-          : isTransfer
-            ? accountId
-              ? isOutgoingTransfer
-                ? -transaction.amount
-                : transaction.amount
-              : 0
-            : transaction.amount;
-      const title =
-        isIncome || isExpense
-          ? (transaction.category_label ??
-            capitalize(transaction.transaction_type))
-          : isTransfer
-            ? "Transfer"
-            : "Balance Adjustment";
-      const subtitle =
-        isIncome || isExpense
-          ? `${transaction.account_label ?? "Account"} \u00b7 ${capitalize(transaction.transaction_type)}`
-          : isTransfer
-            ? `${transaction.from_account_label ?? "Account"} \u2192 ${transaction.to_account_label ?? "Account"}`
-            : `${transaction.account_label ?? "Account"} \u00b7 Balance ${transaction.amount > 0 ? "increased" : "decreased"}`;
-      const item: AppTxnListItemType = {
-        id: transaction.id,
-        icon: (transaction.category_icon ??
-          (isTransfer
-            ? "ArrowLeftRight"
-            : "WalletCards")) as AppIconProps["name"],
-        title,
-        subtitle,
-        fromAccountLabel: isTransfer
-          ? (transaction.from_account_label ?? "Account")
-          : undefined,
-        toAccountLabel: isTransfer
-          ? (transaction.to_account_label ?? "Account")
-          : undefined,
-        accountId: transaction.account_id ?? undefined,
-        amount: transaction.amount,
-        balanceEffect,
-        transactionType: transaction.transaction_type,
-        transactionDate: transaction.transaction_date,
-      };
-      const items = groups.get(item.transactionDate) ?? [];
-      items.push(item);
-      groups.set(item.transactionDate, items);
-    });
-
-    return Array.from(groups, ([transactionDate, items]) => ({
-      transactionDate,
-      netTotal: items.reduce((total, item) => total + item.balanceEffect, 0),
-      data: items,
-    }));
-  }, [accountId, data]);
-
-  useEffect(() => {
-    if (!error) return;
-
-    console.error(
-      DEBUG_TAG.TRANSACTION_MANAGEMENT,
-      "Error when getting transaction list",
-      error,
-    );
-  }, [error]);
-
-  const onLoadMore = () => {
-    if (isFetchingNextPage || !hasNextPage) return;
-
-    debugLog(
-      DEBUG_TAG.TRANSACTION_MANAGEMENT,
-      "Fetching next transaction page",
-    );
-    fetchNextPage();
-  };
-
-  const onRefresh = async () => {
-    debugLog(DEBUG_TAG.TRANSACTION_MANAGEMENT, "Refreshing transaction list");
-    await refetch();
-  };
+    onLoadMore,
+    onRefresh,
+    transactionSections,
+  } = useTransactionManagementList(props);
 
   if (isLoading) {
     return (
@@ -313,7 +150,7 @@ export default function TransactionManagementList({
                 variant="titleLarge"
                 style={[styles.sectionNet, { color: netColor }]}
               >
-                {formatDailyNet(section.netTotal)}
+                {formatSignedAmount(section.netTotal)}
               </Text>
             </View>
           </View>
@@ -338,8 +175,8 @@ export default function TransactionManagementList({
             ? `${ACCOUNT_MANAGEMENT_BASE_URL}/${item.accountId}`
             : `${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}`;
         const displayAmount = accountId
-          ? formatDailyNet(item.balanceEffect)
-          : formatAmount(item.amount);
+          ? formatSignedAmount(item.balanceEffect)
+          : formatAbsoluteAmount(item.amount);
 
         return (
           <Pressable

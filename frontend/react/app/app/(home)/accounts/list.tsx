@@ -17,12 +17,8 @@ import { getAccMgmtList } from "../../../sql/service/accMgmtService";
 import { AccMgmtRspType } from "../../../sql/types/accMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
-
-const PAGE_SIZE = 40;
-const amountFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
+import { formatAmount } from "../../../utils/number";
 
 type AccountTypeSection = {
   typeId: string;
@@ -43,11 +39,11 @@ export default function AccountsList() {
     isRefetching,
     refetch,
   } = useInfiniteQuery({
-    queryKey: accountManagementQueryKeys.list({ pageSize: PAGE_SIZE }),
-    queryFn: ({ pageParam }) => getAccMgmtList(pageParam, PAGE_SIZE),
+    queryKey: accountManagementQueryKeys.list({ pageSize: DEFAULT_PAGE_SIZE }),
+    queryFn: ({ pageParam }) => getAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === PAGE_SIZE ? allPages.length + 1 : undefined,
+      lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
 
   const accountSections = useMemo<AccountTypeSection[]>(() => {
@@ -154,7 +150,7 @@ export default function AccountsList() {
             right={() => (
               <View style={styles.accountBalanceContainer}>
                 <Text style={styles.accountBalance}>
-                  {amountFormatter.format(account.current_balance)}
+                  {formatAmount(account.current_balance)}
                 </Text>
                 <ChevronRight color={THEME.onSurfaceVariant} size={22} />
               </View>

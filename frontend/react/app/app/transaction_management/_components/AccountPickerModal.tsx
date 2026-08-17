@@ -18,6 +18,7 @@ import {
   LIST_ITEM_TITLE_FONTSIZE,
 } from "../../../constants/size";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import { formatAmount } from "../../../utils/number";
 
 type AccountPickerModalItem = AppListItemType & {
   balance: number;
@@ -38,11 +39,6 @@ type AccountPickerModalProps = {
   selectedItem?: AccountPickerModalItem;
   title?: string;
 };
-
-const amountFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 
 export default function AccountPickerModal({
   accounts,
@@ -149,7 +145,7 @@ export default function AccountPickerModal({
                       <Text
                         style={[styles.accountBalance, { color: textColor }]}
                       >
-                        {amountFormatter.format(item.balance)}
+                        {formatAmount(item.balance)}
                       </Text>
                       <View style={styles.selectionIndicator}>
                         {isSelected && (

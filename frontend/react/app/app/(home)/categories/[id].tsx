@@ -20,48 +20,25 @@ import { getCategoryDateRangeSummary } from "../../../sql/service/transactionMgm
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { DEBUG_TAG } from "../../../utils/debugLog";
 import TransactionManagementList from "../../transaction_management/list";
-
-const amountFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const formatDate = (date?: Date) => {
-  if (!date || Number.isNaN(date.getTime())) return "";
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const getCurrentMonth = (): AppDateRangeValue => {
-  const today = new Date();
-  return {
-    startDate: new Date(today.getFullYear(), today.getMonth(), 1),
-    endDate: new Date(today.getFullYear(), today.getMonth() + 1, 0),
-  };
-};
-
-const parseDate = (value?: string) => {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
-
-  const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? undefined : date;
-};
+import {
+  formatDateValue,
+  getCurrentMonthDateRange,
+  parseDateValue,
+} from "../../../utils/date";
+import { formatAmount } from "../../../utils/number";
 
 const getInitialDateRange = (
   startDate?: string,
   endDate?: string,
 ): AppDateRangeValue => {
-  const parsedStartDate = parseDate(startDate);
-  const parsedEndDate = parseDate(endDate);
+  const parsedStartDate = parseDateValue(startDate);
+  const parsedEndDate = parseDateValue(endDate);
 
   if (parsedStartDate && parsedEndDate) {
     return { startDate: parsedStartDate, endDate: parsedEndDate };
   }
 
-  return getCurrentMonth();
+  return getCurrentMonthDateRange();
 };
 
 export default function CategoryDetail() {
@@ -78,8 +55,8 @@ export default function CategoryDetail() {
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(() =>
     getInitialDateRange(initialStartDate, initialEndDate),
   );
-  const startDate = formatDate(dateRange.startDate);
-  const endDate = formatDate(dateRange.endDate);
+  const startDate = formatDateValue(dateRange.startDate);
+  const endDate = formatDateValue(dateRange.endDate);
 
   const categoryQuery = useQuery({
     queryKey: categoryManagementQueryKeys.detail(id),
@@ -185,7 +162,7 @@ export default function CategoryDetail() {
                 },
               ]}
             >
-              {amountFormatter.format(summaryQuery.data?.total_amount ?? 0)}
+              {formatAmount(summaryQuery.data?.total_amount ?? 0)}
             </Text>
           </View>
           <View style={styles.summaryItem}>

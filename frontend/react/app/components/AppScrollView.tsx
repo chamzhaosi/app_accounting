@@ -3,7 +3,7 @@ import {
   KeyboardAwareScrollViewProps,
 } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { cn } from "../utils/common";
+import { cn } from "../utils/className";
 
 type AppScrollViewProps = KeyboardAwareScrollViewProps;
 
