@@ -12,6 +12,9 @@ export const SELECT_OPTIONS_CONTAINER_HEIGHT_MIN = 50;
 
 export const ICON_DEFAULT_WIDTH = 40;
 
+export const DEFAULT_PAGE_SIZE = 40;
+export const ACCOUNT_TYPE_PAGE_SIZE = 100;
+
 export const DIALOG_COMMON_BTN_PROPS = {
   labelStyle: { fontSize: 14 },
   contentStyle: {

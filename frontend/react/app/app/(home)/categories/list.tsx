@@ -21,12 +21,9 @@ import { getCategoryPeriodSummaryList } from "../../../sql/service/categoryMgmtS
 import { CategoryPeriodSummaryRspType } from "../../../sql/types/categoryMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
-
-const PAGE_SIZE = 40;
-const amountFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
+import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
+import { formatAmount } from "../../../utils/number";
 
 type TabRoute = Route & {
   key: "expense" | "income";
@@ -39,31 +36,15 @@ const ROUTES: TabRoute[] = [
   { key: "income", title: "Income", typeId: 1 },
 ];
 
-const formatDate = (date?: Date) => {
-  if (!date || Number.isNaN(date.getTime())) return "";
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const getCurrentMonth = (): AppDateRangeValue => {
-  const today = new Date();
-  return {
-    startDate: new Date(today.getFullYear(), today.getMonth(), 1),
-    endDate: new Date(today.getFullYear(), today.getMonth() + 1, 0),
-  };
-};
-
 export default function CategoriesList() {
   const { THEME } = useThemeStore();
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
-  const [dateRange, setDateRange] =
-    useState<AppDateRangeValue>(getCurrentMonth);
-  const startDate = formatDate(dateRange.startDate);
-  const endDate = formatDate(dateRange.endDate);
+  const [dateRange, setDateRange] = useState<AppDateRangeValue>(
+    getCurrentMonthDateRange,
+  );
+  const startDate = formatDateValue(dateRange.startDate);
+  const endDate = formatDateValue(dateRange.endDate);
 
   const renderTabBar = (props: TabBarProps<TabRoute>) => (
     <TabBar
@@ -134,7 +115,7 @@ function CategoryPeriodTab({
   } = useInfiniteQuery({
     queryKey: categoryManagementQueryKeys.periodList({
       typeId,
-      pageSize: PAGE_SIZE,
+      pageSize: DEFAULT_PAGE_SIZE,
       startDate,
       endDate,
     }),
@@ -144,12 +125,12 @@ function CategoryPeriodTab({
         startDate,
         endDate,
         pageParam,
-        PAGE_SIZE,
+        DEFAULT_PAGE_SIZE,
       ),
     enabled: Boolean(startDate && endDate),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === PAGE_SIZE ? allPages.length + 1 : undefined,
+      lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
   const categories = data?.pages.flat() ?? [];
   const amountColor = typeId === 1 ? THEME.primary : THEME.error;
@@ -243,7 +224,7 @@ function CategoryPeriodTab({
           right={() => (
             <View style={styles.categoryTotalContainer}>
               <Text style={[styles.categoryTotal, { color: amountColor }]}>
-                {amountFormatter.format(category.period_total)}
+                {formatAmount(category.period_total)}
               </Text>
               <ChevronRight color={THEME.onSurfaceVariant} size={22} />
             </View>

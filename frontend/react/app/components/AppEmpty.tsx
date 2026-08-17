@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon from "./AppIcon";
 import AppText from "./AppText";
-import { cn } from "../utils/common";
+import { cn } from "../utils/className";
 
 export default function AppEmpty({ className }: { className?: string }) {
   const { THEME } = useThemeStore();

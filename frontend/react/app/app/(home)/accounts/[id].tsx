@@ -21,36 +21,17 @@ import {
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { DEBUG_TAG } from "../../../utils/debugLog";
 import TransactionManagementList from "../../transaction_management/list";
-
-const amountFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const formatDate = (date?: Date) => {
-  if (!date || Number.isNaN(date.getTime())) return "";
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const getCurrentMonth = (): AppDateRangeValue => {
-  const today = new Date();
-  return {
-    startDate: new Date(today.getFullYear(), today.getMonth(), 1),
-    endDate: new Date(today.getFullYear(), today.getMonth() + 1, 0),
-  };
-};
+import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
+import { formatAmount } from "../../../utils/number";
 
 export default function AccountDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
-  const [dateRange, setDateRange] =
-    useState<AppDateRangeValue>(getCurrentMonth);
-  const startDate = formatDate(dateRange.startDate);
-  const endDate = formatDate(dateRange.endDate);
+  const [dateRange, setDateRange] = useState<AppDateRangeValue>(
+    getCurrentMonthDateRange,
+  );
+  const startDate = formatDateValue(dateRange.startDate);
+  const endDate = formatDateValue(dateRange.endDate);
 
   const accountQuery = useQuery({
     queryKey: accountManagementQueryKeys.detail(id),
@@ -152,7 +133,7 @@ export default function AccountDetail() {
               Current Balance
             </Text>
             <Text variant="titleLarge" style={styles.balanceAmount}>
-              {amountFormatter.format(account?.current_balance ?? 0)}
+              {formatAmount(account?.current_balance ?? 0)}
             </Text>
           </View>
         </View>
@@ -172,7 +153,7 @@ export default function AccountDetail() {
               Balance Forward
             </Text>
             <Text style={styles.periodAmount}>
-              {amountFormatter.format(forwardBalance)}
+              {formatAmount(forwardBalance)}
             </Text>
           </View>
           <View style={styles.periodTotal}>
@@ -180,7 +161,7 @@ export default function AccountDetail() {
               Period End Balance
             </Text>
             <Text style={styles.periodAmount}>
-              {amountFormatter.format(periodEndBalance)}
+              {formatAmount(periodEndBalance)}
             </Text>
           </View>
         </View>
@@ -191,13 +172,13 @@ export default function AccountDetail() {
           <View style={styles.periodTotal}>
             <Text style={{ color: THEME.onSurfaceVariant }}>Money Out</Text>
             <Text style={[styles.periodAmount, { color: THEME.error }]}>
-              {amountFormatter.format(moneyOut)}
+              {formatAmount(moneyOut)}
             </Text>
           </View>
           <View style={styles.periodTotal}>
             <Text style={{ color: THEME.onSurfaceVariant }}>Money In</Text>
             <Text style={[styles.periodAmount, { color: THEME.primary }]}>
-              {amountFormatter.format(moneyIn)}
+              {formatAmount(moneyIn)}
             </Text>
           </View>
         </View>

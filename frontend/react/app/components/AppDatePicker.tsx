@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { TextInput, TextInputProps, useTheme } from "react-native-paper";
+import { formatDateValue } from "../utils/date";
 import AppTextInput from "./AppTextInput";
 import CustomDatePicker from "./CustomDatePicker";
 
@@ -19,15 +20,6 @@ type AppDatePickerProps = Omit<
   onChange: (date: Date) => void;
   onBlur?: () => void;
   errorField?: FieldError;
-};
-
-const formatDate = (date?: Date) => {
-  if (!date || Number.isNaN(date.getTime())) return "";
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 };
 
 const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
@@ -51,7 +43,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
             {...props}
             ref={ref}
             style={{ marginBottom: 16 }}
-            value={formatDate(value)}
+            value={formatDateValue(value)}
             editable={false}
             disabled={disabled}
             showSoftInputOnFocus={false}

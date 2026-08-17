@@ -1,9 +1,9 @@
 import { ChevronRight } from "lucide-react-native";
 import { FlatList, FlatListProps, StyleSheet, View } from "react-native";
-import { List } from "react-native-paper";
+import { List, Text } from "react-native-paper";
 import { FONTS } from "../constants/fonts";
 import { useThemeStore } from "../stores/useThemeStore";
-import { cn } from "../utils/common";
+import { cn } from "../utils/className";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import {
   LIST_ITEM_TITLE_FONTSIZE,
@@ -17,6 +17,7 @@ export type AppListItemType = {
   icon: AppIconProps["name"];
   label: ReactNode | string;
   descriptions?: string;
+  rightLabel?: ReactNode;
   onPress?: () => void;
 };
 
@@ -75,9 +76,19 @@ export default function AppListView<T extends AppListItemType>({
             color={isItemSelected ? THEME.onTertiary : undefined}
           />
         )}
-        right={() =>
-          isHideLeftIcon ? undefined : <ChevronRight color={THEME.onSurface} />
-        }
+        right={() => {
+          if (isHideLeftIcon) return undefined;
+          if (item.rightLabel === undefined) {
+            return <ChevronRight color={THEME.onSurface} />;
+          }
+
+          return (
+            <View style={defaultStyle.rightContainer}>
+              <Text style={defaultStyle.rightLabel}>{item.rightLabel}</Text>
+              <ChevronRight color={THEME.onSurfaceVariant} size={22} />
+            </View>
+          );
+        }}
       />
     );
   };
@@ -117,6 +128,16 @@ const defaultStyle = StyleSheet.create({
   containerStyle: {
     marginInline: 12,
     alignItems: "center",
+  },
+  rightContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  rightLabel: {
+    fontFamily: FONTS.ROBOTO,
+    fontSize: LIST_ITEM_TITLE_FONTSIZE,
+    fontWeight: "700",
+    marginRight: 8,
   },
   emptyContentContainer: {
     flexGrow: 1,

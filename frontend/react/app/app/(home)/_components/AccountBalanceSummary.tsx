@@ -86,7 +86,6 @@ export default function AccountBalanceSummary({
           label="Date Range"
           maxRangeDays={90}
           value={dateRange}
-          disableFutureDates
           onChange={onDateRangeChange}
         />
       </View>

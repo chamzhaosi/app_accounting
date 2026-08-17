@@ -3,7 +3,7 @@ import {
   SafeAreaView,
   SafeAreaViewProps,
 } from "react-native-safe-area-context";
-import { cn } from "../utils/common";
+import { cn } from "../utils/className";
 
 type AppViewProps = {
   isSafe?: boolean;
