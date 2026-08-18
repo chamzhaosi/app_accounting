@@ -20,6 +20,7 @@ import { TXN_TYPE_ENUM } from "../../constants/enum";
 import { TRANSACTION_CATEGORY_TYPE_IDS } from "../../constants/options";
 import {
   accountManagementQueryKeys,
+  budgetQueryKeys,
   categoryManagementQueryKeys,
   invalidateQuery,
   transactionManagementQueryKeys,
@@ -278,6 +279,7 @@ export default function useTransactionManagementDetail() {
         invalidateQuery(queryClient, transactionManagementQueryKeys.detail(id)),
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
         invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, budgetQueryKeys.months()),
       ]);
       AppToast.success({ message: "Transaction updated successfully" });
       router.back();
@@ -308,6 +310,7 @@ export default function useTransactionManagementDetail() {
         invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
         invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, budgetQueryKeys.months()),
       ]);
       queryClient.removeQueries({
         queryKey: transactionManagementQueryKeys.detail(id),

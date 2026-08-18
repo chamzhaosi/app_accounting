@@ -5,7 +5,16 @@ export enum QueryKeyModule {
   ACCOUNT_TYPE = "accountType",
   CATEGORY_MANAGEMENT = "categoryManagement",
   TRANSACTION_MANAGEMENT = "transactionManagement",
+  BUDGET = "budget",
 }
+
+export const budgetQueryKeys = {
+  all: [QueryKeyModule.BUDGET] as const,
+  months: () => [...budgetQueryKeys.all, "month"] as const,
+  month: (month: string) => [...budgetQueryKeys.months(), month] as const,
+  management: (month: string) =>
+    [...budgetQueryKeys.all, "management", month] as const,
+};
 
 export const accountTypeQueryKeys = {
   all: [QueryKeyModule.ACCOUNT_TYPE] as const,

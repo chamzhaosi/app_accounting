@@ -105,6 +105,10 @@ export default function StackLayout() {
             <Stack.Screen name="landing" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(home)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="category_detail/[id]"
+              options={{ title: "Category Detail" }}
+            />
 
             <Stack.Screen
               name="account_type"
@@ -116,6 +120,10 @@ export default function StackLayout() {
             />
             <Stack.Screen
               name="category_management"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="budget_management"
               options={{ headerShown: false }}
             />
             <Stack.Screen name="security" options={{ headerShown: false }} />

@@ -1,5 +1,11 @@
 import { Tabs, useSegments } from "expo-router";
-import { Gauge, Settings, Tags, WalletCards } from "lucide-react-native";
+import {
+  Gauge,
+  HandCoins,
+  Settings,
+  Tags,
+  WalletCards,
+} from "lucide-react-native";
 import { FONTS } from "../../constants/fonts";
 import { useThemeStore } from "../../stores/useThemeStore";
 
@@ -56,6 +62,16 @@ export default function StackLayout() {
           title: "Categories",
           headerShown: isCategoriesList,
           tabBarIcon: ({ color, size }) => <Tags color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="budget"
+        options={{
+          title: "Budget",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <HandCoins color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
