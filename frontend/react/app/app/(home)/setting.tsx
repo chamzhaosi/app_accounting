@@ -1,10 +1,11 @@
-import { router } from "expo-router";
+import { Href, router } from "expo-router";
 import AppListView, { AppListItemType } from "../../components/AppListView";
 import AppView from "../../components/AppView";
 import {
   ACCOUNT_MANAGEMENT_LIST_URL,
   ACCOUNT_TYPE_LIST_URL,
   CATEGORY_MANAGEMENT_LIST_URL,
+  BUDGET_MANAGEMENT_URL,
   LOCAL_AUTHENTICATE_URL,
 } from "../../constants/urls";
 
@@ -28,7 +29,12 @@ export default function Setting() {
       icon: "BookOpenCheck",
       onPress: () => router.push(CATEGORY_MANAGEMENT_LIST_URL),
     },
-    // { id: "4", label: "Budget Management", icon: HandCoins },
+    {
+      id: 4,
+      label: "Budget Management",
+      icon: "HandCoins",
+      onPress: () => router.push(BUDGET_MANAGEMENT_URL as Href),
+    },
     // {
     //   id: 5,
     //   label: "Reset Password",

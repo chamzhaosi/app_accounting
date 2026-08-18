@@ -20,6 +20,7 @@ import { TXN_TYPE_ENUM } from "../../constants/enum";
 import { TRANSACTION_CATEGORY_TYPE_IDS } from "../../constants/options";
 import {
   accountManagementQueryKeys,
+  budgetQueryKeys,
   categoryManagementQueryKeys,
   invalidateQuery,
   transactionManagementQueryKeys,
@@ -259,6 +260,7 @@ export default function useTransactionManagementCreate() {
         invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
         invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
+        invalidateQuery(queryClient, budgetQueryKeys.months()),
       ]);
       AppToast.success({ message: "Transaction created successfully" });
       reset({

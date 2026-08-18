@@ -186,3 +186,52 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         WHERE deleted_at IS NULL;
     `);
 };
+
+export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS budgets (
+        id TEXT PRIMARY KEY,
+        month DATE NOT NULL UNIQUE
+          CHECK (
+            date(month) IS NOT NULL
+            AND month = date(month, 'start of month')
+          ),
+        total_budget REAL NOT NULL CHECK (total_budget > 0),
+        is_active BOOLEAN NOT NULL DEFAULT 1,
+
+        sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
+        synced_at DATETIME DEFAULT NULL,
+        deleted_at DATETIME DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS budget_categories (
+        id TEXT PRIMARY KEY,
+        budget_id TEXT NOT NULL,
+        category_id TEXT NOT NULL,
+        amount REAL NOT NULL CHECK (amount > 0),
+
+        sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
+        synced_at DATETIME DEFAULT NULL,
+        deleted_at DATETIME DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+
+        FOREIGN KEY (budget_id) REFERENCES budgets(id),
+        FOREIGN KEY (category_id) REFERENCES categories(id)
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_categories_active_budget_category
+        ON budget_categories(budget_id, category_id)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_budget_categories_active_budget
+        ON budget_categories(budget_id)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_category_date
+        ON transactions(category_id, transaction_date)
+        WHERE deleted_at IS NULL;
+    `);
+};

@@ -3,6 +3,7 @@ import * as SQLite from "expo-sqlite";
 import {
   createAccMgmtTable,
   createAccTypTable,
+  createBudgetTables,
   createCategoryMgmtTable,
   createTransactionMgmtTable,
 } from "./schemas";
@@ -20,6 +21,13 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
       await insertAccTypTable(db);
       await insertCategoryMgmtTable(db);
       await updateDBVersion(db, 1);
+    });
+  }
+
+  if (currentVersion < 2) {
+    await db.withTransactionAsync(async () => {
+      await createBudgetTables(db);
+      await updateDBVersion(db, 2);
     });
   }
 };
