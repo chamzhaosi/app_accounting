@@ -7,12 +7,14 @@ import AppDateRangePicker, {
   AppDateRangeValue,
 } from "../../../components/AppDateRangePicker";
 import AppFloatingButton from "../../../components/AppFloatingButton";
+import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
 import {
   accountManagementQueryKeys,
   transactionManagementQueryKeys,
 } from "../../../constants/queryKeys";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
+import { ACCOUNT_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import { getAccMgmtById } from "../../../sql/service/accMgmtService";
 import {
   getAccountDateRangeFlowTotals,
@@ -23,6 +25,7 @@ import { DEBUG_TAG } from "../../../utils/debugLog";
 import TransactionManagementList from "../../transaction_management/list";
 import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
 import { formatAmount } from "../../../utils/number";
+import AccountBalanceHistoryChart from "./_components/AccountBalanceHistoryChart";
 
 export default function AccountDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -104,85 +107,90 @@ export default function AccountDetail() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
-      <Surface
-        elevation={1}
-        style={[
-          styles.summary,
-          { backgroundColor: THEME.surfaceContainerHigh },
-        ]}
-      >
-        <View style={styles.accountHeading}>
-          <View style={styles.accountName}>
-            <Text variant="titleLarge" numberOfLines={1}>
-              {account?.label ?? "Account unavailable"}
-            </Text>
-            {account && (
+      <AppSwipePager>
+        <Surface
+          elevation={1}
+          style={[
+            styles.summary,
+            { backgroundColor: THEME.surfaceContainerHigh },
+          ]}
+        >
+          <View style={styles.accountHeading}>
+            <View style={styles.accountName}>
+              <Text variant="titleLarge" numberOfLines={1}>
+                {account?.label ?? "Account unavailable"}
+              </Text>
+              {account && (
+                <Text
+                  variant="bodyMedium"
+                  style={{ color: THEME.onSurfaceVariant }}
+                >
+                  {account.type_label}
+                </Text>
+              )}
+            </View>
+            <View style={styles.balance}>
               <Text
-                variant="bodyMedium"
+                variant="labelMedium"
                 style={{ color: THEME.onSurfaceVariant }}
               >
-                {account.type_label}
+                Current Balance
               </Text>
-            )}
+              <Text variant="titleLarge" style={styles.balanceAmount}>
+                {formatAmount(account?.current_balance ?? 0)}
+              </Text>
+            </View>
           </View>
-          <View style={styles.balance}>
-            <Text
-              variant="labelMedium"
-              style={{ color: THEME.onSurfaceVariant }}
-            >
-              Current Balance
-            </Text>
-            <Text variant="titleLarge" style={styles.balanceAmount}>
-              {formatAmount(account?.current_balance ?? 0)}
-            </Text>
-          </View>
-        </View>
 
-        <AppDateRangePicker
-          label="Date Range"
-          maxRangeDays={90}
-          value={dateRange}
-          onChange={setDateRange}
-        />
+          <AppDateRangePicker
+            label="Date Range"
+            maxRangeDays={90}
+            value={dateRange}
+            onChange={setDateRange}
+          />
 
-        <View
-          style={[styles.summaryRow, { borderTopColor: THEME.outlineVariant }]}
-        >
-          <View style={styles.periodTotal}>
-            <Text style={{ color: THEME.onSurfaceVariant }}>
-              Balance Forward
-            </Text>
-            <Text style={styles.periodAmount}>
-              {formatAmount(forwardBalance)}
-            </Text>
+          <View
+            style={[
+              styles.summaryRow,
+              { borderTopColor: THEME.outlineVariant },
+            ]}
+          >
+            <View style={styles.periodTotal}>
+              <Text style={{ color: THEME.onSurfaceVariant }}>Opening</Text>
+              <Text style={styles.periodAmount}>
+                {formatAmount(forwardBalance)}
+              </Text>
+            </View>
+            <View style={styles.periodTotal}>
+              <Text style={{ color: THEME.onSurfaceVariant }}>Closing</Text>
+              <Text style={styles.periodAmount}>
+                {formatAmount(periodEndBalance)}
+              </Text>
+            </View>
+            <View style={styles.periodTotal}>
+              <Text style={{ color: THEME.onSurfaceVariant }}>Out</Text>
+              <Text style={[styles.periodAmount, { color: THEME.error }]}>
+                {formatAmount(moneyOut)}
+              </Text>
+            </View>
+            <View style={styles.periodTotal}>
+              <Text style={{ color: THEME.onSurfaceVariant }}>In</Text>
+              <Text style={[styles.periodAmount, { color: THEME.primary }]}>
+                {formatAmount(moneyIn)}
+              </Text>
+            </View>
           </View>
-          <View style={styles.periodTotal}>
-            <Text style={{ color: THEME.onSurfaceVariant }}>
-              Period End Balance
-            </Text>
-            <Text style={styles.periodAmount}>
-              {formatAmount(periodEndBalance)}
-            </Text>
-          </View>
-        </View>
-
-        <View
-          style={[styles.summaryRow, { borderTopColor: THEME.outlineVariant }]}
-        >
-          <View style={styles.periodTotal}>
-            <Text style={{ color: THEME.onSurfaceVariant }}>Money Out</Text>
-            <Text style={[styles.periodAmount, { color: THEME.error }]}>
-              {formatAmount(moneyOut)}
-            </Text>
-          </View>
-          <View style={styles.periodTotal}>
-            <Text style={{ color: THEME.onSurfaceVariant }}>Money In</Text>
-            <Text style={[styles.periodAmount, { color: THEME.primary }]}>
-              {formatAmount(moneyIn)}
-            </Text>
-          </View>
-        </View>
-      </Surface>
+        </Surface>
+        {account ? (
+          <AccountBalanceHistoryChart
+            accountId={id}
+            startDate={startDate}
+            endDate={endDate}
+            forwardBalance={forwardBalance}
+            isForwardBalanceLoading={forwardBalanceQuery.isLoading}
+          />
+        ) : null}
+      </AppSwipePager>
 
       {account && (
         <TransactionManagementList
@@ -211,7 +219,9 @@ export default function AccountDetail() {
 const styles = StyleSheet.create({
   summary: {
     borderRadius: 20,
-    margin: 12,
+    height: ACCOUNT_DETAIL_CARD_HEIGHT,
+    marginHorizontal: 12,
+    marginVertical: 8,
     overflow: "hidden",
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -220,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   accountName: {
     flex: 1,
@@ -234,18 +244,20 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   summaryRow: {
+    alignItems: "center",
     borderTopWidth: StyleSheet.hairlineWidth,
+    flex: 1,
     flexDirection: "row",
     marginHorizontal: -16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   periodTotal: {
     alignItems: "center",
     flex: 1,
   },
   periodAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     marginTop: 4,
   },

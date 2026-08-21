@@ -8,6 +8,7 @@ import {
   getMainAccountBalanceFromDB,
   updateAccMgmtToDB,
 } from "../repo/accMgmtRepo";
+import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
 import {
   AccMgmtCreateReqType,
   AccMgmtRspType,
@@ -77,6 +78,39 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
       },
     );
     return "Same label of account found.";
+  }
+
+  const currentAccount = await getAccMgmtByIdFromDB(data.id);
+  if (!currentAccount) return "Account not found.";
+
+  const nextBalance = Number(data.currentBalance ?? 0);
+  const balanceDifference =
+    Math.round((nextBalance - currentAccount.current_balance) * 100) / 100;
+
+  if (balanceDifference !== 0) {
+    if (!data.balanceChangeKind)
+      return "Choose how to record the balance difference.";
+
+    const expectedKind = balanceDifference < 0 ? "expense" : "income";
+    if (
+      data.balanceChangeKind !== "correction" &&
+      data.balanceChangeKind !== expectedKind
+    )
+      return `A ${balanceDifference < 0 ? "decrease" : "increase"} must be recorded as ${expectedKind} or a balance correction.`;
+
+    if (data.balanceChangeKind !== "correction") {
+      if (!data.balanceChangeCategoryId)
+        return `Select a category for the missing ${expectedKind}.`;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.balanceChangeDate ?? ""))
+        return `Select a date for the missing ${expectedKind}.`;
+
+      const category = await getCategoryMgmtByIdFromDB(
+        data.balanceChangeCategoryId,
+      );
+      const expectedTypeId = expectedKind === "expense" ? 2 : 1;
+      if (!category?.is_active || category.type_id !== expectedTypeId)
+        return `Selected category is unavailable for this ${expectedKind}.`;
+    }
   }
 
   await updateAccMgmtToDB(data);

@@ -15,6 +15,11 @@ export const ICON_DEFAULT_WIDTH = 40;
 export const DEFAULT_PAGE_SIZE = 40;
 export const ACCOUNT_TYPE_PAGE_SIZE = 100;
 
+export const DASHBOARD_SUMMARY_CARD_HEIGHT = 280;
+export const ACCOUNT_DETAIL_CARD_HEIGHT = 230;
+export const CATEGORY_DETAIL_CARD_HEIGHT = 230;
+export const BUDGET_SWIPE_CARD_HEIGHT = 260;
+
 export const DIALOG_COMMON_BTN_PROPS = {
   labelStyle: { fontSize: 14 },
   contentStyle: {

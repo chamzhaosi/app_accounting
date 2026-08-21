@@ -8,6 +8,7 @@ import AppDateRangePicker, {
 } from "../../../components/AppDateRangePicker";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
+import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
 import { TXN_TYPE_ENUM } from "../../../constants/enum";
 import {
@@ -15,6 +16,7 @@ import {
   transactionManagementQueryKeys,
 } from "../../../constants/queryKeys";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
+import { CATEGORY_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import { getCategoryMgmtById } from "../../../sql/service/categoryMgmtService";
 import { getCategoryDateRangeSummary } from "../../../sql/service/transactionMgmtService";
 import { useThemeStore } from "../../../stores/useThemeStore";
@@ -26,6 +28,7 @@ import {
   parseDateValue,
 } from "../../../utils/date";
 import { formatAmount } from "../../../utils/number";
+import CategoryCumulativeChart from "./_components/CategoryCumulativeChart";
 
 const getInitialDateRange = (
   startDate?: string,
@@ -109,70 +112,91 @@ export default function CategoryDetail() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
-      <Surface
-        elevation={1}
-        style={[
-          styles.summary,
-          { backgroundColor: THEME.surfaceContainerHigh },
-        ]}
-      >
-        <View style={styles.categoryHeading}>
-          {category && (
-            <View
-              style={[
-                styles.categoryIcon,
-                { backgroundColor: THEME.surfaceContainerHighest },
-              ]}
-            >
-              <AppIcon name={category.icon as AppIconProps["name"]} size={24} />
-            </View>
-          )}
-          <View style={styles.categoryName}>
-            <Text variant="titleLarge" numberOfLines={1}>
-              {category?.label ?? "Category unavailable"}
-            </Text>
-            {category && (
-              <Text
-                variant="bodyMedium"
-                style={{ color: THEME.onSurfaceVariant }}
-              >
-                {typeLabel}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        <AppDateRangePicker
-          label="Date Range"
-          maxRangeDays={90}
-          value={dateRange}
-          onChange={setDateRange}
-        />
-
-        <View
-          style={[styles.summaryRow, { borderTopColor: THEME.outlineVariant }]}
+      <AppSwipePager>
+        <Surface
+          elevation={1}
+          style={[
+            styles.summary,
+            { backgroundColor: THEME.surfaceContainerHigh },
+          ]}
         >
-          <View style={styles.summaryItem}>
-            <Text style={{ color: THEME.onSurfaceVariant }}>Period Total</Text>
-            <Text
-              style={[
-                styles.summaryAmount,
-                {
-                  color: category?.type_id === 1 ? THEME.primary : THEME.error,
-                },
-              ]}
-            >
-              {formatAmount(summaryQuery.data?.total_amount ?? 0)}
-            </Text>
+          <View style={styles.categoryHeading}>
+            {category && (
+              <View
+                style={[
+                  styles.categoryIcon,
+                  { backgroundColor: THEME.surfaceContainerHighest },
+                ]}
+              >
+                <AppIcon
+                  name={category.icon as AppIconProps["name"]}
+                  size={24}
+                />
+              </View>
+            )}
+            <View style={styles.categoryName}>
+              <Text variant="titleLarge" numberOfLines={1}>
+                {category?.label ?? "Category unavailable"}
+              </Text>
+              {category && (
+                <Text
+                  variant="bodyMedium"
+                  style={{ color: THEME.onSurfaceVariant }}
+                >
+                  {typeLabel}
+                </Text>
+              )}
+            </View>
           </View>
-          <View style={styles.summaryItem}>
-            <Text style={{ color: THEME.onSurfaceVariant }}>Transactions</Text>
-            <Text style={styles.summaryAmount}>
-              {summaryQuery.data?.transaction_count ?? 0}
-            </Text>
+
+          <AppDateRangePicker
+            label="Date Range"
+            maxRangeDays={90}
+            value={dateRange}
+            onChange={setDateRange}
+          />
+
+          <View
+            style={[
+              styles.summaryRow,
+              { borderTopColor: THEME.outlineVariant },
+            ]}
+          >
+            <View style={styles.summaryItem}>
+              <Text style={{ color: THEME.onSurfaceVariant }}>
+                Period Total
+              </Text>
+              <Text
+                style={[
+                  styles.summaryAmount,
+                  {
+                    color:
+                      category?.type_id === 1 ? THEME.primary : THEME.error,
+                  },
+                ]}
+              >
+                {formatAmount(summaryQuery.data?.total_amount ?? 0)}
+              </Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={{ color: THEME.onSurfaceVariant }}>
+                Transactions
+              </Text>
+              <Text style={styles.summaryAmount}>
+                {summaryQuery.data?.transaction_count ?? 0}
+              </Text>
+            </View>
           </View>
-        </View>
-      </Surface>
+        </Surface>
+        {category ? (
+          <CategoryCumulativeChart
+            categoryId={id}
+            typeId={category.type_id}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        ) : null}
+      </AppSwipePager>
 
       {category && (
         <TransactionManagementList
@@ -204,7 +228,9 @@ export default function CategoryDetail() {
 const styles = StyleSheet.create({
   summary: {
     borderRadius: 20,
-    margin: 12,
+    height: CATEGORY_DETAIL_CARD_HEIGHT,
+    marginHorizontal: 12,
+    marginVertical: 8,
     overflow: "hidden",
     paddingHorizontal: 16,
     paddingTop: 16,

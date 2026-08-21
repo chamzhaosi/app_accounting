@@ -9,13 +9,171 @@ import {
 import { getDB } from "../db/database";
 import { SQLQueryOptions } from "../types/common";
 import {
+  AccountDailyBalanceChangeType,
   AccountDateRangeFlowTotalsType,
+  CategoryDailyTotalType,
   CategoryDateRangeSummaryType,
+  TransactionDailyTotalsType,
   TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
   TransactionMgmtUpdateReqType,
 } from "../types/transactionMgmtType";
+
+export const getAccountDailyBalanceChangesFromDB = async (
+  accountId: string,
+  startDate: string,
+  endDate: string,
+): Promise<AccountDailyBalanceChangeType[]> => {
+  try {
+    const db = await getDB();
+    const result = await db.getAllAsync<AccountDailyBalanceChangeType>(
+      `SELECT
+         transaction_date,
+         COALESCE(SUM(
+           CASE
+             WHEN transaction_type = 'income' AND account_id = ? THEN amount
+             WHEN transaction_type = 'expense' AND account_id = ? THEN -amount
+             WHEN transaction_type = 'adjustment' AND account_id = ? THEN amount
+             WHEN transaction_type = 'transfer' AND from_account_id = ? THEN -amount
+             WHEN transaction_type = 'transfer' AND to_account_id = ? THEN amount
+             ELSE 0
+           END
+         ), 0) AS balance_change
+       FROM transactions
+       WHERE deleted_at IS NULL
+         AND transaction_date >= ?
+         AND transaction_date <= ?
+         AND (account_id = ? OR from_account_id = ? OR to_account_id = ?)
+       GROUP BY transaction_date
+       ORDER BY transaction_date ASC;`,
+      [
+        accountId,
+        accountId,
+        accountId,
+        accountId,
+        accountId,
+        startDate,
+        endDate,
+        accountId,
+        accountId,
+        accountId,
+      ],
+    );
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded daily account balance changes",
+      {
+        accountId,
+        startDate,
+        endDate,
+        count: result.length,
+      },
+    );
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when loading daily account balance changes",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const getCategoryDailyTotalsFromDB = async (
+  categoryId: string,
+  startDate: string,
+  endDate: string,
+): Promise<CategoryDailyTotalType[]> => {
+  try {
+    const db = await getDB();
+    const result = await db.getAllAsync<CategoryDailyTotalType>(
+      `SELECT
+         transaction_date,
+         COALESCE(SUM(amount), 0) AS daily_total
+       FROM transactions
+       WHERE category_id = ?
+         AND transaction_date >= ?
+         AND transaction_date <= ?
+         AND deleted_at IS NULL
+       GROUP BY transaction_date
+       ORDER BY transaction_date ASC;`,
+      [categoryId, startDate, endDate],
+    );
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded daily category totals",
+      {
+        categoryId,
+        startDate,
+        endDate,
+        count: result.length,
+      },
+    );
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when loading daily category totals",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const getTransactionDailyTotalsFromDB = async (
+  startDate: string,
+  endDate: string,
+): Promise<TransactionDailyTotalsType[]> => {
+  try {
+    const db = await getDB();
+    const result = await db.getAllAsync<TransactionDailyTotalsType>(
+      `
+        SELECT
+          transaction_date,
+          COALESCE(SUM(
+            CASE
+              WHEN transaction_type = 'income' THEN amount
+              WHEN transaction_type = 'adjustment' AND amount > 0 THEN amount
+              ELSE 0
+            END
+          ), 0) AS income_total,
+          COALESCE(SUM(
+            CASE
+              WHEN transaction_type = 'expense' THEN amount
+              WHEN transaction_type = 'adjustment' AND amount < 0 THEN ABS(amount)
+              ELSE 0
+            END
+          ), 0) AS expense_total,
+          COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0) AS recorded_income_total,
+          COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0) AS recorded_expense_total
+        FROM transactions
+        WHERE deleted_at IS NULL
+          AND transaction_date >= ?
+          AND transaction_date <= ?
+        GROUP BY transaction_date
+        ORDER BY transaction_date ASC;
+      `,
+      [startDate, endDate],
+    );
+
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded daily transaction totals",
+      { startDate, endDate, count: result.length },
+    );
+
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when getting daily transaction totals from db",
+      e,
+    );
+    throw e;
+  }
+};
 
 type BalanceTransaction = {
   transactionType: TXN_TYPE_ENUM;
@@ -293,6 +451,17 @@ const getBalanceAdjustments = (
       {
         accountId: transaction.accountId,
         amount: -transaction.amount * multiplier,
+      },
+    ];
+  }
+
+  if (transaction.transactionType === TXN_TYPE_ENUM.ADJUSTMENT) {
+    if (!transaction.accountId)
+      throw new Error("Adjustment account is required.");
+    return [
+      {
+        accountId: transaction.accountId,
+        amount: transaction.amount * multiplier,
       },
     ];
   }

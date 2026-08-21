@@ -4,10 +4,62 @@ import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { getDB } from "../db/database";
 import type {
   BudgetCategoryProgressType,
+  BudgetDailyRemainingType,
   BudgetManageCategoryType,
   BudgetRspType,
   BudgetSaveReqType,
 } from "../types/budgetType";
+
+export const getBudgetDailyRemainingFromDB = async (
+  startDate: string,
+  endDate: string,
+): Promise<BudgetDailyRemainingType[]> => {
+  try {
+    const db = await getDB();
+    const result = await db.getAllAsync<BudgetDailyRemainingType>(
+      `WITH RECURSIVE dates(transaction_date) AS (
+         SELECT date(?)
+         UNION ALL
+         SELECT date(transaction_date, '+1 day')
+         FROM dates
+         WHERE transaction_date < date(?)
+       )
+       SELECT
+         dates.transaction_date,
+         COALESCE(budgets.total_budget, 0) AS total_budget,
+         CASE
+           WHEN budgets.id IS NULL THEN 0
+           ELSE budgets.total_budget - COALESCE((
+             SELECT SUM(transactions.amount)
+             FROM transactions
+             WHERE transactions.transaction_type = 'expense'
+               AND transactions.deleted_at IS NULL
+               AND transactions.transaction_date >= budgets.month
+               AND transactions.transaction_date <= dates.transaction_date
+           ), 0)
+         END AS remaining_amount
+       FROM dates
+       LEFT JOIN budgets
+         ON budgets.month = date(dates.transaction_date, 'start of month')
+        AND budgets.deleted_at IS NULL
+       ORDER BY dates.transaction_date ASC;`,
+      [startDate, endDate],
+    );
+    debugLog(DEBUG_TAG.BUDGET_DB, "Loaded daily remaining budget", {
+      startDate,
+      endDate,
+      count: result.length,
+    });
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.BUDGET_DB,
+      "Error when loading daily remaining budget",
+      e,
+    );
+    throw e;
+  }
+};
 
 export const getBudgetByMonthFromDB = async (
   month: string,
@@ -34,23 +86,31 @@ export const getBudgetCategoryProgressFromDB = async (
   try {
     const db = await getDB();
     const result = await db.getAllAsync<BudgetCategoryProgressType>(
-      `SELECT
-         bc.id AS allocation_id,
+      `WITH category_spending AS (
+         SELECT category_id, SUM(amount) AS spent_amount
+         FROM transactions
+         WHERE transaction_type = 'expense'
+           AND deleted_at IS NULL
+           AND transaction_date >= ?
+           AND transaction_date < date(?, '+1 month')
+         GROUP BY category_id
+       )
+       SELECT
+         COALESCE(bc.id, 'unallocated:' || c.id) AS allocation_id,
          c.id AS category_id,
          c.label,
          c.icon,
-         bc.amount AS allocated_amount,
-         COALESCE(SUM(t.amount), 0) AS spent_amount
-       FROM budget_categories bc
-       JOIN categories c ON c.id = bc.category_id
-       LEFT JOIN transactions t
-         ON t.category_id = c.id
-        AND t.transaction_type = 'expense'
-        AND t.deleted_at IS NULL
-        AND t.transaction_date >= ?
-        AND t.transaction_date < date(?, '+1 month')
-       WHERE bc.budget_id = ? AND bc.deleted_at IS NULL
-       GROUP BY bc.id, c.id, c.label, c.icon, bc.amount
+         COALESCE(bc.amount, 0) AS allocated_amount,
+         COALESCE(category_spending.spent_amount, 0) AS spent_amount
+       FROM categories c
+       LEFT JOIN budget_categories bc
+         ON bc.category_id = c.id
+        AND bc.budget_id = ?
+        AND bc.deleted_at IS NULL
+       LEFT JOIN category_spending
+         ON category_spending.category_id = c.id
+       WHERE c.type_id = 2
+         AND (bc.id IS NOT NULL OR category_spending.spent_amount > 0)
        ORDER BY spent_amount DESC, c.label ASC;`,
       [month, month, budgetId],
     );

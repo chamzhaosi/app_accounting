@@ -1,20 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
 import AppDateRangePicker, {
   AppDateRangeValue,
 } from "../../../components/AppDateRangePicker";
-import {
-  accountManagementQueryKeys,
-  transactionManagementQueryKeys,
-} from "../../../constants/queryKeys";
-import { getMainAccountBalance } from "../../../sql/service/accMgmtService";
-import { getTransactionDateRangeTotals } from "../../../sql/service/transactionMgmtService";
+import { BUDGET_REMAINING_COLOR } from "../../../constants/colors";
+import { DASHBOARD_SUMMARY_CARD_HEIGHT } from "../../../constants/size";
+import useAccountBalanceSummary from "../../../hook/dashboard/useAccountBalanceSummary";
 import { useThemeStore } from "../../../stores/useThemeStore";
-import { DEBUG_TAG } from "../../../utils/debugLog";
-
-const formatAmount = (amount: number) => amount.toFixed(2);
+import { formatAmount } from "../../../utils/number";
 
 type AccountBalanceSummaryProps = {
   dateRange: AppDateRangeValue;
@@ -29,44 +22,21 @@ export default function AccountBalanceSummary({
   endDate,
   onDateRangeChange,
 }: AccountBalanceSummaryProps) {
-  const { THEME } = useThemeStore();
-  const balanceQuery = useQuery({
-    queryKey: accountManagementQueryKeys.mainBalance(),
-    queryFn: getMainAccountBalance,
-  });
-  const totalsQuery = useQuery({
-    queryKey: transactionManagementQueryKeys.dateRangeTotals({
-      startDate,
-      endDate,
-    }),
-    queryFn: () => getTransactionDateRangeTotals(startDate, endDate),
-    enabled: Boolean(startDate && endDate),
-    placeholderData: (previousData) => previousData,
-  });
-
-  useEffect(() => {
-    if (!balanceQuery.error) return;
-
-    console.error(
-      DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Error when loading main account balance",
-      balanceQuery.error,
-    );
-  }, [balanceQuery.error]);
-
-  useEffect(() => {
-    if (!totalsQuery.error) return;
-
-    console.error(
-      DEBUG_TAG.TRANSACTION_MANAGEMENT,
-      "Error when loading transaction date range totals",
-      totalsQuery.error,
-    );
-  }, [totalsQuery.error]);
-
-  const balance = balanceQuery.data ?? 0;
-  const income = totalsQuery.data?.income_total ?? 0;
-  const expense = totalsQuery.data?.expense_total ?? 0;
+  const { isDark, THEME } = useThemeStore();
+  const {
+    balance,
+    expense,
+    income,
+    isBalanceLoading,
+    isBudgetLoading,
+    isBudgetOver,
+    remainingBudget,
+  } = useAccountBalanceSummary(startDate, endDate);
+  const remainingBudgetColor = isBudgetOver
+    ? THEME.error
+    : isDark
+      ? BUDGET_REMAINING_COLOR.dark
+      : BUDGET_REMAINING_COLOR.light;
 
   return (
     <Surface
@@ -94,43 +64,88 @@ export default function AccountBalanceSummary({
         <Text variant="labelLarge" style={{ color: THEME.onSurfaceVariant }}>
           Balance
         </Text>
-        {balanceQuery.isLoading ? (
+        {isBalanceLoading ? (
           <ActivityIndicator style={styles.loader} />
         ) : (
-          <Text variant="headlineLarge" style={styles.balanceAmount}>
+          <Text
+            variant="headlineLarge"
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            numberOfLines={1}
+            style={styles.balanceAmount}
+          >
             {formatAmount(balance)}
           </Text>
         )}
+
+        <View style={styles.cashFlowRow}>
+          <View style={styles.cashFlowItem}>
+            <Text
+              variant="labelSmall"
+              style={{ color: THEME.onSurfaceVariant }}
+            >
+              Expense
+            </Text>
+            <Text
+              variant="titleMedium"
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              numberOfLines={1}
+              style={[styles.cashFlowAmount, { color: THEME.error }]}
+            >
+              {formatAmount(expense)}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.cashFlowDivider,
+              { backgroundColor: THEME.outlineVariant },
+            ]}
+          />
+
+          <View style={styles.cashFlowItem}>
+            <Text
+              variant="labelSmall"
+              style={{ color: THEME.onSurfaceVariant }}
+            >
+              Income
+            </Text>
+            <Text
+              variant="titleMedium"
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              numberOfLines={1}
+              style={[styles.cashFlowAmount, { color: THEME.primary }]}
+            >
+              {formatAmount(income)}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <View
         style={[
-          styles.totalsContainer,
+          styles.budgetContainer,
           { borderTopColor: THEME.outlineVariant },
         ]}
       >
-        <View style={styles.totalItem}>
-          <Text variant="labelMedium" style={{ color: THEME.onSurfaceVariant }}>
-            Expense
-          </Text>
+        <Text variant="labelMedium" style={{ color: THEME.onSurfaceVariant }}>
+          {isBudgetOver ? "Budget Over" : "Budget Left"}
+        </Text>
+        {isBudgetLoading ? (
+          <ActivityIndicator size="small" style={styles.budgetLoader} />
+        ) : (
           <Text
             variant="titleMedium"
-            style={[styles.totalAmount, { color: THEME.error }]}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
+            style={[styles.budgetAmount, { color: remainingBudgetColor }]}
           >
-            {formatAmount(expense)}
+            {formatAmount(remainingBudget)}
           </Text>
-        </View>
-        <View style={styles.totalItem}>
-          <Text variant="labelMedium" style={{ color: THEME.onSurfaceVariant }}>
-            Income
-          </Text>
-          <Text
-            variant="titleMedium"
-            style={[styles.totalAmount, { color: THEME.primary }]}
-          >
-            {formatAmount(income)}
-          </Text>
-        </View>
+        )}
       </View>
     </Surface>
   );
@@ -139,40 +154,69 @@ export default function AccountBalanceSummary({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
-    margin: 12,
+    height: DASHBOARD_SUMMARY_CARD_HEIGHT,
+    marginHorizontal: 12,
+    marginVertical: 8,
     overflow: "hidden",
   },
   dateRangeContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 10,
   },
   balanceContainer: {
     alignItems: "center",
+    flex: 1,
     justifyContent: "center",
-    minHeight: 120,
-    padding: 20,
+    minHeight: 90,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   balanceAmount: {
     fontWeight: "700",
-    marginTop: 8,
+    marginTop: 4,
+    maxWidth: "100%",
+  },
+  cashFlowRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+    maxWidth: 340,
+    width: "100%",
+  },
+  cashFlowItem: {
+    alignItems: "center",
+    flex: 1,
+    minWidth: 0,
+  },
+  cashFlowAmount: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 2,
+    maxWidth: "100%",
+  },
+  cashFlowDivider: {
+    height: 28,
+    width: StyleSheet.hairlineWidth,
   },
   loader: {
     marginTop: 16,
   },
-  totalsContainer: {
+  budgetContainer: {
+    alignItems: "center",
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
+    justifyContent: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
-  totalItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  totalAmount: {
+  budgetAmount: {
     fontSize: 20,
     fontWeight: "700",
-    marginTop: 4,
+    marginLeft: 8,
+  },
+  budgetLoader: {
+    marginLeft: 8,
   },
 });

@@ -18,6 +18,11 @@ export type AccMgmtCreateReqType = {
   isMainAccount: boolean;
 };
 
+export type BalanceChangeKind = "expense" | "income" | "correction";
+
 export type AccMgmtUpdateReqType = AccMgmtCreateReqType & {
   id: string;
+  balanceChangeKind?: BalanceChangeKind;
+  balanceChangeCategoryId?: string;
+  balanceChangeDate?: string;
 };

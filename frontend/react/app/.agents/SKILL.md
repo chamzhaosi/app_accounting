@@ -10,6 +10,7 @@ Use the account type module as the reference pattern for new modules and module 
 Before changing code under `frontend/react/app`, read the focused skill files that match the work:
 
 - For new modules, module folder layout, or responsibility boundaries, use `module-structure/SKILL.md`.
+- For screen/component presentation boundaries, controller hooks, or shared helper placement, use `component-controller-standards/SKILL.md`.
 - For screen, form, navigation, toast, or TanStack Query work, use `page-query-patterns/SKILL.md`.
 - For service-layer business checks, use `service-standards/SKILL.md`.
 - For SQL repository work, use `db-repository-standards/SKILL.md`.

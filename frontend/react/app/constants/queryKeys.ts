@@ -12,6 +12,8 @@ export const budgetQueryKeys = {
   all: [QueryKeyModule.BUDGET] as const,
   months: () => [...budgetQueryKeys.all, "month"] as const,
   month: (month: string) => [...budgetQueryKeys.months(), month] as const,
+  dailyRemaining: (params: { startDate: string; endDate: string }) =>
+    [...budgetQueryKeys.months(), "dailyRemaining", params] as const,
   management: (month: string) =>
     [...budgetQueryKeys.all, "management", month] as const,
 };
@@ -66,6 +68,8 @@ export const transactionManagementQueryKeys = {
       "dateRangeTotals",
       params,
     ] as const,
+  dailyTotals: (params: { startDate: string; endDate: string }) =>
+    [...transactionManagementQueryKeys.lists(), "dailyTotals", params] as const,
   accountForwardBalance: (params: { accountId: string; startDate: string }) =>
     [
       ...transactionManagementQueryKeys.lists(),
@@ -82,6 +86,16 @@ export const transactionManagementQueryKeys = {
       "accountFlowTotals",
       params,
     ] as const,
+  accountDailyBalance: (params: {
+    accountId: string;
+    startDate: string;
+    endDate: string;
+  }) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "accountDailyBalance",
+      params,
+    ] as const,
   categoryDateRangeSummary: (params: {
     categoryId: string;
     startDate: string;
@@ -90,6 +104,16 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "categoryDateRangeSummary",
+      params,
+    ] as const,
+  categoryDailyTotal: (params: {
+    categoryId: string;
+    startDate: string;
+    endDate: string;
+  }) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "categoryDailyTotal",
       params,
     ] as const,
   list: (params: {
