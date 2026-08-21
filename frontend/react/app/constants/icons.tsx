@@ -1,7 +1,303 @@
-import { Key } from "react";
-import { AppIconProps } from "../components/AppIcon";
+import type { AppIconProps } from "../components/AppIcon";
 
 const ICON_KEYS = ["ACCOUNT_TYPE", "CATEGORY_ICONS"] as const;
+type AppIconName = AppIconProps["name"];
+
+type CategoryIconGroup = {
+  tags: readonly string[];
+  icons: AppIconName[];
+};
+
+export const CATEGORY_ICON_GROUPS = [
+  {
+    tags: [
+      "food",
+      "drink",
+      "dining",
+      "restaurant",
+      "meal",
+      "groceries",
+      "snack",
+    ],
+    icons: [
+      "Utensils",
+      "CookingPot",
+      "Soup",
+      "Pizza",
+      "Sandwich",
+      "Beef",
+      "Fish",
+      "Apple",
+      "Salad",
+      "CakeSlice",
+      "IceCreamBowl",
+      "Cookie",
+      "Coffee",
+      "CupSoda",
+      "Wine",
+      "Beer",
+    ],
+  },
+  {
+    tags: ["shopping", "personal", "clothes", "fashion", "retail"],
+    icons: [
+      "ShoppingBag",
+      "ShoppingCart",
+      "Store",
+      "Package",
+      "Tag",
+      "Shirt",
+      "Footprints",
+      "Gem",
+      "Watch",
+      "Glasses",
+      "Scissors",
+      "Sparkles",
+    ],
+  },
+  {
+    tags: [
+      "transport",
+      "transportation",
+      "public transport",
+      "commute",
+      "vehicle",
+      "driving",
+    ],
+    icons: [
+      "Car",
+      "CarTaxiFront",
+      "Bus",
+      "TrainFront",
+      "TramFront",
+      "Bike",
+      "Motorbike",
+      "Ship",
+      "Plane",
+      "Fuel",
+      "CircleParking",
+      "Route",
+    ],
+  },
+  {
+    tags: [
+      "home",
+      "house",
+      "rent",
+      "furniture",
+      "appliance",
+      "maintenance",
+      "repair",
+    ],
+    icons: [
+      "House",
+      "Building2",
+      "BedDouble",
+      "Sofa",
+      "Bath",
+      "Refrigerator",
+      "WashingMachine",
+      "Microwave",
+      "Fan",
+      "Lamp",
+      "Armchair",
+      "KeyRound",
+      "Hammer",
+      "Paintbrush",
+      "Wrench",
+    ],
+  },
+  {
+    tags: [
+      "utilities",
+      "bills",
+      "technology",
+      "device",
+      "internet",
+      "subscription",
+      "electricity",
+      "water",
+      "gas",
+    ],
+    icons: [
+      "Lightbulb",
+      "Zap",
+      "Plug",
+      "Flame",
+      "Droplets",
+      "Wifi",
+      "Smartphone",
+      "Phone",
+      "Tv",
+      "Radio",
+      "Laptop",
+      "Monitor",
+      "Tablet",
+      "Printer",
+      "Camera",
+    ],
+  },
+  {
+    tags: ["entertainment", "hobby", "leisure", "media", "fun", "art"],
+    icons: [
+      "Film",
+      "Gamepad2",
+      "Music",
+      "Headphones",
+      "Guitar",
+      "MicVocal",
+      "Palette",
+      "Brush",
+      "Puzzle",
+      "Drama",
+      "BookOpen",
+      "Newspaper",
+      "Ticket",
+    ],
+  },
+  {
+    tags: ["education", "school", "study", "work", "office", "learning"],
+    icons: [
+      "Book",
+      "GraduationCap",
+      "School",
+      "Library",
+      "NotebookPen",
+      "Pencil",
+      "Calculator",
+      "Languages",
+      "Briefcase",
+      "Presentation",
+      "CalendarDays",
+      "Clock",
+    ],
+  },
+  {
+    tags: ["health", "medical", "wellness", "fitness", "sport", "exercise"],
+    icons: [
+      "HeartPulse",
+      "Heart",
+      "Stethoscope",
+      "Hospital",
+      "Ambulance",
+      "Pill",
+      "Syringe",
+      "Brain",
+      "Accessibility",
+      "Dumbbell",
+      "PersonStanding",
+      "Trophy",
+      "Medal",
+      "WavesLadder",
+    ],
+  },
+  {
+    tags: ["travel", "vacation", "holiday", "outdoor", "trip", "tourism"],
+    icons: [
+      "Map",
+      "MapPin",
+      "Navigation",
+      "Compass",
+      "Globe",
+      "Luggage",
+      "Hotel",
+      "TentTree",
+      "Mountain",
+      "TreePalm",
+    ],
+  },
+  {
+    tags: ["family", "social", "people", "children", "pets", "celebration"],
+    icons: [
+      "Users",
+      "UserRound",
+      "Baby",
+      "Dog",
+      "Cat",
+      "Bird",
+      "PawPrint",
+      "Gift",
+      "PartyPopper",
+      "Cake",
+    ],
+  },
+  {
+    tags: [
+      "money",
+      "finance",
+      "banking",
+      "income",
+      "salary",
+      "business",
+      "investment",
+      "tax",
+    ],
+    icons: [
+      "Wallet",
+      "Coins",
+      "Banknote",
+      "CreditCard",
+      "Landmark",
+      "PiggyBank",
+      "HandCoins",
+      "CircleDollarSign",
+      "BadgePercent",
+      "TrendingUp",
+      "Receipt",
+      "FileText",
+    ],
+  },
+  {
+    tags: [
+      "service",
+      "charity",
+      "donation",
+      "insurance",
+      "security",
+      "delivery",
+      "community",
+    ],
+    icons: [
+      "Church",
+      "Handshake",
+      "HandHeart",
+      "Shield",
+      "ShieldCheck",
+      "LockKeyhole",
+      "Construction",
+      "Truck",
+      "Trash2",
+      "Recycle",
+      "Mail",
+      "Bell",
+    ],
+  },
+  {
+    tags: ["nature", "general", "other", "miscellaneous", "environment"],
+    icons: [
+      "Leaf",
+      "Sprout",
+      "TreePine",
+      "Flower2",
+      "Sun",
+      "Moon",
+      "Cloud",
+      "Star",
+      "Flag",
+      "Bookmark",
+      "CirclePlus",
+      "CircleEllipsis",
+    ],
+  },
+] satisfies readonly CategoryIconGroup[];
+
+export const CATEGORY_ICON_TAGS = Object.fromEntries(
+  CATEGORY_ICON_GROUPS.flatMap(({ icons, tags }) =>
+    icons.map((icon) => [icon, tags]),
+  ),
+) as Partial<Record<AppIconName, readonly string[]>>;
+
+const CATEGORY_ICONS = CATEGORY_ICON_GROUPS.flatMap(({ icons }) => icons);
 
 export const ICONS: Record<(typeof ICON_KEYS)[number], AppIconProps["name"][]> =
   {
@@ -29,46 +325,5 @@ export const ICONS: Record<(typeof ICON_KEYS)[number], AppIconProps["name"][]> =
       "HandCoins",
       "PiggyBank",
     ],
-    CATEGORY_ICONS: [
-      "Utensils", // Food
-      "Coffee", // Drinks
-      "ShoppingBag", // Shopping
-      "Shirt", // Clothing
-      "Car", // Transport
-      "Bus", // Public Transport
-      "Fuel", // Petrol
-      "House", // Rent
-      // "Home", // Home Expenses
-      "Building2", // Utilities
-      "Lightbulb", // Electricity
-      "Droplets", // Water Bill
-      "Wifi", // Internet
-      "Smartphone", // Mobile Bill
-      "Tv", // Entertainment
-      "Film", // Movies
-      "Gamepad2", // Gaming
-      "Music", // Music
-      "Book", // Education
-      "GraduationCap", // Study
-      "Briefcase", // Work
-      "Laptop", // Technology
-      "Monitor", // Electronics
-      "Wrench", // Maintenance
-      "HeartPulse", // Medical
-      "Pill", // Medicine
-      "Dumbbell", // Fitness
-      "Plane", // Travel
-      "Map", // Vacation
-      "Gift", // Gifts
-      "PartyPopper", // Celebration
-      "Users", // Family
-      "Baby", // Children
-      "Dog", // Pets
-      "Church", // Donation
-      "Handshake", // Charity
-      "Receipt", // Bills
-      "FileText", // Tax
-      "Shield", // Insurance
-      "CircleEllipsis", // Others
-    ],
+    CATEGORY_ICONS,
   };

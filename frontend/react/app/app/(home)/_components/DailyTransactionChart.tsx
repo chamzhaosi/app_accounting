@@ -11,7 +11,11 @@ import { DASHBOARD_SUMMARY_CARD_HEIGHT } from "../../../constants/size";
 import useDailyTransactionChart from "../../../hook/dashboard/useDailyTransactionChart";
 import type { ChartPoint } from "../../../hook/dashboard/useDailyTransactionChart";
 import { useThemeStore } from "../../../stores/useThemeStore";
-import { formatAmount, formatCompactAmount } from "../../../utils/number";
+import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
+import {
+  formatPrivateAmount,
+  formatPrivateCompactAmount,
+} from "../../../utils/number";
 
 type DailyTransactionChartProps = {
   startDate: string;
@@ -24,6 +28,9 @@ export default function DailyTransactionChart({
 }: DailyTransactionChartProps) {
   const { width } = useWindowDimensions();
   const { isDark, THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const {
     budgetPaceData,
     dateRangeLabel,
@@ -176,7 +183,9 @@ export default function DailyTransactionChart({
               width: 32,
             }}
             xAxisLabelsHeight={22}
-            formatYLabel={(label) => formatCompactAmount(Number(label))}
+            formatYLabel={(label) =>
+              formatPrivateCompactAmount(Number(label), areAmountsVisible)
+            }
             pointerConfig={{
               pointer1Color: expenseColor,
               pointer2Color: incomeColor,
@@ -207,12 +216,14 @@ export default function DailyTransactionChart({
                     label="Expense"
                     value={items[0]?.value ?? 0}
                     textColor={THEME.inverseOnSurface}
+                    areAmountsVisible={areAmountsVisible}
                   />
                   <TooltipValue
                     color={incomeColor}
                     label="Income"
                     value={items[1]?.value ?? 0}
                     textColor={THEME.inverseOnSurface}
+                    areAmountsVisible={areAmountsVisible}
                   />
                   {showBudgetPace ? (
                     <TooltipValue
@@ -220,6 +231,7 @@ export default function DailyTransactionChart({
                       label="Budget pace"
                       value={items[2]?.value ?? 0}
                       textColor={THEME.inverseOnSurface}
+                      areAmountsVisible={areAmountsVisible}
                     />
                   ) : null}
                 </View>
@@ -237,11 +249,13 @@ function TooltipValue({
   label,
   value,
   textColor,
+  areAmountsVisible,
 }: {
   color: string;
   label: string;
   value: number;
   textColor: string;
+  areAmountsVisible: boolean;
 }) {
   return (
     <View style={styles.tooltipRow}>
@@ -253,7 +267,7 @@ function TooltipValue({
         variant="labelSmall"
         style={[styles.tooltipAmount, { color: textColor }]}
       >
-        {formatAmount(value)}
+        {formatPrivateAmount(value, areAmountsVisible)}
       </Text>
     </View>
   );

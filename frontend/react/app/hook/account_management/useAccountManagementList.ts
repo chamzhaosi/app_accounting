@@ -5,10 +5,14 @@ import type { AppListItemType } from "../../components/AppListView";
 import { accountManagementQueryKeys } from "../../constants/queryKeys";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { getAccMgmtList } from "../../sql/service/accMgmtService";
+import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { formatAmount } from "../../utils/number";
+import { formatPrivateAmount } from "../../utils/number";
 
 export default function useAccountManagementList() {
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const query = useInfiniteQuery({
     queryKey: accountManagementQueryKeys.list({ pageSize: DEFAULT_PAGE_SIZE }),
     queryFn: ({ pageParam }) => getAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
@@ -24,9 +28,12 @@ export default function useAccountManagementList() {
         icon: item.type_icon as AppIconProps["name"],
         label: item.label,
         descriptions: item.descriptions ?? undefined,
-        rightLabel: formatAmount(item.current_balance),
+        rightLabel: formatPrivateAmount(
+          item.current_balance,
+          areAmountsVisible,
+        ),
       })) ?? [],
-    [query.data],
+    [areAmountsVisible, query.data],
   );
 
   useEffect(() => {

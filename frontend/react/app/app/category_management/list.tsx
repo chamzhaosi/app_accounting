@@ -5,11 +5,11 @@ import { ActivityIndicator } from "react-native-paper";
 import type { Route, TabBarProps } from "react-native-tab-view";
 import { TabBar, TabView } from "react-native-tab-view";
 import AppFloatingButton from "../../components/AppFloatingButton";
-import AppListCardView from "../../components/AppListCardView";
 import AppView from "../../components/AppView";
 import { CATEGORY_MANAGEMENT_CREATE_URL } from "../../constants/urls";
 import useCategoryManagementList from "../../hook/category_management/useCategoryManagementList";
 import { useThemeStore } from "../../stores/useThemeStore";
+import DraggableCategoryList from "./_components/DraggableCategoryList";
 
 type TabRoute = Route & { key: "inc" | "exp"; title: string; typeId: number };
 const ROUTES: TabRoute[] = [
@@ -70,16 +70,15 @@ function TxnTypeTabView({ typeId }: { typeId: number }) {
       </View>
     );
   return (
-    <AppListCardView
+    <DraggableCategoryList
       data={logic.categoryItems}
       onPress={logic.onPress}
-      extraCardHeight={-12}
-      numberItemInRow={3}
-      refreshing={logic.isRefetching && !logic.isFetchingNextPage}
-      isLoading={logic.isFetchingNextPage}
+      isRefreshing={logic.isRefetching && !logic.isFetchingNextPage}
+      isFetchingNextPage={logic.isFetchingNextPage}
+      isReordering={logic.isReordering}
+      onDragEnd={logic.onDragEnd}
       onRefresh={logic.onRefresh}
-      onEndReached={logic.onLoadMore}
-      onEndReachedThreshold={0.5}
+      onLoadMore={logic.onLoadMore}
     />
   );
 }

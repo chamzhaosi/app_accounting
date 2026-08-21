@@ -16,9 +16,10 @@ import {
 import { getAccMgmtList } from "../../../sql/service/accMgmtService";
 import { AccMgmtRspType } from "../../../sql/types/accMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
 import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
-import { formatAmount } from "../../../utils/number";
+import { formatPrivateAmount } from "../../../utils/number";
 
 type AccountTypeSection = {
   typeId: string;
@@ -29,6 +30,9 @@ type AccountTypeSection = {
 
 export default function AccountsList() {
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const {
     data,
     error,
@@ -150,7 +154,10 @@ export default function AccountsList() {
             right={() => (
               <View style={styles.accountBalanceContainer}>
                 <Text style={styles.accountBalance}>
-                  {formatAmount(account.current_balance)}
+                  {formatPrivateAmount(
+                    account.current_balance,
+                    areAmountsVisible,
+                  )}
                 </Text>
                 <ChevronRight color={THEME.onSurfaceVariant} size={22} />
               </View>

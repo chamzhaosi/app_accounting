@@ -20,3 +20,25 @@ export const formatSignedAmount = (amount: number): string => {
   const prefix = amount > 0 ? "+" : amount < 0 ? "-" : "";
   return `${prefix}${formatAbsoluteAmount(amount)}`;
 };
+
+export const MASKED_AMOUNT = "***";
+
+export const formatPrivateAmount = (
+  amount: number,
+  areAmountsVisible: boolean,
+): string => (areAmountsVisible ? formatAmount(amount) : MASKED_AMOUNT);
+
+export const formatPrivateCompactAmount = (
+  amount: number,
+  areAmountsVisible: boolean,
+): string => (areAmountsVisible ? formatCompactAmount(amount) : MASKED_AMOUNT);
+
+export const formatPrivateAbsoluteAmount = (
+  amount: number,
+  areAmountsVisible: boolean,
+): string => (areAmountsVisible ? formatAbsoluteAmount(amount) : MASKED_AMOUNT);
+
+export const formatPrivateSignedAmount = (
+  amount: number,
+  areAmountsVisible: boolean,
+): string => (areAmountsVisible ? formatSignedAmount(amount) : MASKED_AMOUNT);

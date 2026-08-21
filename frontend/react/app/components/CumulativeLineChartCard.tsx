@@ -2,6 +2,8 @@ import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
+import { useAmountPrivacyStore } from "../stores/useAmountPrivacyStore";
+import { MASKED_AMOUNT } from "../utils/number";
 
 export type CumulativeChartPoint = {
   value: number;
@@ -37,6 +39,9 @@ export default function CumulativeLineChartCard({
 }: CumulativeLineChartCardProps) {
   const { width } = useWindowDimensions();
   const { isDark, THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const chartWidth = Math.max(width - 96, 220);
   const horizontalInset = 16;
   const spacing =
@@ -120,7 +125,9 @@ export default function CumulativeLineChartCard({
             width: 32,
           }}
           xAxisLabelsHeight={22}
-          formatYLabel={(label) => formatAxisAmount(Number(label))}
+          formatYLabel={(label) =>
+            areAmountsVisible ? formatAxisAmount(Number(label)) : MASKED_AMOUNT
+          }
           pointerConfig={{
             pointerColor: color,
             pointerStripColor: THEME.outlineVariant,
@@ -148,7 +155,9 @@ export default function CumulativeLineChartCard({
                   variant="labelMedium"
                   style={[styles.tooltipAmount, { color }]}
                 >
-                  {(items[0]?.value ?? 0).toFixed(2)}
+                  {areAmountsVisible
+                    ? (items[0]?.value ?? 0).toFixed(2)
+                    : MASKED_AMOUNT}
                 </Text>
               </View>
             ),

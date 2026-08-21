@@ -32,12 +32,16 @@ import {
 import { getBudgetOverview } from "../../sql/service/budgetService";
 import type { BudgetOverviewType } from "../../sql/types/budgetType";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { getMonthEndKey, getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
-import { formatAmount } from "../../utils/number";
+import { formatPrivateAmount, MASKED_AMOUNT } from "../../utils/number";
 
 export default function Budget() {
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const [month, setMonth] = useState(getMonthKey);
   const isCurrentMonth = month === getMonthKey();
   const query = useQuery({
@@ -184,7 +188,10 @@ export default function Budget() {
                 <View style={styles.flex}>
                   <Text variant="labelLarge">Monthly budget</Text>
                   <Text variant="headlineLarge">
-                    {formatAmount(overview.budget.total_budget)}
+                    {formatPrivateAmount(
+                      overview.budget.total_budget,
+                      areAmountsVisible,
+                    )}
                   </Text>
                 </View>
                 {!overview.budget.is_active && (
@@ -318,9 +325,16 @@ export default function Budget() {
                           variant="bodySmall"
                           style={{ color: THEME.onSurfaceVariant }}
                         >
-                          {formatAmount(category.spent_amount)} of{" "}
-                          {formatAmount(category.allocated_amount)} ·{" "}
-                          {progressLabel}
+                          {formatPrivateAmount(
+                            category.spent_amount,
+                            areAmountsVisible,
+                          )}{" "}
+                          of{" "}
+                          {formatPrivateAmount(
+                            category.allocated_amount,
+                            areAmountsVisible,
+                          )}{" "}
+                          · {progressLabel}
                         </Text>
                       </View>
                       <Text
@@ -329,9 +343,11 @@ export default function Budget() {
                           color: remaining < 0 ? THEME.error : categoryColor,
                         }}
                       >
-                        {remaining >= 0
-                          ? formatAmount(remaining)
-                          : `-${formatAmount(-remaining)}`}
+                        {areAmountsVisible
+                          ? remaining >= 0
+                            ? formatPrivateAmount(remaining, true)
+                            : `-${formatPrivateAmount(-remaining, true)}`
+                          : MASKED_AMOUNT}
                       </Text>
                     </View>
                     <ProgressBar
@@ -370,11 +386,14 @@ function Stat({
   value: number;
   color?: string;
 }) {
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   return (
     <View style={styles.stat}>
       <Text variant="labelMedium">{label}</Text>
       <Text variant="titleLarge" style={color ? { color } : undefined}>
-        {formatAmount(value)}
+        {formatPrivateAmount(value, areAmountsVisible)}
       </Text>
     </View>
   );
@@ -421,6 +440,9 @@ function BudgetExpenseDonutChart({
   overview: BudgetOverviewType;
 }) {
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const categories = overview.categories
     .filter((category) => category.spent_amount > 0)
@@ -483,7 +505,7 @@ function BudgetExpenseDonutChart({
                   Spent
                 </Text>
                 <Text variant="titleSmall" style={styles.expenseDonutTotal}>
-                  {formatAmount(overview.spentAmount)}
+                  {formatPrivateAmount(overview.spentAmount, areAmountsVisible)}
                 </Text>
               </View>
             )}
@@ -508,8 +530,11 @@ function BudgetExpenseDonutChart({
                 {selectedCategory.label}
               </Text>
               <Text variant="labelMedium" style={styles.expenseDonutAmount}>
-                {formatAmount(selectedCategory.spent_amount)} ·{" "}
-                {selectedPercentage.toFixed(1)}%
+                {formatPrivateAmount(
+                  selectedCategory.spent_amount,
+                  areAmountsVisible,
+                )}{" "}
+                · {selectedPercentage.toFixed(1)}%
               </Text>
             </View>
           )}

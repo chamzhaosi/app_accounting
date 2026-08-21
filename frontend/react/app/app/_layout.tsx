@@ -10,6 +10,7 @@ import { toastConfig } from "../config/toastConfig";
 import { FONTS, FONTS_THEME } from "../constants/fonts";
 import "../global.css";
 import { useLoadingStore } from "../stores/useLoadingStore";
+import { useAmountPrivacyStore } from "../stores/useAmountPrivacyStore";
 import { ThemeType, useThemeStore } from "../stores/useThemeStore";
 
 import { StatusBar } from "expo-status-bar";
@@ -37,6 +38,7 @@ export default function StackLayout() {
   const colorScheme = useColorScheme() as ThemeType;
   const { isDark, THEME, toggleTheme } = useThemeStore() ?? { THEME: LIGHT };
   const { startLoading, stopLoading } = useLoadingStore();
+  const hydrateAmountPrivacy = useAmountPrivacyStore((state) => state.hydrate);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
 
@@ -84,6 +86,10 @@ export default function StackLayout() {
   useEffect(() => {
     toggleTheme(colorScheme);
   }, [colorScheme]);
+
+  useEffect(() => {
+    void hydrateAmountPrivacy();
+  }, [hydrateAmountPrivacy]);
 
   useEffect(() => {
     if (!loaded || !isDatabaseReady || isAppReady) return;

@@ -8,18 +8,34 @@ import AppIcon, { AppIconProps } from "./AppIcon";
 import AppIconModal from "./AppIconModal";
 import AppText, { TextTypEnum } from "./AppText";
 
+const formatIconLabel = (icon: AppIconProps["name"]) =>
+  icon.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+
 type AppIconSelectProps = {
   error?: FieldError;
   onChange: (value: AppIconProps["name"]) => void;
   value: AppIconProps["name"];
   onBlur: () => void;
   icons: AppIconProps["name"][];
+  iconTags?: Partial<Record<AppIconProps["name"], readonly string[]>>;
   editable: boolean;
   disabled: boolean;
 };
 
 const AppIconSelect = forwardRef<any, AppIconSelectProps>(
-  ({ value, onChange, onBlur, error, icons = [], editable, disabled }, ref) => {
+  (
+    {
+      value,
+      onChange,
+      onBlur,
+      error,
+      icons = [],
+      iconTags = {},
+      editable,
+      disabled,
+    },
+    ref,
+  ) => {
     const { THEME } = useThemeStore();
     const isError = error?.message;
     const isAvailabled = editable && !disabled;
@@ -44,10 +60,11 @@ const AppIconSelect = forwardRef<any, AppIconSelectProps>(
 
     const genIconData = (icons: AppIconProps["name"][]) => {
       if (!icons.length) return [];
-      return icons.map((i, index) => ({
-        id: index,
-        label: "",
-        icon: i,
+      return icons.map((icon) => ({
+        id: icon,
+        label: formatIconLabel(icon),
+        icon,
+        searchTerms: iconTags[icon],
       }));
     };
 

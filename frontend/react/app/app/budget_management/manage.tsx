@@ -27,9 +27,10 @@ import {
 } from "../../sql/service/budgetService";
 import { AppToast } from "../../components/AppToast";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
-import { formatAmount } from "../../utils/number";
+import { formatPrivateAmount } from "../../utils/number";
 import BudgetCategoryPickerModal from "./_components/BudgetCategoryPickerModal";
 
 const AMOUNT_MAX_LENGTH = 11;
@@ -372,11 +373,14 @@ function SummaryValue({
   value: number;
   color?: string;
 }) {
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   return (
     <View style={styles.summaryValue}>
       <Text variant="labelLarge">{label}</Text>
       <Text variant="titleLarge" style={color ? { color } : undefined}>
-        {formatAmount(value)}
+        {formatPrivateAmount(value, areAmountsVisible)}
       </Text>
     </View>
   );

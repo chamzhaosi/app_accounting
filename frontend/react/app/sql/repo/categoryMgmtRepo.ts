@@ -180,10 +180,36 @@ export const createNewCategoryMgmtToDB = async (
     const id = randomUUID();
     await db.runAsync(
       `
-        INSERT INTO categories (id, type_id, label, icon, descriptions)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO categories (
+          id,
+          type_id,
+          label,
+          icon,
+          descriptions,
+          sort_order
+        )
+        VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          (
+            SELECT COALESCE(MAX(sort_order), -1) + 1
+            FROM categories
+            WHERE type_id = ?
+              AND deleted_at IS NULL
+          )
+        );
       `,
-      [id, data.typeId, data.label, data.icon, data.descriptions || null],
+      [
+        id,
+        data.typeId,
+        data.label,
+        data.icon,
+        data.descriptions || null,
+        data.typeId,
+      ],
     );
     debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Created category", {
       id,
@@ -200,6 +226,43 @@ export const createNewCategoryMgmtToDB = async (
   }
 };
 
+export const reorderCategoryMgmtInDB = async (
+  typeId: number,
+  orderedCategoryIds: string[],
+) => {
+  try {
+    const db = await getDB();
+    await db.withTransactionAsync(async () => {
+      for (const [sortOrder, id] of orderedCategoryIds.entries()) {
+        await db.runAsync(
+          `
+            UPDATE categories
+            SET
+              sort_order = ?,
+              sync_status = ?,
+              updated_at = datetime('now')
+            WHERE id = ?
+              AND type_id = ?
+              AND deleted_at IS NULL;
+          `,
+          [sortOrder, DB_SYNC_STATUS.PENDING, id, typeId],
+        );
+      }
+    });
+    debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Reordered categories", {
+      typeId,
+      count: orderedCategoryIds.length,
+    });
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
+      "Error when reordering categories in db",
+      e,
+    );
+    throw e;
+  }
+};
+
 export const updateCategoryMgmtToDB = async (
   data: CategoryMgmtUpdateReqType,
 ) => {
@@ -209,6 +272,15 @@ export const updateCategoryMgmtToDB = async (
       `
         UPDATE categories
         SET
+          sort_order = CASE
+            WHEN type_id <> ? THEN (
+              SELECT COALESCE(MAX(sort_order), -1) + 1
+              FROM categories
+              WHERE type_id = ?
+                AND deleted_at IS NULL
+            )
+            ELSE sort_order
+          END,
           type_id = ?,
           label = ?,
           icon = ?,
@@ -220,6 +292,8 @@ export const updateCategoryMgmtToDB = async (
           AND is_system = 0;
       `,
       [
+        data.typeId,
+        data.typeId,
         data.typeId,
         data.label,
         data.icon,
