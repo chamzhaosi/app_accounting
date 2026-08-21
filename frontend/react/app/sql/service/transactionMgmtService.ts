@@ -5,22 +5,48 @@ import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
 import {
   createNewTransactionMgmtToDB,
   deleteTransactionMgmtFromDB,
+  getAccountDailyBalanceChangesFromDB,
   getAccountDateRangeFlowTotalsFromDB,
   getAccountForwardBalanceFromDB,
   getCategoryDateRangeSummaryFromDB,
+  getCategoryDailyTotalsFromDB,
+  getTransactionDailyTotalsFromDB,
   getTransactionDateRangeTotalsFromDB,
   getTransactionMgmtByIdFromDB,
   getTransactionMgmtListFromDB,
   updateTransactionMgmtToDB,
 } from "../repo/transactionMgmtRepo";
 import {
+  AccountDailyBalanceChangeType,
   AccountDateRangeFlowTotalsType,
+  CategoryDailyTotalType,
   CategoryDateRangeSummaryType,
+  TransactionDailyTotalsType,
   TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
   TransactionMgmtUpdateReqType,
 } from "../types/transactionMgmtType";
+
+export const getAccountDailyBalanceChanges = async (
+  accountId: string,
+  startDate: string,
+  endDate: string,
+): Promise<AccountDailyBalanceChangeType[]> =>
+  getAccountDailyBalanceChangesFromDB(accountId, startDate, endDate);
+
+export const getCategoryDailyTotals = async (
+  categoryId: string,
+  startDate: string,
+  endDate: string,
+): Promise<CategoryDailyTotalType[]> =>
+  getCategoryDailyTotalsFromDB(categoryId, startDate, endDate);
+
+export const getTransactionDailyTotals = async (
+  startDate: string,
+  endDate: string,
+): Promise<TransactionDailyTotalsType[]> =>
+  getTransactionDailyTotalsFromDB(startDate, endDate);
 
 export const getAccountForwardBalance = async (
   accountId: string,

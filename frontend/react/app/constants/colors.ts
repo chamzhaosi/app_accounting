@@ -1,4 +1,9 @@
 // Tailwind and react native paper apply some below color schema
+export const BUDGET_REMAINING_COLOR = {
+  light: "#D99A00",
+  dark: "#FACC15",
+} as const;
+
 export const LIGHT = {
   primary: "#006878",
   surfaceTint: "#006878",

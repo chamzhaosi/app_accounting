@@ -2,17 +2,19 @@ import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
   getBudgetByMonthFromDB,
   getBudgetCategoryProgressFromDB,
+  getBudgetDailyRemainingFromDB,
   getBudgetManageCategoriesFromDB,
   getMonthExpenseTotalFromDB,
   rolloverBudgetFromLatestToDB,
   saveBudgetToDB,
 } from "../repo/budgetRepo";
 import type {
+  BudgetDailyRemainingType,
   BudgetManagementType,
   BudgetOverviewType,
   BudgetSaveReqType,
 } from "../types/budgetType";
-import { getMonthKey } from "../../utils/date";
+import { getMonthEndKey, getMonthKey } from "../../utils/date";
 
 const getBudgetWithCurrentMonthRollover = async (month: string) => {
   let budget = await getBudgetByMonthFromDB(month);
@@ -21,6 +23,17 @@ const getBudgetWithCurrentMonthRollover = async (month: string) => {
     budget = await getBudgetByMonthFromDB(month);
   }
   return budget;
+};
+
+export const getBudgetDailyRemaining = async (
+  startDate: string,
+  endDate: string,
+): Promise<BudgetDailyRemainingType[]> => {
+  const currentMonth = getMonthKey();
+  if (startDate <= getMonthEndKey(currentMonth) && endDate >= currentMonth) {
+    await getBudgetWithCurrentMonthRollover(currentMonth);
+  }
+  return getBudgetDailyRemainingFromDB(startDate, endDate);
 };
 
 export const getBudgetOverview = async (

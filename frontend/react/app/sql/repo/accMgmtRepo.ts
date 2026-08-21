@@ -252,6 +252,25 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
       }
 
       if (balanceAdjustment !== 0) {
+        const balanceChangeKind = data.balanceChangeKind ?? "correction";
+        const transactionType =
+          balanceChangeKind === "correction"
+            ? TXN_TYPE_ENUM.ADJUSTMENT
+            : balanceChangeKind === "expense"
+              ? TXN_TYPE_ENUM.EXPENSE
+              : TXN_TYPE_ENUM.INCOME;
+        const transactionAmount =
+          transactionType === TXN_TYPE_ENUM.ADJUSTMENT
+            ? balanceAdjustment
+            : Math.abs(balanceAdjustment);
+        const categoryId =
+          transactionType === TXN_TYPE_ENUM.ADJUSTMENT
+            ? null
+            : (data.balanceChangeCategoryId ?? null);
+        const description =
+          transactionType === TXN_TYPE_ENUM.ADJUSTMENT
+            ? "Balance correction"
+            : `Missing ${transactionType} from balance reconciliation`;
         await db.runAsync(
           `
             INSERT INTO transactions (
@@ -264,14 +283,16 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
               amount,
               descriptions,
               transaction_date
-            ) VALUES (?, ?, NULL, ?, NULL, NULL, ?, ?, date('now', 'localtime'));
+            ) VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, COALESCE(?, date('now', 'localtime')));
           `,
           [
             randomUUID(),
-            TXN_TYPE_ENUM.ADJUSTMENT,
+            transactionType,
+            categoryId,
             data.id,
-            balanceAdjustment,
-            "Balance adjustment",
+            transactionAmount,
+            description,
+            data.balanceChangeDate ?? null,
           ],
         );
       }

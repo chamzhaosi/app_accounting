@@ -20,6 +20,22 @@ export type TransactionDateRangeTotalsType = {
   expense_total: number;
 };
 
+export type TransactionDailyTotalsType = TransactionDateRangeTotalsType & {
+  transaction_date: string;
+  recorded_income_total: number;
+  recorded_expense_total: number;
+};
+
+export type AccountDailyBalanceChangeType = {
+  transaction_date: string;
+  balance_change: number;
+};
+
+export type CategoryDailyTotalType = {
+  transaction_date: string;
+  daily_total: number;
+};
+
 export type AccountDateRangeFlowTotalsType = {
   in_total: number;
   out_total: number;

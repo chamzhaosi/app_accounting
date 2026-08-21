@@ -24,6 +24,12 @@ export type BudgetOverviewType = {
   overallocatedAmount: number;
 };
 
+export type BudgetDailyRemainingType = {
+  transaction_date: string;
+  total_budget: number;
+  remaining_amount: number;
+};
+
 export type BudgetManageCategoryType = {
   category_id: string;
   label: string;

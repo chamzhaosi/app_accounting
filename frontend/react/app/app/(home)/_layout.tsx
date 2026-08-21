@@ -90,6 +90,20 @@ export default function StackLayout() {
           tabBarItemStyle: { display: "none" },
         }}
       />
+      <Tabs.Screen
+        name="_components/DailyTransactionChart"
+        options={{
+          href: null,
+          tabBarItemStyle: { display: "none" },
+        }}
+      />
+      <Tabs.Screen
+        name="_components/DashboardSummaryCarousel"
+        options={{
+          href: null,
+          tabBarItemStyle: { display: "none" },
+        }}
+      />
     </Tabs>
   );
 }

@@ -1,26 +1,13 @@
 import { router } from "expo-router";
-import { useState } from "react";
 import AppFloatingButton from "../../components/AppFloatingButton";
-import { AppDateRangeValue } from "../../components/AppDateRangePicker";
 import AppView from "../../components/AppView";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../constants/urls";
+import useDashboard from "../../hook/dashboard/useDashboard";
 import TransactionManagementList from "../transaction_management/list";
-import AccountBalanceSummary from "./_components/AccountBalanceSummary";
-import { formatDateValue } from "../../utils/date";
-
-const getDefaultDateRange = (): AppDateRangeValue => {
-  const today = new Date();
-  return {
-    startDate: new Date(today.getFullYear(), today.getMonth(), 1),
-    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
-  };
-};
+import DashboardSummaryCarousel from "./_components/DashboardSummaryCarousel";
 
 export default function Dashboard() {
-  const [dateRange, setDateRange] =
-    useState<AppDateRangeValue>(getDefaultDateRange);
-  const startDate = formatDateValue(dateRange.startDate);
-  const endDate = formatDateValue(dateRange.endDate);
+  const { dateRange, endDate, onDateRangeChange, startDate } = useDashboard();
 
   return (
     <AppView
@@ -28,11 +15,11 @@ export default function Dashboard() {
       edges={["top"]}
       className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow"
     >
-      <AccountBalanceSummary
+      <DashboardSummaryCarousel
         dateRange={dateRange}
         startDate={startDate}
         endDate={endDate}
-        onDateRangeChange={setDateRange}
+        onDateRangeChange={onDateRangeChange}
       />
       <TransactionManagementList startDate={startDate} endDate={endDate} />
 
