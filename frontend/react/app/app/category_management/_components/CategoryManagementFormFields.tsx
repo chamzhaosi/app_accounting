@@ -9,7 +9,7 @@ import type { AppIconProps } from "../../../components/AppIcon";
 import AppIconSelect from "../../../components/AppIconSelect";
 import AppSelect from "../../../components/AppSelect";
 import AppTextInput from "../../../components/AppTextInput";
-import { ICONS } from "../../../constants/icons";
+import { CATEGORY_ICON_TAGS, ICONS } from "../../../constants/icons";
 import { CATEGORY_TRANSACTION_TYPE_OPTIONS } from "../../../constants/options";
 import {
   DESCRIPTION_MAX_LEN,
@@ -71,6 +71,7 @@ export default function CategoryManagementFormFields({
                 error={error}
                 onBlur={onBlur}
                 icons={ICONS.CATEGORY_ICONS}
+                iconTags={CATEGORY_ICON_TAGS}
                 editable={!isSubmitting}
                 disabled={isSubmitting}
               />

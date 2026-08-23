@@ -4,6 +4,7 @@ export type CategoryMgmtRspType = {
   label: string;
   icon: string;
   descriptions?: string | null;
+  sort_order: number;
   is_active: boolean;
   is_system: boolean;
 };

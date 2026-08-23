@@ -20,6 +20,7 @@ import { CATEGORY_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import { getCategoryMgmtById } from "../../../sql/service/categoryMgmtService";
 import { getCategoryDateRangeSummary } from "../../../sql/service/transactionMgmtService";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { DEBUG_TAG } from "../../../utils/debugLog";
 import TransactionManagementList from "../../transaction_management/list";
 import {
@@ -27,7 +28,7 @@ import {
   getCurrentMonthDateRange,
   parseDateValue,
 } from "../../../utils/date";
-import { formatAmount } from "../../../utils/number";
+import { formatPrivateAmount } from "../../../utils/number";
 import CategoryCumulativeChart from "./_components/CategoryCumulativeChart";
 
 const getInitialDateRange = (
@@ -55,6 +56,9 @@ export default function CategoryDetail() {
     endDate?: string;
   }>();
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(() =>
     getInitialDateRange(initialStartDate, initialEndDate),
   );
@@ -175,7 +179,10 @@ export default function CategoryDetail() {
                   },
                 ]}
               >
-                {formatAmount(summaryQuery.data?.total_amount ?? 0)}
+                {formatPrivateAmount(
+                  summaryQuery.data?.total_amount ?? 0,
+                  areAmountsVisible,
+                )}
               </Text>
             </View>
             <View style={styles.summaryItem}>

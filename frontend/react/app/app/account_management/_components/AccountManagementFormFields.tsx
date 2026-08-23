@@ -116,6 +116,7 @@ export default function AccountManagementFormFields({
             value={value}
             maxLength={CURRENT_BALANCE_MAX_LEN}
             showClear
+            fixedDecimalInput
             errorField={error}
           />
         )}

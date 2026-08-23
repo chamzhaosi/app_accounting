@@ -4,6 +4,7 @@ export type OrderBy = {
   column:
     | "id"
     | "label"
+    | "sort_order"
     | "created_at"
     | "updated_at"
     | "transaction_date"

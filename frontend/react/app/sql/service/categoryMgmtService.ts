@@ -6,6 +6,7 @@ import {
   getCategoryMgmtByTypeAndLabelFromDB,
   getCategoryMgmtListFromDB,
   getCategoryPeriodSummaryListFromDB,
+  reorderCategoryMgmtInDB,
   updateCategoryMgmtToDB,
 } from "../repo/categoryMgmtRepo";
 import {
@@ -23,12 +24,24 @@ export const getCategoryMgmtList = async (
   getCategoryMgmtListFromDB({
     typeId,
     orderBy: [
+      { column: "sort_order", direction: "ASC" },
       { column: "created_at", direction: "ASC" },
       { column: "label", direction: "ASC" },
     ],
     curPage,
     pageSize,
   });
+
+export const reorderCategoryMgmt = async (
+  typeId: number,
+  orderedCategoryIds: string[],
+): Promise<string | void> => {
+  if (!orderedCategoryIds.length) return "No categories to reorder.";
+  if (new Set(orderedCategoryIds).size !== orderedCategoryIds.length)
+    return "Invalid category order.";
+
+  await reorderCategoryMgmtInDB(typeId, orderedCategoryIds);
+};
 
 export const getCategoryPeriodSummaryList = async (
   typeId: number,

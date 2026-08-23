@@ -36,6 +36,6 @@ export const accountManagementFormDefaultValues: AccountManagementFormType = {
   typeId: "",
   label: "",
   descriptions: "",
-  currentBalance: "",
+  currentBalance: "0.00",
   isMainAccount: true,
 };

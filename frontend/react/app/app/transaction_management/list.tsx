@@ -16,7 +16,11 @@ import {
 import useTransactionManagementList from "../../hook/transaction_management/useTransactionManagementList";
 import type { TransactionManagementListProps } from "../../hook/transaction_management/useTransactionManagementList";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { formatAbsoluteAmount, formatSignedAmount } from "../../utils/number";
+import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
+import {
+  formatPrivateAbsoluteAmount,
+  formatPrivateSignedAmount,
+} from "../../utils/number";
 
 const formatDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -61,6 +65,9 @@ export default function TransactionManagementList(
 ) {
   const { accountId } = props;
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const {
     isFetchingNextPage,
     isLoading,
@@ -150,7 +157,7 @@ export default function TransactionManagementList(
                 variant="titleLarge"
                 style={[styles.sectionNet, { color: netColor }]}
               >
-                {formatSignedAmount(section.netTotal)}
+                {formatPrivateSignedAmount(section.netTotal, areAmountsVisible)}
               </Text>
             </View>
           </View>
@@ -175,8 +182,8 @@ export default function TransactionManagementList(
             ? `${ACCOUNT_MANAGEMENT_BASE_URL}/${item.accountId}`
             : `${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}`;
         const displayAmount = accountId
-          ? formatSignedAmount(item.balanceEffect)
-          : formatAbsoluteAmount(item.amount);
+          ? formatPrivateSignedAmount(item.balanceEffect, areAmountsVisible)
+          : formatPrivateAbsoluteAmount(item.amount, areAmountsVisible);
 
         return (
           <Pressable

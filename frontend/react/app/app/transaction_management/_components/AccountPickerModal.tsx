@@ -18,7 +18,8 @@ import {
   LIST_ITEM_TITLE_FONTSIZE,
 } from "../../../constants/size";
 import { useThemeStore } from "../../../stores/useThemeStore";
-import { formatAmount } from "../../../utils/number";
+import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
+import { formatPrivateAmount } from "../../../utils/number";
 
 type AccountPickerModalItem = AppListItemType & {
   balance: number;
@@ -56,6 +57,9 @@ export default function AccountPickerModal({
   title = "Select Account",
 }: AccountPickerModalProps) {
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const { height, width } = useWindowDimensions();
 
   return (
@@ -145,7 +149,7 @@ export default function AccountPickerModal({
                       <Text
                         style={[styles.accountBalance, { color: textColor }]}
                       >
-                        {formatAmount(item.balance)}
+                        {formatPrivateAmount(item.balance, areAmountsVisible)}
                       </Text>
                       <View style={styles.selectionIndicator}>
                         {isSelected && (

@@ -7,6 +7,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { IconButton, Text, useTheme } from "react-native-paper";
+import { useThemeStore } from "../stores/useThemeStore";
 
 const WEEK_DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const CALENDAR_CELL_COUNT = 42;
@@ -65,6 +66,7 @@ export default function CustomDateRangePicker({
   style,
 }: CustomDateRangePickerProps) {
   const theme = useTheme();
+  const { THEME } = useThemeStore();
   const today = startOfDay(new Date());
   const normalizedMaxRangeDays =
     maxRangeDays !== undefined &&
@@ -208,7 +210,7 @@ export default function CustomDateRangePicker({
     <View
       style={[
         styles.container,
-        { backgroundColor: theme.colors.secondaryContainer },
+        { backgroundColor: THEME.surfaceContainerHigh },
         style,
       ]}
     >
@@ -308,7 +310,7 @@ export default function CustomDateRangePicker({
                       backgroundColor: theme.colors.primaryContainer,
                     },
                     isEndpoint && {
-                      backgroundColor: theme.colors.tertiary,
+                      backgroundColor: theme.colors.primary,
                       borderRadius: 10,
                     },
                   ]}
@@ -335,7 +337,7 @@ export default function CustomDateRangePicker({
                           color: isDateDisabled
                             ? theme.colors.outlineVariant
                             : isEndpoint
-                              ? theme.colors.onTertiary
+                              ? theme.colors.onPrimary
                               : outsideCurrentMonth
                                 ? theme.colors.outline
                                 : theme.colors.onSurface,

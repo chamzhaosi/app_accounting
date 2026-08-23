@@ -29,6 +29,7 @@ export type AppListCardItemType = {
   id: number | string;
   icon: AppIconProps["name"];
   label: string;
+  searchTerms?: readonly string[];
   description?: string;
   isEditable?: boolean;
 };
@@ -107,6 +108,8 @@ export default function AppListCardView({
       >
         <TouchableRipple
           onPress={() => onPress(item)}
+          accessibilityRole="button"
+          accessibilityLabel={item.label || item.icon}
           style={defaultStyle.rippleContainer}
         >
           <>

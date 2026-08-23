@@ -1,44 +1,59 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeftRight } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { ActivityIndicator } from "react-native-paper";
-import type { Route, TabBarProps } from "react-native-tab-view";
+import { ActivityIndicator, IconButton } from "react-native-paper";
+import type { TabBarProps } from "react-native-tab-view";
 import { TabBar, TabView } from "react-native-tab-view";
 import AppFloatingButton from "../../components/AppFloatingButton";
-import AppListCardView from "../../components/AppListCardView";
 import AppView from "../../components/AppView";
 import { CATEGORY_MANAGEMENT_CREATE_URL } from "../../constants/urls";
 import useCategoryManagementList from "../../hook/category_management/useCategoryManagementList";
 import { useThemeStore } from "../../stores/useThemeStore";
-
-type TabRoute = Route & { key: "inc" | "exp"; title: string; typeId: number };
-const ROUTES: TabRoute[] = [
-  { key: "inc", title: "Income", typeId: 1 },
-  { key: "exp", title: "Expense", typeId: 2 },
-];
+import CategoryReorderList from "./_components/CategoryReorderList";
+import {
+  CATEGORY_MANAGEMENT_TAB_ROUTES,
+  CATEGORY_REORDER_HEADER_ICON_SIZE,
+  type CategoryManagementTabRoute,
+} from "./_components/categoryManagement.constants";
 
 export default function CategoryManagementList() {
   const router = useRouter();
-  const { type } = useLocalSearchParams<{ type?: TabRoute["key"] }>();
+  const { type } = useLocalSearchParams<{
+    type?: CategoryManagementTabRoute["key"];
+  }>();
   const { THEME } = useThemeStore();
   const layout = useWindowDimensions();
   const [index, setIndex] = React.useState(type === "exp" ? 1 : 0);
+  const [adjustingTypeId, setAdjustingTypeId] = React.useState<number>();
+  const isAdjusting = adjustingTypeId !== undefined;
   useEffect(() => {
-    const requestedIndex = ROUTES.findIndex((route) => route.key === type);
+    const requestedIndex = CATEGORY_MANAGEMENT_TAB_ROUTES.findIndex(
+      (route) => route.key === type,
+    );
     if (requestedIndex >= 0) setIndex(requestedIndex);
   }, [type]);
-  const renderTabBar = (props: TabBarProps<TabRoute>) => (
+  const renderTabBar = (props: TabBarProps<CategoryManagementTabRoute>) => (
     <TabBar
       {...props}
       activeColor={THEME.primary}
       inactiveColor={THEME.outline}
       indicatorStyle={{ backgroundColor: THEME.primary }}
+      onTabPress={({ preventDefault }) => {
+        if (isAdjusting) preventDefault();
+      }}
       style={{ backgroundColor: THEME.secondaryContainer }}
     />
   );
-  const renderScene = ({ route }: { route: TabRoute }) => (
+  const renderScene = ({ route }: { route: CategoryManagementTabRoute }) => (
     <AppView className="relative">
-      <TxnTypeTabView typeId={route.typeId} />
+      <TxnTypeTabView
+        isAdjusting={adjustingTypeId === route.typeId}
+        onAdjustingChange={(nextIsAdjusting) =>
+          setAdjustingTypeId(nextIsAdjusting ? route.typeId : undefined)
+        }
+        typeId={route.typeId}
+      />
       <AppFloatingButton
         icon="plus"
         onPress={() =>
@@ -47,21 +62,56 @@ export default function CategoryManagementList() {
             params: { type: route.key },
           })
         }
+        visible={adjustingTypeId !== route.typeId}
       />
     </AppView>
   );
   return (
-    <TabView
-      renderTabBar={renderTabBar}
-      navigationState={{ index, routes: ROUTES }}
-      renderScene={renderScene}
-      onIndexChange={setIndex}
-      initialLayout={{ width: layout.width }}
-    />
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <IconButton
+              accessibilityHint="Select two category cards to swap positions."
+              accessibilityLabel="Reorder categories"
+              disabled={isAdjusting}
+              icon={({ color, size }) => (
+                <ArrowLeftRight color={color} size={size} />
+              )}
+              iconColor={THEME.primary}
+              mode="contained-tonal"
+              onPress={() =>
+                setAdjustingTypeId(CATEGORY_MANAGEMENT_TAB_ROUTES[index].typeId)
+              }
+              size={CATEGORY_REORDER_HEADER_ICON_SIZE}
+              style={{ margin: 0 }}
+            />
+          ),
+        }}
+      />
+      <TabView
+        renderTabBar={renderTabBar}
+        navigationState={{ index, routes: CATEGORY_MANAGEMENT_TAB_ROUTES }}
+        renderScene={renderScene}
+        onIndexChange={setIndex}
+        initialLayout={{ width: layout.width }}
+        swipeEnabled={!isAdjusting}
+      />
+    </>
   );
 }
 
-function TxnTypeTabView({ typeId }: { typeId: number }) {
+type TxnTypeTabViewProps = {
+  isAdjusting: boolean;
+  onAdjustingChange: (isAdjusting: boolean) => void;
+  typeId: number;
+};
+
+function TxnTypeTabView({
+  isAdjusting,
+  onAdjustingChange,
+  typeId,
+}: TxnTypeTabViewProps) {
   const logic = useCategoryManagementList(typeId);
   if (logic.isLoading)
     return (
@@ -70,16 +120,24 @@ function TxnTypeTabView({ typeId }: { typeId: number }) {
       </View>
     );
   return (
-    <AppListCardView
+    <CategoryReorderList
       data={logic.categoryItems}
+      hasOrderChanges={logic.hasOrderChanges}
+      isAdjusting={isAdjusting}
+      isFetchingNextPage={logic.isFetchingNextPage}
+      isReordering={logic.isReordering}
+      isRefreshing={logic.isRefetching && !logic.isFetchingNextPage}
+      onCancel={() => {
+        logic.onCancelOrder();
+        onAdjustingChange(false);
+      }}
+      onLoadMore={logic.onLoadMore}
+      onOrderChange={logic.onOrderChange}
       onPress={logic.onPress}
-      extraCardHeight={-12}
-      numberItemInRow={3}
-      refreshing={logic.isRefetching && !logic.isFetchingNextPage}
-      isLoading={logic.isFetchingNextPage}
       onRefresh={logic.onRefresh}
-      onEndReached={logic.onLoadMore}
-      onEndReachedThreshold={0.5}
+      onSave={async () => {
+        if (await logic.onSaveOrder()) onAdjustingChange(false);
+      }}
     />
   );
 }

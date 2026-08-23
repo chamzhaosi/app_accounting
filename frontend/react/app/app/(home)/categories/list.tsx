@@ -20,10 +20,11 @@ import {
 import { getCategoryPeriodSummaryList } from "../../../sql/service/categoryMgmtService";
 import { CategoryPeriodSummaryRspType } from "../../../sql/types/categoryMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
 import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
 import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
-import { formatAmount } from "../../../utils/number";
+import { formatPrivateAmount } from "../../../utils/number";
 
 type TabRoute = Route & {
   key: "expense" | "income";
@@ -103,6 +104,9 @@ function CategoryPeriodTab({
   endDate,
 }: CategoryPeriodTabProps) {
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const {
     data,
     error,
@@ -224,7 +228,7 @@ function CategoryPeriodTab({
           right={() => (
             <View style={styles.categoryTotalContainer}>
               <Text style={[styles.categoryTotal, { color: amountColor }]}>
-                {formatAmount(category.period_total)}
+                {formatPrivateAmount(category.period_total, areAmountsVisible)}
               </Text>
               <ChevronRight color={THEME.onSurfaceVariant} size={22} />
             </View>

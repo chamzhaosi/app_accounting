@@ -1,16 +1,28 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AppIconProps } from "../../components/AppIcon";
 import type { AppListCardItemType } from "../../components/AppListCardView";
 import { AppToast } from "../../components/AppToast";
-import { categoryManagementQueryKeys } from "../../constants/queryKeys";
+import {
+  categoryManagementQueryKeys,
+  invalidateQuery,
+} from "../../constants/queryKeys";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { CATEGORY_MANAGEMENT_DETAIL_URL } from "../../constants/urls";
-import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
+import {
+  getCategoryMgmtList,
+  reorderCategoryMgmt,
+} from "../../sql/service/categoryMgmtService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { getCategoryOrderIds } from "./categoryManagementList.utils";
 
 export default function useCategoryManagementList(typeId: number) {
+  const queryClient = useQueryClient();
   const query = useInfiniteQuery({
     queryKey: categoryManagementQueryKeys.list({
       typeId,
@@ -22,7 +34,7 @@ export default function useCategoryManagementList(typeId: number) {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
-  const categoryItems = useMemo<AppListCardItemType[]>(
+  const queriedCategoryItems = useMemo<AppListCardItemType[]>(
     () =>
       query.data?.pages.flat().map((item) => ({
         id: item.id,
@@ -33,6 +45,28 @@ export default function useCategoryManagementList(typeId: number) {
       })) ?? [],
     [query.data],
   );
+  const [categoryItems, setCategoryItems] = useState<AppListCardItemType[]>([]);
+  const hasOrderChanges = useMemo(
+    () =>
+      getCategoryOrderIds(categoryItems).join(",") !==
+      getCategoryOrderIds(queriedCategoryItems).join(","),
+    [categoryItems, queriedCategoryItems],
+  );
+  const reorderMutation = useMutation({
+    mutationFn: async (orderedItems: AppListCardItemType[]) => {
+      const errorMessage = await reorderCategoryMgmt(
+        typeId,
+        getCategoryOrderIds(orderedItems),
+      );
+      if (errorMessage) throw new Error(errorMessage);
+    },
+    onSuccess: () =>
+      invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
+  });
+
+  useEffect(() => {
+    setCategoryItems(queriedCategoryItems);
+  }, [queriedCategoryItems]);
 
   useEffect(() => {
     if (query.error)
@@ -69,13 +103,41 @@ export default function useCategoryManagementList(typeId: number) {
     });
     await query.refetch();
   };
+  const onOrderChange = (orderedItems: AppListCardItemType[]) => {
+    setCategoryItems(orderedItems);
+  };
+  const onCancelOrder = () => {
+    setCategoryItems(queriedCategoryItems);
+  };
+  const onSaveOrder = async () => {
+    if (!hasOrderChanges) return true;
+
+    try {
+      await reorderMutation.mutateAsync(categoryItems);
+      AppToast.success({ message: "Category order updated." });
+      return true;
+    } catch (e) {
+      console.error(
+        DEBUG_TAG.CATEGORY_MANAGEMENT,
+        "Error when reordering categories",
+        e,
+      );
+      AppToast.error({ message: "Unable to update category order." });
+      return false;
+    }
+  };
   return {
     categoryItems,
+    hasOrderChanges,
     isFetchingNextPage: query.isFetchingNextPage,
     isLoading: query.isLoading,
     isRefetching: query.isRefetching,
+    isReordering: reorderMutation.isPending,
+    onCancelOrder,
     onLoadMore,
+    onOrderChange,
     onPress,
     onRefresh,
+    onSaveOrder,
   };
 }

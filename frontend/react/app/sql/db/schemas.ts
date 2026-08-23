@@ -74,6 +74,7 @@ export const createCategoryMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         label VARCHAR(${CATEGORY_LABEL_MAX_LEN}) NOT NULL COLLATE NOCASE,
         icon VARCHAR(100) NOT NULL,
         descriptions VARCHAR(${CATEGORY_DESCRIPTION_MAX_LEN}),
+        sort_order INTEGER NOT NULL DEFAULT 0,
 
         is_active BOOLEAN NOT NULL DEFAULT 1,
         is_system BOOLEAN NOT NULL DEFAULT 0,
@@ -88,6 +89,10 @@ export const createCategoryMgmtTable = async (db: SQLite.SQLiteDatabase) => {
 
       CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_active_type_label
         ON categories(type_id, label)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_categories_active_type_sort_order
+        ON categories(type_id, sort_order)
         WHERE deleted_at IS NULL;
     `);
 };

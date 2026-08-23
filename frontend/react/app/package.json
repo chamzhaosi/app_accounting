@@ -26,6 +26,7 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.76.1",
     "react-native": "0.85.3",
+    "react-native-draggable-grid": "^2.2.2",
     "react-native-gifted-charts": "^1.4.78",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-paper": "^5.15.3",

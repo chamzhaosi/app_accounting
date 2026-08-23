@@ -21,15 +21,19 @@ import {
   getAccountForwardBalance,
 } from "../../../sql/service/transactionMgmtService";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { DEBUG_TAG } from "../../../utils/debugLog";
 import TransactionManagementList from "../../transaction_management/list";
 import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
-import { formatAmount } from "../../../utils/number";
+import { formatPrivateAmount } from "../../../utils/number";
 import AccountBalanceHistoryChart from "./_components/AccountBalanceHistoryChart";
 
 export default function AccountDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(
     getCurrentMonthDateRange,
   );
@@ -137,7 +141,10 @@ export default function AccountDetail() {
                 Current Balance
               </Text>
               <Text variant="titleLarge" style={styles.balanceAmount}>
-                {formatAmount(account?.current_balance ?? 0)}
+                {formatPrivateAmount(
+                  account?.current_balance ?? 0,
+                  areAmountsVisible,
+                )}
               </Text>
             </View>
           </View>
@@ -158,25 +165,25 @@ export default function AccountDetail() {
             <View style={styles.periodTotal}>
               <Text style={{ color: THEME.onSurfaceVariant }}>Opening</Text>
               <Text style={styles.periodAmount}>
-                {formatAmount(forwardBalance)}
+                {formatPrivateAmount(forwardBalance, areAmountsVisible)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
               <Text style={{ color: THEME.onSurfaceVariant }}>Closing</Text>
               <Text style={styles.periodAmount}>
-                {formatAmount(periodEndBalance)}
+                {formatPrivateAmount(periodEndBalance, areAmountsVisible)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
               <Text style={{ color: THEME.onSurfaceVariant }}>Out</Text>
               <Text style={[styles.periodAmount, { color: THEME.error }]}>
-                {formatAmount(moneyOut)}
+                {formatPrivateAmount(moneyOut, areAmountsVisible)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
               <Text style={{ color: THEME.onSurfaceVariant }}>In</Text>
               <Text style={[styles.periodAmount, { color: THEME.primary }]}>
-                {formatAmount(moneyIn)}
+                {formatPrivateAmount(moneyIn, areAmountsVisible)}
               </Text>
             </View>
           </View>
