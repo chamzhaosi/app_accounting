@@ -19,6 +19,7 @@ import {
   reorderCategoryMgmt,
 } from "../../sql/service/categoryMgmtService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { getCategoryOrderIds } from "./categoryManagementList.utils";
 
 export default function useCategoryManagementList(typeId: number) {
   const queryClient = useQueryClient();
@@ -45,11 +46,17 @@ export default function useCategoryManagementList(typeId: number) {
     [query.data],
   );
   const [categoryItems, setCategoryItems] = useState<AppListCardItemType[]>([]);
+  const hasOrderChanges = useMemo(
+    () =>
+      getCategoryOrderIds(categoryItems).join(",") !==
+      getCategoryOrderIds(queriedCategoryItems).join(","),
+    [categoryItems, queriedCategoryItems],
+  );
   const reorderMutation = useMutation({
     mutationFn: async (orderedItems: AppListCardItemType[]) => {
       const errorMessage = await reorderCategoryMgmt(
         typeId,
-        orderedItems.map(({ id }) => id.toString()),
+        getCategoryOrderIds(orderedItems),
       );
       if (errorMessage) throw new Error(errorMessage);
     },
@@ -96,32 +103,41 @@ export default function useCategoryManagementList(typeId: number) {
     });
     await query.refetch();
   };
-  const onDragEnd = async (orderedItems: AppListCardItemType[]) => {
-    const previousItems = categoryItems;
+  const onOrderChange = (orderedItems: AppListCardItemType[]) => {
     setCategoryItems(orderedItems);
+  };
+  const onCancelOrder = () => {
+    setCategoryItems(queriedCategoryItems);
+  };
+  const onSaveOrder = async () => {
+    if (!hasOrderChanges) return true;
 
     try {
-      await reorderMutation.mutateAsync(orderedItems);
+      await reorderMutation.mutateAsync(categoryItems);
       AppToast.success({ message: "Category order updated." });
+      return true;
     } catch (e) {
-      setCategoryItems(previousItems);
       console.error(
         DEBUG_TAG.CATEGORY_MANAGEMENT,
         "Error when reordering categories",
         e,
       );
       AppToast.error({ message: "Unable to update category order." });
+      return false;
     }
   };
   return {
     categoryItems,
+    hasOrderChanges,
     isFetchingNextPage: query.isFetchingNextPage,
     isLoading: query.isLoading,
     isRefetching: query.isRefetching,
     isReordering: reorderMutation.isPending,
-    onDragEnd,
+    onCancelOrder,
     onLoadMore,
+    onOrderChange,
     onPress,
     onRefresh,
+    onSaveOrder,
   };
 }
