@@ -132,4 +132,23 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
       await updateDBVersion(db, 6);
     });
   }
+
+  if (currentVersion < 7) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+        UPDATE accounts
+        SET current_balance = ROUND(current_balance, 2);
+
+        UPDATE transactions
+        SET amount = ROUND(amount, 2);
+
+        UPDATE budgets
+        SET total_budget = ROUND(total_budget, 2);
+
+        UPDATE budget_categories
+        SET amount = ROUND(amount, 2);
+      `);
+      await updateDBVersion(db, 7);
+    });
+  }
 };

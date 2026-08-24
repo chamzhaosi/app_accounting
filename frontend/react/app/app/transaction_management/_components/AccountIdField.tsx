@@ -7,7 +7,7 @@ import { TEXTINPUT_HEIGHT } from "../../../constants/size";
 import { TransactionManagementFormType } from "../../../forms/schemas/transaction_management.schema";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import AccountPickerModal from "./AccountPickerModal";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 export type AccountFieldName = "accountId" | "fromAccountId" | "toAccountId";
 

@@ -1,6 +1,6 @@
 import { Text, TextProps } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export enum TextTypEnum {
   ERROR = "error",

@@ -1,5 +1,6 @@
 import { randomUUID } from "expo-crypto";
 import { DB_SYNC_STATUS } from "../../constants/enum";
+import { toAmountNumber } from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { getDB } from "../db/database";
 import type {
@@ -26,17 +27,17 @@ export const getBudgetDailyRemainingFromDB = async (
        )
        SELECT
          dates.transaction_date,
-         COALESCE(budgets.total_budget, 0) AS total_budget,
+         ROUND(COALESCE(budgets.total_budget, 0), 2) AS total_budget,
          CASE
            WHEN budgets.id IS NULL THEN 0
-           ELSE budgets.total_budget - COALESCE((
+           ELSE ROUND(budgets.total_budget - COALESCE((
              SELECT SUM(transactions.amount)
              FROM transactions
              WHERE transactions.transaction_type = 'expense'
                AND transactions.deleted_at IS NULL
                AND transactions.transaction_date >= budgets.month
                AND transactions.transaction_date <= dates.transaction_date
-           ), 0)
+           ), 0), 2)
          END AS remaining_amount
        FROM dates
        LEFT JOIN budgets
@@ -87,7 +88,7 @@ export const getBudgetCategoryProgressFromDB = async (
     const db = await getDB();
     const result = await db.getAllAsync<BudgetCategoryProgressType>(
       `WITH category_spending AS (
-         SELECT category_id, SUM(amount) AS spent_amount
+         SELECT category_id, ROUND(SUM(amount), 2) AS spent_amount
          FROM transactions
          WHERE transaction_type = 'expense'
            AND deleted_at IS NULL
@@ -166,7 +167,7 @@ export const getMonthExpenseTotalFromDB = async (
   try {
     const db = await getDB();
     const result = await db.getFirstAsync<{ total: number }>(
-      `SELECT COALESCE(SUM(amount), 0) AS total
+      `SELECT ROUND(COALESCE(SUM(amount), 0), 2) AS total
        FROM transactions
        WHERE transaction_type = 'expense'
          AND deleted_at IS NULL
@@ -244,6 +245,7 @@ export const rolloverBudgetFromLatestToDB = async (
 export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
   try {
     const db = await getDB();
+    const totalBudget = toAmountNumber(data.totalBudget);
     await db.withTransactionAsync(async () => {
       const existingBudget = await db.getFirstAsync<BudgetRspType>(
         "SELECT id, month, total_budget, is_active FROM budgets WHERE month = ? AND deleted_at IS NULL;",
@@ -257,7 +259,7 @@ export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
            SET total_budget = ?, is_active = ?, sync_status = ?, updated_at = datetime('now')
            WHERE id = ?;`,
           [
-            data.totalBudget,
+            totalBudget,
             data.isActive ? 1 : 0,
             DB_SYNC_STATUS.PENDING,
             budgetId,
@@ -267,7 +269,7 @@ export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
         await db.runAsync(
           `INSERT INTO budgets (id, month, total_budget, is_active)
            VALUES (?, ?, ?, ?);`,
-          [budgetId, data.month, data.totalBudget, data.isActive ? 1 : 0],
+          [budgetId, data.month, totalBudget, data.isActive ? 1 : 0],
         );
       }
 
@@ -288,18 +290,19 @@ export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
 
       for (const allocation of data.allocations) {
         const allocationId = existingByCategory.get(allocation.categoryId);
+        const amount = toAmountNumber(allocation.amount);
         if (allocationId) {
           await db.runAsync(
             `UPDATE budget_categories
              SET amount = ?, sync_status = ?, updated_at = datetime('now')
              WHERE id = ?;`,
-            [allocation.amount, DB_SYNC_STATUS.PENDING, allocationId],
+            [amount, DB_SYNC_STATUS.PENDING, allocationId],
           );
         } else {
           await db.runAsync(
             `INSERT INTO budget_categories (id, budget_id, category_id, amount)
              VALUES (?, ?, ?, ?);`,
-            [randomUUID(), budgetId, allocation.categoryId, allocation.amount],
+            [randomUUID(), budgetId, allocation.categoryId, amount],
           );
         }
       }

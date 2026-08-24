@@ -19,7 +19,7 @@ import {
 } from "../../forms/schemas/auth/login.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { OTP_URL } from "../../constants/urls";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function Loign() {
   const { THEME } = useThemeStore();

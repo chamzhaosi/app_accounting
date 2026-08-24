@@ -30,7 +30,7 @@ import { initDB } from "../sql/db/database";
 import { useToastStore } from "../stores/useToastStore";
 import { useLanguageStore } from "../stores/useLanguageStore";
 import { DEBUG_TAG, debugLog } from "../utils/debugLog";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -125,7 +125,6 @@ export default function StackLayout() {
               name="category_detail/[id]"
               options={{ title: t("Category Detail") }}
             />
-
             <Stack.Screen
               name="account_type"
               options={{ headerShown: false }}

@@ -20,14 +20,15 @@ import type { AppListCardItemType } from "../../../components/AppListCardView";
 import AppSpacer from "../../../components/AppSpacer";
 import AppText from "../../../components/AppText";
 import { useThemeStore } from "../../../stores/useThemeStore";
+
+import { useTranslation } from "../../../i18n/helper";
 import {
   CATEGORY_LIST_LOAD_MORE_THRESHOLD,
   CATEGORY_LIST_SCROLL_EVENT_THROTTLE,
   CATEGORY_REORDER_GRID,
   CATEGORY_REORDER_ICON_SIZE,
-} from "./categoryManagement.constants";
-import { swapCategoryItems } from "./categoryReorderList.utils";
-import { useTranslation } from "../../../i18n";
+} from "../../../constants/size";
+import { swapCategoryItems } from "../../../hook/category_management/categoryManagementList.utils";
 
 type Props = {
   data: AppListCardItemType[];
@@ -61,7 +62,9 @@ export default function CategoryReorderList({
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
+
   const [selectedKey, setSelectedKey] = useState<string>();
+
   const cardWidth = Math.floor(
     (width -
       CATEGORY_REORDER_GRID.gap * (CATEGORY_REORDER_GRID.columnCount + 1)) /

@@ -16,7 +16,7 @@ import {
   formatPrivateAmount,
   formatPrivateCompactAmount,
 } from "../../../utils/number";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 type DailyTransactionChartProps = {
   startDate: string;
@@ -186,7 +186,7 @@ export default function DailyTransactionChart({
             }}
             xAxisLabelsHeight={22}
             formatYLabel={(label) =>
-              formatPrivateCompactAmount(Number(label), areAmountsVisible)
+              formatPrivateCompactAmount(label, areAmountsVisible)
             }
             pointerConfig={{
               pointer1Color: expenseColor,

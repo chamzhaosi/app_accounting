@@ -3,7 +3,7 @@ import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon from "./AppIcon";
 import AppText from "./AppText";
 import { cn } from "../utils/className";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export default function AppEmpty({ className }: { className?: string }) {
   const { THEME } = useThemeStore();

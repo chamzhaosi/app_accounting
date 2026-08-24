@@ -15,7 +15,7 @@ import {
   NICKNAME_MAX_LEN,
 } from "../../forms/schemas/account_settings.schema";
 import useAccountSettings from "../../hook/account_settings/useAccountSettings";
-import { translate } from "../../i18n";
+import { translate } from "../../i18n/helper";
 import type { Language } from "../../stores/useLanguageStore";
 
 export default function AccountSettings() {

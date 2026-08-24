@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
+import {
+  AMOUNT_MAX_LENGTH,
+  AMOUNT_PATTERN,
+  compareAmounts,
+} from "../../utils/amount";
 
 export const DESCRIPTION_MAX_LEN = 100;
-export const AMOUNT_MAX_LEN = 13;
+export const AMOUNT_MAX_LEN = AMOUNT_MAX_LENGTH;
 export const TRANSACTION_DATE_MAX_LEN = 10;
 
 export const transactionManagementFormSchema = z
@@ -23,10 +28,10 @@ export const transactionManagementFormSchema = z
     amount: z
       .string()
       .min(1, "Please enter a transaction amount")
-      .refine((value) => /^\d{1,10}(\.\d{1,2})?$/.test(value), {
-        message: "Maximum 10 integer digits and 2 decimal places",
+      .refine((value) => AMOUNT_PATTERN.test(value), {
+        message: "Maximum 13 integer digits and 2 decimal places",
       })
-      .refine((value) => Number(value) > 0, {
+      .refine((value) => compareAmounts(value, 0) > 0, {
         message: "Transaction amount must be greater than zero",
       }),
     transactionDate: z

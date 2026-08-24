@@ -22,7 +22,7 @@ import {
   ForgetPasswordResetFormType,
 } from "../../forms/schemas/auth/forget_password.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 enum ForgetPasswordStepEnum {
   STEP_1_EMAIL = "EMAIL",

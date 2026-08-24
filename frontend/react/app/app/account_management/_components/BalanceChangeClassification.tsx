@@ -5,7 +5,8 @@ import AppSelect, { SelectOptionType } from "../../../components/AppSelect";
 import type { BalanceChangeKind } from "../../../sql/types/accMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { formatDateValue, parseDateValue } from "../../../utils/date";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
+import { toAmountString, toBigAmount } from "../../../utils/amount";
 
 type BalanceChangeClassificationProps = {
   difference: number;
@@ -35,7 +36,7 @@ export default function BalanceChangeClassification({
   if (difference === 0) return null;
 
   const transactionKind = difference < 0 ? "expense" : "income";
-  const amount = Math.abs(difference).toFixed(2);
+  const amount = toAmountString(toBigAmount(difference).abs());
 
   return (
     <Surface

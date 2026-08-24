@@ -8,7 +8,7 @@ import {
 } from "lucide-react-native";
 import { FONTS } from "../../constants/fonts";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function StackLayout() {
   const { THEME } = useThemeStore();

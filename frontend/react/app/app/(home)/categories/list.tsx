@@ -1,56 +1,36 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { Href, router } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
-import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, useWindowDimensions, View } from "react-native";
 import { ActivityIndicator, List, Surface, Text } from "react-native-paper";
-import { Route, TabBar, TabBarProps, TabView } from "react-native-tab-view";
-import AppDateRangePicker, {
-  AppDateRangeValue,
-} from "../../../components/AppDateRangePicker";
+import { TabBar, TabBarProps, TabView } from "react-native-tab-view";
+import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppEmpty from "../../../components/AppEmpty";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
 import AppView from "../../../components/AppView";
 import { FONTS } from "../../../constants/fonts";
-import { categoryManagementQueryKeys } from "../../../constants/queryKeys";
+import { CATEGORY_DETAIL_URL } from "../../../constants/urls";
 import {
   LIST_ITEM_DESCRIPTION_FONTSIZE,
   LIST_ITEM_TITLE_FONTSIZE,
 } from "../../../constants/size";
-import { getCategoryPeriodSummaryList } from "../../../sql/service/categoryMgmtService";
-import { CategoryPeriodSummaryRspType } from "../../../sql/types/categoryMgmtType";
+import useCategoriesList, {
+  CategoryHomeTabRoute,
+  useCategoryPeriodList,
+} from "../../../hook/category_management/useCategoriesList";
+import type { CategoryPeriodSummaryRspType } from "../../../sql/types/categoryMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
-import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
-import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
-import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
 import { formatPrivateAmount } from "../../../utils/number";
-import { useTranslation } from "../../../i18n";
-import { getCategoryDisplayLabel } from "../../../utils/category";
-
-type TabRoute = Route & {
-  key: "expense" | "income";
-  title: string;
-  typeId: number;
-};
-
-const ROUTES: TabRoute[] = [
-  { key: "expense", title: "Expense", typeId: 2 },
-  { key: "income", title: "Income", typeId: 1 },
-];
+import { useTranslation } from "../../../i18n/helper";
+import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
 
 export default function CategoriesList() {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
   const layout = useWindowDimensions();
-  const [index, setIndex] = useState(0);
-  const [dateRange, setDateRange] = useState<AppDateRangeValue>(
-    getCurrentMonthDateRange,
-  );
-  const startDate = formatDateValue(dateRange.startDate);
-  const endDate = formatDateValue(dateRange.endDate);
+  const logic = useCategoriesList();
 
-  const renderTabBar = (props: TabBarProps<TabRoute>) => (
+  const renderTabBar = (props: TabBarProps<CategoryHomeTabRoute>) => (
     <TabBar
       {...props}
       activeColor={THEME.primary}
@@ -72,8 +52,8 @@ export default function CategoriesList() {
         <AppDateRangePicker
           label="Date Range"
           maxRangeDays={90}
-          value={dateRange}
-          onChange={setDateRange}
+          value={logic.dateRange}
+          onChange={logic.setDateRange}
         />
       </Surface>
 
@@ -81,8 +61,8 @@ export default function CategoriesList() {
         style={styles.tabView}
         renderTabBar={renderTabBar}
         navigationState={{
-          index,
-          routes: ROUTES.map((route) => ({
+          index: logic.index,
+          routes: logic.routes.map((route) => ({
             ...route,
             title: t(route.title),
           })),
@@ -90,11 +70,11 @@ export default function CategoriesList() {
         renderScene={({ route }) => (
           <CategoryPeriodTab
             typeId={route.typeId}
-            startDate={startDate}
-            endDate={endDate}
+            startDate={logic.startDate}
+            endDate={logic.endDate}
           />
         )}
-        onIndexChange={setIndex}
+        onIndexChange={logic.setIndex}
         initialLayout={{ width: layout.width }}
       />
     </AppView>
@@ -117,49 +97,10 @@ function CategoryPeriodTab({
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isRefetching,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: categoryManagementQueryKeys.periodList({
-      typeId,
-      pageSize: DEFAULT_PAGE_SIZE,
-      startDate,
-      endDate,
-    }),
-    queryFn: ({ pageParam }) =>
-      getCategoryPeriodSummaryList(
-        typeId,
-        startDate,
-        endDate,
-        pageParam,
-        DEFAULT_PAGE_SIZE,
-      ),
-    enabled: Boolean(startDate && endDate),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
-  });
-  const categories = data?.pages.flat() ?? [];
+  const logic = useCategoryPeriodList(typeId, startDate, endDate);
   const amountColor = typeId === 1 ? THEME.primary : THEME.error;
 
-  useEffect(() => {
-    if (!error) return;
-
-    console.error(
-      DEBUG_TAG.CATEGORY_MANAGEMENT,
-      "Error when loading category period list",
-      { typeId, startDate, endDate, error },
-    );
-  }, [endDate, error, startDate, typeId]);
-
-  if (isLoading) {
+  if (logic.isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
@@ -169,29 +110,19 @@ function CategoryPeriodTab({
 
   return (
     <FlatList<CategoryPeriodSummaryRspType>
-      data={categories}
+      data={logic.categories}
       keyExtractor={(category) => category.id}
-      refreshing={isRefetching && !isFetchingNextPage}
-      onRefresh={async () => {
-        debugLog(
-          DEBUG_TAG.CATEGORY_MANAGEMENT,
-          "Refreshing category period list",
-          { typeId, startDate, endDate },
-        );
-        await refetch();
-      }}
-      onEndReached={() => {
-        if (isFetchingNextPage || !hasNextPage) return;
-        void fetchNextPage();
-      }}
+      refreshing={logic.isRefetching && !logic.isFetchingNextPage}
+      onRefresh={logic.onRefresh}
+      onEndReached={logic.onLoadMore}
       onEndReachedThreshold={0.5}
       contentContainerStyle={[
         styles.listContent,
-        categories.length === 0 && styles.emptyListContent,
+        logic.categories.length === 0 && styles.emptyListContent,
       ]}
       ListEmptyComponent={<AppEmpty />}
       ListFooterComponent={
-        isFetchingNextPage ? (
+        logic.isFetchingNextPage ? (
           <ActivityIndicator style={styles.footerLoader} />
         ) : null
       }
@@ -218,7 +149,7 @@ function CategoryPeriodTab({
           rippleColor={THEME.surfaceContainerHighest}
           onPress={() =>
             router.push({
-              pathname: "/(home)/categories/[id]",
+              pathname: CATEGORY_DETAIL_URL,
               params: {
                 id: category.id,
                 startDate,

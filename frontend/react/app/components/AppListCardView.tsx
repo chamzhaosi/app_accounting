@@ -24,7 +24,7 @@ import AppIcon, { AppIconProps } from "./AppIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export type AppListCardItemType = {
   id: number | string;

@@ -25,7 +25,7 @@ import {
 import useTransactionManagementDetail from "../../hook/transaction_management/useTransactionManagementDetail";
 import AccountIdField from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function TransactionManagementDetail() {
   const { t } = useTranslation();

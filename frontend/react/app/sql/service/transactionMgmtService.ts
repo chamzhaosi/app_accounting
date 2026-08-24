@@ -1,4 +1,5 @@
 import { TXN_TYPE_ENUM } from "../../constants/enum";
+import { compareAmounts, isValidAmount } from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { getAccMgmtByIdFromDB } from "../repo/accMgmtRepo";
 import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
@@ -111,6 +112,9 @@ export const getTransactionMgmtById = async (
 const validateTransactionMgmt = async (
   data: TransactionMgmtCreateReqType,
 ): Promise<string | void> => {
+  if (!isValidAmount(data.amount) || compareAmounts(data.amount, 0) <= 0)
+    return "Enter an amount with up to 13 integer digits and 2 decimal places.";
+
   if (data.transactionType === TXN_TYPE_ENUM.TRANSFER) {
     if (data.fromAccountId === data.toAccountId)
       return "From and To Accounts must be different.";

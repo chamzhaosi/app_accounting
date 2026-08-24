@@ -4,8 +4,9 @@ import { TextInput as RNTextInput, StyleSheet, View } from "react-native";
 import { TextInput, TextInputProps } from "react-native-paper";
 import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
+import { toAmountString, toBigAmount } from "../utils/amount";
 import AppText, { TextTypEnum } from "./AppText";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 type AppTextInputProps = TextInputProps & {
   errorField?: FieldError;
@@ -16,7 +17,23 @@ type AppTextInputProps = TextInputProps & {
 
 const formatFixedDecimalInput = (value: string) => {
   const digits = value.replace(/\D/g, "");
-  return (Number(digits || 0) / 100).toFixed(2);
+  return toBigAmount(digits).div(100).toFixed(2);
+};
+
+const formatAmountOnBlur = (value?: string) => {
+  try {
+    return toAmountString(value);
+  } catch {
+    return "0.00";
+  }
+};
+
+const isNonZeroAmount = (value?: string) => {
+  try {
+    return !toBigAmount(value).eq(0);
+  } catch {
+    return false;
+  }
 };
 
 const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
@@ -55,7 +72,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
           right={
             showClear &&
             value?.length &&
-            (!fixedDecimalInput || Number(value) !== 0) && (
+            (!fixedDecimalInput || isNonZeroAmount(value)) && (
               <TextInput.Icon
                 icon="close"
                 onPress={() => onChangeText?.(fixedDecimalInput ? "0.00" : "")}
@@ -68,8 +85,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
           error={!!errorField?.message}
           maxLength={maxLength}
           onBlur={(e) => {
-            const num = Number(value);
-            onChangeText?.(isNaN(num) ? "0.00" : num.toFixed(2));
+            onChangeText?.(formatAmountOnBlur(value));
             onBlur?.(e);
           }}
           onChangeText={(text) =>

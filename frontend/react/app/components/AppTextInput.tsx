@@ -6,7 +6,7 @@ import { useThemeStore } from "../stores/useThemeStore";
 import AppText, { TextTypEnum } from "./AppText";
 import AppView from "./AppView";
 import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/size";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;

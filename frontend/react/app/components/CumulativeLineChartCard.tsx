@@ -3,8 +3,12 @@ import { LineChart } from "react-native-gifted-charts";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../stores/useAmountPrivacyStore";
-import { MASKED_AMOUNT } from "../utils/number";
-import { useTranslation } from "../i18n";
+import {
+  formatAmount,
+  formatCompactAmount,
+  MASKED_AMOUNT,
+} from "../utils/number";
+import { useTranslation } from "../i18n/helper";
 
 export type CumulativeChartPoint = {
   value: number;
@@ -19,13 +23,6 @@ type CumulativeLineChartCardProps = {
   color: string;
   cardHeight: number;
   isLoading: boolean;
-};
-
-const formatAxisAmount = (amount: number) => {
-  const absoluteAmount = Math.abs(amount);
-  if (absoluteAmount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}m`;
-  if (absoluteAmount >= 1_000) return `${(amount / 1_000).toFixed(1)}k`;
-  return amount.toFixed(0);
 };
 
 const roundAxisValue = (value: number) => Math.ceil(value / 20) * 20;
@@ -128,7 +125,7 @@ export default function CumulativeLineChartCard({
           }}
           xAxisLabelsHeight={22}
           formatYLabel={(label) =>
-            areAmountsVisible ? formatAxisAmount(Number(label)) : MASKED_AMOUNT
+            areAmountsVisible ? formatCompactAmount(label) : MASKED_AMOUNT
           }
           pointerConfig={{
             pointerColor: color,
@@ -158,7 +155,7 @@ export default function CumulativeLineChartCard({
                   style={[styles.tooltipAmount, { color }]}
                 >
                   {areAmountsVisible
-                    ? (items[0]?.value ?? 0).toFixed(2)
+                    ? formatAmount(items[0]?.value ?? 0)
                     : MASKED_AMOUNT}
                 </Text>
               </View>

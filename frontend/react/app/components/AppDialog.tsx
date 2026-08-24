@@ -4,7 +4,7 @@ import { Dialog, Portal } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppText from "./AppText";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 type AppDialogProps = {
   title: string;

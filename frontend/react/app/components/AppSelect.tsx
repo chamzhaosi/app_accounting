@@ -22,7 +22,7 @@ import AppIcon, { AppIconProps } from "./AppIcon";
 import { FieldError } from "react-hook-form";
 import AppText, { TextTypEnum } from "./AppText";
 import AppDivider from "./AppDivider";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export type SelectOptionType = {
   id: number | string;

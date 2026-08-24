@@ -27,3 +27,15 @@ export const DIALOG_COMMON_BTN_PROPS = {
   },
   style: { borderRadius: 8 },
 };
+
+export const CATEGORY_REORDER_GRID = {
+  cardHeightOffset: 12,
+  columnCount: 3,
+  gap: 16,
+  horizontalMargin: 8,
+} as const;
+
+export const CATEGORY_REORDER_ICON_SIZE = 18;
+export const CATEGORY_REORDER_HEADER_ICON_SIZE = 20;
+export const CATEGORY_LIST_LOAD_MORE_THRESHOLD = 120;
+export const CATEGORY_LIST_SCROLL_EVENT_THROTTLE = 200;

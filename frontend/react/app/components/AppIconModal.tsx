@@ -6,7 +6,7 @@ import { AppIconProps } from "./AppIcon";
 import AppIconButton from "./AppIconButton";
 import AppListCardView, { AppListCardItemType } from "./AppListCardView";
 import AppText from "./AppText";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 const normalizeSearchTerm = (value: string) =>
   value.replace(/[^a-z0-9]/gi, "").toLowerCase();

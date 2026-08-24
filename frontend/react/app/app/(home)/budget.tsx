@@ -1,6 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
 import { Href, router } from "expo-router";
-import { useEffect, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -23,43 +21,35 @@ import AppIconButton from "../../components/AppIconButton";
 import AppMonthNavigator from "../../components/AppMonthNavigator";
 import AppSwipePager from "../../components/AppSwipePager";
 import AppView from "../../components/AppView";
-import { budgetQueryKeys } from "../../constants/queryKeys";
 import { BUDGET_SWIPE_CARD_HEIGHT } from "../../constants/size";
 import {
   BUDGET_CATEGORY_DETAIL_URL,
   BUDGET_MANAGEMENT_URL,
 } from "../../constants/urls";
-import { getBudgetOverview } from "../../sql/service/budgetService";
 import type { BudgetOverviewType } from "../../sql/types/budgetType";
+import { BUDGET_PIE_COLORS } from "../../hook/budget_management/budgetOverview.utils";
+import useBudgetExpenseDonutChart from "../../hook/budget_management/useBudgetExpenseDonutChart";
+import useBudgetOverview from "../../hook/budget_management/useBudgetOverview";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
-import { getMonthEndKey, getMonthKey } from "../../utils/date";
-import { DEBUG_TAG } from "../../utils/debugLog";
+import { absoluteAmount, compareAmounts } from "../../utils/amount";
+import { getMonthEndKey } from "../../utils/date";
 import { formatPrivateAmount, MASKED_AMOUNT } from "../../utils/number";
-import { useTranslation } from "../../i18n";
-import { getCategoryDisplayLabel } from "../../utils/category";
+import { useTranslation } from "../../i18n/helper";
+import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
 
 export default function Budget() {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
+
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const [month, setMonth] = useState(getMonthKey);
-  const isCurrentMonth = month === getMonthKey();
-  const query = useQuery({
-    queryKey: budgetQueryKeys.month(month),
-    queryFn: () => getBudgetOverview(month),
-  });
-
-  useEffect(() => {
-    if (query.error)
-      console.error(DEBUG_TAG.BUDGET, "Error when loading budget", query.error);
-  }, [query.error]);
+  const logic = useBudgetOverview(THEME);
 
   const openManagement = () => router.push(BUDGET_MANAGEMENT_URL as Href);
 
-  if (query.isLoading) {
+  if (logic.isLoading) {
     return (
       <AppView className="items-center justify-center">
         <ActivityIndicator size="large" />
@@ -67,7 +57,7 @@ export default function Budget() {
     );
   }
 
-  if (query.isError) {
+  if (logic.isError) {
     return (
       <AppView
         isSafe
@@ -81,14 +71,14 @@ export default function Budget() {
             { backgroundColor: THEME.surfaceContainer },
           ]}
         >
-          <AppMonthNavigator month={month} onChange={setMonth} />
+          <AppMonthNavigator month={logic.month} onChange={logic.setMonth} />
           <AppIcon name="CircleAlert" size={64} color={THEME.error} />
           <Text variant="headlineSmall" style={styles.emptyTitle}>
             {t("Unable to load budget")}
           </Text>
           <AppButton
             {...SUBMIT_BTN_CONTENT_STYLE}
-            onPress={() => void query.refetch()}
+            onPress={logic.onRetry}
             style={styles.emptyButton}
           >
             Retry
@@ -98,32 +88,7 @@ export default function Budget() {
     );
   }
 
-  const overview = query.data;
-  const overallProgress = overview
-    ? Math.min(overview.spentAmount / overview.budget.total_budget, 1)
-    : 0;
-  const overallColor = overview
-    ? getProgressColor(
-        overview.spentAmount / overview.budget.total_budget,
-        THEME,
-      )
-    : THEME.primary;
-  const expenseColorByCategoryId = new Map(
-    (overview
-      ? [...overview.categories]
-          .filter((category) => category.spent_amount > 0)
-          .sort(sortCategoriesBySpent)
-      : []
-    ).map((category, index, categories) => [
-      category.category_id,
-      PIE_COLORS[
-        (categories.length > 6 && index >= 5 ? 5 : index) % PIE_COLORS.length
-      ],
-    ]),
-  );
-  const orderedCategories = overview
-    ? [...overview.categories].sort(sortCategoriesByProgress)
-    : [];
+  const overview = logic.overview;
 
   return (
     <AppView
@@ -136,8 +101,8 @@ export default function Budget() {
           contentContainerStyle={styles.content}
           refreshControl={
             <RefreshControl
-              refreshing={query.isRefetching}
-              onRefresh={query.refetch}
+              refreshing={logic.isRefetching}
+              onRefresh={logic.onRefresh}
             />
           }
         >
@@ -148,7 +113,7 @@ export default function Budget() {
               { backgroundColor: THEME.surfaceContainer },
             ]}
           >
-            <AppMonthNavigator month={month} onChange={setMonth} />
+            <AppMonthNavigator month={logic.month} onChange={logic.setMonth} />
             <AppIcon
               name="HandCoins"
               size={72}
@@ -162,12 +127,12 @@ export default function Budget() {
               style={[styles.emptyText, { color: THEME.onSurfaceVariant }]}
             >
               {t(
-                isCurrentMonth
+                logic.isCurrentMonth
                   ? "Set a monthly total and allocate it across your expense categories."
                   : "Budgets follow the latest active plan when each new month begins.",
               )}
             </Text>
-            {isCurrentMonth && (
+            {logic.isCurrentMonth && (
               <AppButton
                 {...SUBMIT_BTN_CONTENT_STYLE}
                 onPress={openManagement}
@@ -188,7 +153,10 @@ export default function Budget() {
                 { backgroundColor: THEME.primaryContainer },
               ]}
             >
-              <AppMonthNavigator month={month} onChange={setMonth} />
+              <AppMonthNavigator
+                month={logic.month}
+                onChange={logic.setMonth}
+              />
               <View style={styles.titleRow}>
                 <View style={styles.flex}>
                   <Text variant="labelLarge">{t("Monthly budget")}</Text>
@@ -211,21 +179,21 @@ export default function Budget() {
                 )}
               </View>
               <ProgressBar
-                progress={overallProgress}
-                color={overallColor}
+                progress={logic.overallProgress}
+                color={logic.overallColor}
                 style={styles.overallProgress}
               />
               <View style={styles.statsRow}>
                 <Stat
                   label="Spent"
                   value={overview.spentAmount}
-                  color={overallColor}
+                  color={logic.overallColor}
                 />
                 <Stat
                   label={
                     overview.remainingAmount >= 0 ? "Remaining" : "Overspent"
                   }
-                  value={Math.abs(overview.remainingAmount)}
+                  value={absoluteAmount(overview.remainingAmount)}
                   color={
                     overview.remainingAmount < 0 ? THEME.error : THEME.primary
                   }
@@ -240,8 +208,8 @@ export default function Budget() {
             contentContainerStyle={styles.content}
             refreshControl={
               <RefreshControl
-                refreshing={query.isRefetching}
-                onRefresh={query.refetch}
+                refreshing={logic.isRefetching}
+                onRefresh={logic.onRefresh}
               />
             }
           >
@@ -272,7 +240,7 @@ export default function Budget() {
 
             <View style={styles.sectionHeader}>
               <Text variant="titleLarge">{t("Category progress")}</Text>
-              {isCurrentMonth && (
+              {logic.isCurrentMonth && (
                 <AppIconButton
                   iconName="Settings2"
                   accessibilityLabel={t("Manage budget")}
@@ -282,14 +250,7 @@ export default function Budget() {
               )}
             </View>
 
-            {orderedCategories.map((category) => {
-              const ratio = getCategoryProgressRatio(category);
-              const remaining =
-                category.allocated_amount - category.spent_amount;
-              const categoryColor =
-                expenseColorByCategoryId.get(category.category_id) ??
-                THEME.outline;
-              const progressLabel = getCategoryProgressLabel(category);
+            {logic.categories.map((category) => {
               return (
                 <TouchableOpacity
                   key={category.allocation_id}
@@ -298,8 +259,8 @@ export default function Budget() {
                       pathname: BUDGET_CATEGORY_DETAIL_URL,
                       params: {
                         id: category.category_id,
-                        startDate: month,
-                        endDate: getMonthEndKey(month),
+                        startDate: logic.month,
+                        endDate: getMonthEndKey(logic.month),
                       },
                     } as Href)
                   }
@@ -321,7 +282,7 @@ export default function Budget() {
                         <AppIcon
                           name={category.icon as AppIconProps["name"]}
                           size={22}
-                          color={categoryColor}
+                          color={category.color}
                         />
                       </View>
                       <View style={styles.flex}>
@@ -345,25 +306,34 @@ export default function Budget() {
                             category.allocated_amount,
                             areAmountsVisible,
                           )}{" "}
-                          · {t(progressLabel)}
+                          · {t(category.progressLabel)}
                         </Text>
                       </View>
                       <Text
                         variant="titleMedium"
                         style={{
-                          color: remaining < 0 ? THEME.error : categoryColor,
+                          color:
+                            compareAmounts(category.remainingAmount, 0) < 0
+                              ? THEME.error
+                              : category.color,
                         }}
                       >
                         {areAmountsVisible
-                          ? remaining >= 0
-                            ? formatPrivateAmount(remaining, true)
-                            : `-${formatPrivateAmount(-remaining, true)}`
+                          ? compareAmounts(category.remainingAmount, 0) >= 0
+                            ? formatPrivateAmount(
+                                category.remainingAmount,
+                                true,
+                              )
+                            : `-${formatPrivateAmount(
+                                absoluteAmount(category.remainingAmount),
+                                true,
+                              )}`
                           : MASKED_AMOUNT}
                       </Text>
                     </View>
                     <ProgressBar
-                      progress={Math.min(ratio, 1)}
-                      color={categoryColor}
+                      progress={Math.min(category.progressRatio, 1)}
+                      color={category.color}
                       style={styles.categoryProgress}
                     />
                   </Surface>
@@ -411,41 +381,6 @@ function Stat({
   );
 }
 
-const PIE_COLORS = [
-  "#006878",
-  "#C62828",
-  "#D99A00",
-  "#6A5ACD",
-  "#16803D",
-  "#D05A9B",
-  "#3F7CAC",
-  "#A05A2C",
-];
-
-type BudgetCategory = BudgetOverviewType["categories"][number];
-
-const sortCategoriesBySpent = (a: BudgetCategory, b: BudgetCategory) =>
-  b.spent_amount - a.spent_amount || a.label.localeCompare(b.label);
-
-const getCategoryProgressRatio = (category: BudgetCategory) => {
-  if (category.allocated_amount > 0)
-    return category.spent_amount / category.allocated_amount;
-  return category.spent_amount > 0 ? Number.POSITIVE_INFINITY : 0;
-};
-
-const sortCategoriesByProgress = (a: BudgetCategory, b: BudgetCategory) => {
-  const aRatio = getCategoryProgressRatio(a);
-  const bRatio = getCategoryProgressRatio(b);
-  if (aRatio === bRatio) return sortCategoriesBySpent(a, b);
-  return bRatio - aRatio;
-};
-
-const getCategoryProgressLabel = (category: BudgetCategory) => {
-  if (category.allocated_amount <= 0)
-    return category.spent_amount > 0 ? "Unbudgeted" : "0.0%";
-  return `${(getCategoryProgressRatio(category) * 100).toFixed(1)}%`;
-};
-
 function BudgetExpenseDonutChart({
   overview,
 }: {
@@ -456,35 +391,7 @@ function BudgetExpenseDonutChart({
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const categories = overview.categories
-    .filter((category) => category.spent_amount > 0)
-    .sort(sortCategoriesBySpent);
-  const chartCategories =
-    categories.length <= 6
-      ? categories
-      : [
-          ...categories.slice(0, 5),
-          {
-            label: "Other",
-            spent_amount: categories
-              .slice(5)
-              .reduce((sum, category) => sum + category.spent_amount, 0),
-          },
-        ];
-  const activeIndex = Math.min(
-    selectedIndex,
-    Math.max(chartCategories.length - 1, 0),
-  );
-  const selectedCategory = chartCategories[activeIndex];
-  const selectedPercentage =
-    selectedCategory && overview.spentAmount
-      ? (selectedCategory.spent_amount / overview.spentAmount) * 100
-      : 0;
-  const pieData = chartCategories.map((category, index) => ({
-    value: category.spent_amount,
-    color: PIE_COLORS[index % PIE_COLORS.length],
-  }));
+  const logic = useBudgetExpenseDonutChart(overview);
 
   return (
     <Surface
@@ -497,17 +404,19 @@ function BudgetExpenseDonutChart({
       <Text variant="titleMedium" style={styles.expenseDonutTitle}>
         {t("Expense breakdown")}
       </Text>
-      {chartCategories.length ? (
+      {logic.chartCategories.length ? (
         <View style={styles.expenseDonutContent}>
           <PieChart
-            data={pieData}
+            data={logic.pieData}
             donut
             radius={68}
             innerRadius={44}
             innerCircleColor={THEME.surfaceContainerHigh}
             strokeWidth={2}
             strokeColor={THEME.surfaceContainerHigh}
-            onPress={(_: unknown, index: number) => setSelectedIndex(index)}
+            onPress={(_: unknown, index: number) =>
+              logic.setSelectedIndex(index)
+            }
             isAnimated
             centerLabelComponent={() => (
               <View style={styles.expenseDonutCenter}>
@@ -523,7 +432,7 @@ function BudgetExpenseDonutChart({
               </View>
             )}
           />
-          {selectedCategory && (
+          {logic.selectedCategory && (
             <View
               style={[
                 styles.expenseDonutSelection,
@@ -535,25 +444,27 @@ function BudgetExpenseDonutChart({
                   styles.expenseDonutDot,
                   {
                     backgroundColor:
-                      PIE_COLORS[activeIndex % PIE_COLORS.length],
+                      BUDGET_PIE_COLORS[
+                        logic.activeIndex % BUDGET_PIE_COLORS.length
+                      ],
                   },
                 ]}
               />
               <Text variant="labelMedium" numberOfLines={1} style={styles.flex}>
-                {"category_id" in selectedCategory
+                {"category_id" in logic.selectedCategory
                   ? getCategoryDisplayLabel(
-                      selectedCategory.label,
-                      selectedCategory.translation_key,
+                      logic.selectedCategory.label,
+                      logic.selectedCategory.translation_key,
                       t,
                     )
-                  : t(selectedCategory.label)}
+                  : t(logic.selectedCategory.label)}
               </Text>
               <Text variant="labelMedium" style={styles.expenseDonutAmount}>
                 {formatPrivateAmount(
-                  selectedCategory.spent_amount,
+                  logic.selectedCategory.spent_amount,
                   areAmountsVisible,
                 )}{" "}
-                · {selectedPercentage.toFixed(1)}%
+                · {logic.selectedPercentage.toFixed(1)}%
               </Text>
             </View>
           )}
@@ -567,15 +478,6 @@ function BudgetExpenseDonutChart({
       )}
     </Surface>
   );
-}
-
-function getProgressColor(
-  ratio: number,
-  theme: { primary: string; warning: string; error: string },
-) {
-  if (ratio >= 1) return theme.error;
-  if (ratio >= 0.8) return theme.warning;
-  return theme.primary;
 }
 
 const styles = StyleSheet.create({

@@ -20,7 +20,7 @@ import {
   setStoredItem,
 } from "../../local/secureStore";
 import { APP_PIN_SETUP_URL } from "../../constants/urls";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function Security() {
   const { t } = useTranslation();

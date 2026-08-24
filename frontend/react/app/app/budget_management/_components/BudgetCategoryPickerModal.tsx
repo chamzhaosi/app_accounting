@@ -4,8 +4,8 @@ import AppEmpty from "../../../components/AppEmpty";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
 import type { BudgetManageCategoryType } from "../../../sql/types/budgetType";
 import { useThemeStore } from "../../../stores/useThemeStore";
-import { useTranslation } from "../../../i18n";
-import { getCategoryDisplayLabel } from "../../../utils/category";
+import { useTranslation } from "../../../i18n/helper";
+import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
 
 type BudgetCategoryPickerModalProps = {
   categories: BudgetManageCategoryType[];
@@ -83,8 +83,9 @@ export default function BudgetCategoryPickerModal({
 const styles = StyleSheet.create({
   container: {
     alignSelf: "center",
-    borderRadius: 16,
+    borderRadius: 10,
     overflow: "hidden",
+    paddingBottom: 8,
   },
   emptyContent: { flexGrow: 1, justifyContent: "center" },
   header: {
@@ -96,6 +97,6 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 8,
+    marginInline: 8,
   },
 });

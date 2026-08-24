@@ -16,7 +16,7 @@ import {
   LABEL_MAX_LEN,
 } from "../../../forms/schemas/category_management.schema";
 import type { CategoryManagementFormType } from "../../../forms/schemas/category_management.schema";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 type Props = {
   control: Control<CategoryManagementFormType>;

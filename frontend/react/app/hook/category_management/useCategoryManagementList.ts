@@ -19,12 +19,25 @@ import {
   reorderCategoryMgmt,
 } from "../../sql/service/categoryMgmtService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { getCategoryOrderIds } from "./categoryManagementList.utils";
-import { useTranslation } from "../../i18n";
 import {
   getCategoryDisplayDescription,
   getCategoryDisplayLabel,
-} from "../../utils/category";
+  getCategoryOrderIds,
+} from "./categoryManagementList.utils";
+import { useTranslation } from "../../i18n/helper";
+import type { Route } from "react-native-tab-view";
+
+export type CategoryManagementTabRoute = Route & {
+  key: "inc" | "exp";
+  title: string;
+  typeId: number;
+};
+
+export type TxnTypeTabViewProps = {
+  isAdjusting: boolean;
+  onAdjustingChange: (isAdjusting: boolean) => void;
+  typeId: number;
+};
 
 export default function useCategoryManagementList(typeId: number) {
   const queryClient = useQueryClient();

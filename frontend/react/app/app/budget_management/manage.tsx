@@ -1,9 +1,5 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
-import { Keyboard, StyleSheet, View } from "react-native";
+import { Controller } from "react-hook-form";
+import { StyleSheet, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { ActivityIndicator, Surface, Switch, Text } from "react-native-paper";
 import AppAmtInput from "../../components/AppAmtInput";
@@ -15,144 +11,43 @@ import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import AppIconButton from "../../components/AppIconButton";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppView from "../../components/AppView";
-import { budgetQueryKeys, invalidateQuery } from "../../constants/queryKeys";
-import {
-  budgetManagementFormDefaultValues,
-  budgetManagementFormSchema,
-  BudgetManagementFormType,
-} from "../../forms/schemas/budget_management.schema";
-import {
-  getBudgetManagement,
-  saveBudget,
-} from "../../sql/service/budgetService";
-import { AppToast } from "../../components/AppToast";
+import useBudgetManagement from "../../hook/budget_management/useBudgetManagement";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
-import { getMonthKey } from "../../utils/date";
-import { DEBUG_TAG } from "../../utils/debugLog";
+import { absoluteAmount, AMOUNT_MAX_LENGTH } from "../../utils/amount";
 import { formatPrivateAmount } from "../../utils/number";
 import BudgetCategoryPickerModal from "./_components/BudgetCategoryPickerModal";
-import { useTranslation } from "../../i18n";
-import { getCategoryDisplayLabel } from "../../utils/category";
-
-const AMOUNT_MAX_LENGTH = 11;
+import { useTranslation } from "../../i18n/helper";
+import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
 
 export default function BudgetManagement() {
-  const month = getMonthKey();
-  const [allocations, setAllocations] = useState<Record<string, string>>({});
-  const [isCategoryPickerVisible, setIsCategoryPickerVisible] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [rspErrorMsg, setRspErrorMsg] = useState("");
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const query = useQuery({
-    queryKey: budgetQueryKeys.management(month),
-    queryFn: () => getBudgetManagement(month),
-  });
   const {
+    allocatedAmount,
+    allocationDifference,
+    allocations,
+    availableCategories,
     control,
     handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<BudgetManagementFormType>({
-    resolver: zodResolver(budgetManagementFormSchema),
-    mode: "onChange",
-    defaultValues: budgetManagementFormDefaultValues,
-  });
-  const totalBudgetInput = useWatch({ control, name: "totalBudget" });
+    hasCategories,
+    isCategoryPickerVisible,
+    isError,
+    isLoading,
+    isSaving,
+    onAllocationChange,
+    onDismissCategoryPicker,
+    onOpenCategoryPicker,
+    onRemoveAllocation,
+    onRetry,
+    onSelectCategory,
+    onSubmit,
+    rspErrorMsg,
+    selectedCategories,
+    errors,
+  } = useBudgetManagement();
 
-  useEffect(() => {
-    if (!query.data) return;
-    reset({
-      totalBudget: query.data.budget
-        ? query.data.budget.total_budget.toFixed(2)
-        : "0.00",
-      isActive: query.data.budget?.is_active ?? true,
-    });
-    setAllocations(
-      Object.fromEntries(
-        query.data.categories
-          .filter((category) => category.amount > 0)
-          .map((category) => [
-            category.category_id,
-            category.amount.toFixed(2),
-          ]),
-      ),
-    );
-  }, [query.data, reset]);
-
-  useEffect(() => {
-    if (query.error)
-      console.error(
-        DEBUG_TAG.BUDGET,
-        "Error when loading budget management",
-        query.error,
-      );
-  }, [query.error]);
-
-  const allocatedAmount = useMemo(
-    () =>
-      Object.values(allocations).reduce(
-        (total, value) => total + (Number(value) || 0),
-        0,
-      ),
-    [allocations],
-  );
-  const selectedCategories = useMemo(
-    () =>
-      query.data?.categories.filter((category) =>
-        Object.prototype.hasOwnProperty.call(allocations, category.category_id),
-      ) ?? [],
-    [allocations, query.data?.categories],
-  );
-  const availableCategories = useMemo(
-    () =>
-      query.data?.categories.filter(
-        (category) =>
-          !Object.prototype.hasOwnProperty.call(
-            allocations,
-            category.category_id,
-          ),
-      ) ?? [],
-    [allocations, query.data?.categories],
-  );
-
-  const onSubmit = async (value: BudgetManagementFormType) => {
-    try {
-      Keyboard.dismiss();
-      setIsSaving(true);
-      setRspErrorMsg("");
-      const errMsg = await saveBudget({
-        month,
-        totalBudget: Number(value.totalBudget),
-        isActive: value.isActive,
-        allocations: Object.entries(allocations).map(
-          ([categoryId, amount]) => ({
-            categoryId,
-            amount: Number(amount) || 0,
-          }),
-        ),
-      });
-      if (errMsg) {
-        setRspErrorMsg(errMsg);
-        return;
-      }
-      await Promise.all([
-        invalidateQuery(queryClient, budgetQueryKeys.months()),
-        invalidateQuery(queryClient, budgetQueryKeys.management(month)),
-      ]);
-      AppToast.success({ message: "Budget saved successfully" });
-      router.back();
-    } catch (e) {
-      console.error(DEBUG_TAG.BUDGET, "Error when saving budget", e);
-      AppToast.error({ message: "Unable to save budget" });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (query.isLoading) {
+  if (isLoading) {
     return (
       <AppView className="items-center justify-center">
         <ActivityIndicator size="large" />
@@ -160,7 +55,7 @@ export default function BudgetManagement() {
     );
   }
 
-  if (query.isError) {
+  if (isError) {
     return (
       <AppView className="items-center justify-center p-6">
         <AppIcon name="CircleAlert" size={64} color={THEME.error} />
@@ -169,7 +64,7 @@ export default function BudgetManagement() {
         </Text>
         <AppButton
           {...SUBMIT_BTN_CONTENT_STYLE}
-          onPress={() => void query.refetch()}
+          onPress={onRetry}
           style={styles.retryButton}
         >
           Retry
@@ -178,22 +73,13 @@ export default function BudgetManagement() {
     );
   }
 
-  const totalBudgetValue = Number(totalBudgetInput) || 0;
-  const allocationDifference = totalBudgetValue - allocatedAmount;
-
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
       <BudgetCategoryPickerModal
         categories={availableCategories}
         visible={isCategoryPickerVisible}
-        onDismiss={() => setIsCategoryPickerVisible(false)}
-        onSelect={(category) => {
-          setAllocations((current) => ({
-            ...current,
-            [category.category_id]: "0.00",
-          }));
-          setIsCategoryPickerVisible(false);
-        }}
+        onDismiss={onDismissCategoryPicker}
+        onSelect={onSelectCategory}
       />
       <KeyboardAwareScrollView
         contentContainerStyle={styles.content}
@@ -257,7 +143,7 @@ export default function BudgetManagement() {
           <SummaryValue label="Allocated" value={allocatedAmount} />
           <SummaryValue
             label={allocationDifference >= 0 ? "Unallocated" : "Overallocated"}
-            value={Math.abs(allocationDifference)}
+            value={absoluteAmount(allocationDifference)}
             color={allocationDifference < 0 ? THEME.error : THEME.primary}
           />
         </Surface>
@@ -296,10 +182,7 @@ export default function BudgetManagement() {
               keyboardType="number-pad"
               value={allocations[category.category_id] ?? "0.00"}
               onChangeText={(text) =>
-                setAllocations((current) => ({
-                  ...current,
-                  [category.category_id]: text,
-                }))
+                onAllocationChange(category.category_id, text)
               }
               editable={!isSaving}
               fixedDecimalInput
@@ -317,19 +200,13 @@ export default function BudgetManagement() {
                 ),
               })}
               disabled={isSaving}
-              onPress={() =>
-                setAllocations((current) => {
-                  const next = { ...current };
-                  delete next[category.category_id];
-                  return next;
-                })
-              }
+              onPress={() => onRemoveAllocation(category.category_id)}
               style={styles.removeButton}
             />
           </Surface>
         ))}
 
-        {selectedCategories.length === 0 && query.data?.categories.length ? (
+        {selectedCategories.length === 0 && hasCategories ? (
           <Text
             variant="bodyMedium"
             style={[
@@ -342,13 +219,13 @@ export default function BudgetManagement() {
             )}
           </Text>
         ) : null}
-        {query.data?.categories.length ? (
+        {hasCategories ? (
           <AppButton
             {...SUBMIT_BTN_CONTENT_STYLE}
             variant={ButtonType.SECONDARY}
             icon="plus"
             disabled={isSaving || availableCategories.length === 0}
-            onPress={() => setIsCategoryPickerVisible(true)}
+            onPress={onOpenCategoryPicker}
             style={styles.addCategoryButton}
           >
             {availableCategories.length === 0
@@ -356,7 +233,7 @@ export default function BudgetManagement() {
               : "Add Category"}
           </AppButton>
         ) : null}
-        {query.data?.categories.length === 0 && (
+        {!hasCategories && (
           <AppText type={TextTypEnum.ERROR}>
             Create an active expense category before setting allocations.
           </AppText>

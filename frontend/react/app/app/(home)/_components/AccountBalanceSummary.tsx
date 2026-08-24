@@ -15,7 +15,7 @@ import useAccountBalanceSummary from "../../../hook/dashboard/useAccountBalanceS
 import useAmountPrivacyToggle from "../../../hook/security/useAmountPrivacyToggle";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { formatPrivateAmount } from "../../../utils/number";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 type AccountBalanceSummaryProps = {
   dateRange: AppDateRangeValue;

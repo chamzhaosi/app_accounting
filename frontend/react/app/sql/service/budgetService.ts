@@ -14,6 +14,13 @@ import type {
   BudgetOverviewType,
   BudgetSaveReqType,
 } from "../types/budgetType";
+import {
+  absoluteAmount,
+  compareAmounts,
+  isValidAmount,
+  subtractAmounts,
+  sumAmounts,
+} from "../../utils/amount";
 import { getMonthEndKey, getMonthKey } from "../../utils/date";
 
 const getBudgetWithCurrentMonthRollover = async (month: string) => {
@@ -43,20 +50,28 @@ export const getBudgetOverview = async (
   if (!budget) return null;
 
   const categories = await getBudgetCategoryProgressFromDB(budget.id, month);
-  const allocatedAmount = categories.reduce(
-    (total, item) => total + item.allocated_amount,
-    0,
+  const allocatedAmount = sumAmounts(
+    categories.map((item) => item.allocated_amount),
   );
   const spentAmount = await getMonthExpenseTotalFromDB(month);
+  const remainingAmount = subtractAmounts(budget.total_budget, spentAmount);
+  const allocationDifference = subtractAmounts(
+    budget.total_budget,
+    allocatedAmount,
+  );
 
   return {
     budget,
     categories,
     allocatedAmount,
     spentAmount,
-    remainingAmount: budget.total_budget - spentAmount,
-    unallocatedAmount: Math.max(budget.total_budget - allocatedAmount, 0),
-    overallocatedAmount: Math.max(allocatedAmount - budget.total_budget, 0),
+    remainingAmount,
+    unallocatedAmount:
+      compareAmounts(allocationDifference, 0) > 0 ? allocationDifference : 0,
+    overallocatedAmount:
+      compareAmounts(allocationDifference, 0) < 0
+        ? absoluteAmount(allocationDifference)
+        : 0,
   };
 };
 
@@ -71,21 +86,20 @@ export const getBudgetManagement = async (
 export const saveBudget = async (
   data: BudgetSaveReqType,
 ): Promise<string | void> => {
-  if (!Number.isFinite(data.totalBudget) || data.totalBudget <= 0)
+  if (
+    !isValidAmount(data.totalBudget) ||
+    compareAmounts(data.totalBudget, 0) <= 0
+  )
     return "Total budget must be greater than zero.";
 
-  if (
-    data.allocations.some(
-      (item) => !Number.isFinite(item.amount) || item.amount < 0,
-    )
-  )
-    return "Category allocations cannot be negative.";
+  if (data.allocations.some((item) => !isValidAmount(item.amount)))
+    return "Enter allocations with up to 13 integer digits and 2 decimal places.";
 
-  if (data.allocations.some((item) => item.amount === 0))
+  if (data.allocations.some((item) => compareAmounts(item.amount, 0) === 0))
     return "Enter an amount greater than zero for every selected category.";
 
   const positiveAllocations = data.allocations.filter(
-    (item) => item.amount > 0,
+    (item) => compareAmounts(item.amount, 0) > 0,
   );
 
   const categoryIds = positiveAllocations.map((item) => item.categoryId);

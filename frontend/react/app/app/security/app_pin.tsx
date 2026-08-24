@@ -28,7 +28,7 @@ import {
   PIN_PATTERN_LOCK_KEY,
   setStoredItem,
 } from "../../local/secureStore";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function AppPin() {
   const { t } = useTranslation();

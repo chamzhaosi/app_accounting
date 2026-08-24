@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { IconButton, Text } from "react-native-paper";
 import { formatMonthLabel, shiftMonth } from "../utils/date";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 type AppMonthNavigatorProps = {
   month: string;

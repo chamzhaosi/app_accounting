@@ -17,51 +17,13 @@ import useTransactionManagementList from "../../hook/transaction_management/useT
 import type { TransactionManagementListProps } from "../../hook/transaction_management/useTransactionManagementList";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
+import { compareAmounts } from "../../utils/amount";
 import {
   formatPrivateAbsoluteAmount,
   formatPrivateSignedAmount,
 } from "../../utils/number";
-import { useTranslation } from "../../i18n";
-import { formatLocalizedDateLabel } from "../../utils/date";
-
-const formatDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const formatSectionDate = (
-  dateValue: string,
-  locale: string,
-  t: (text: string) => string,
-) => {
-  const date = new Date(`${dateValue}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return dateValue;
-
-  const today = new Date();
-  const yesterday = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate() - 1,
-  );
-  const includeYear = date.getFullYear() !== today.getFullYear();
-  const calendarDate = formatLocalizedDateLabel(date, locale, {
-    includeYear,
-  });
-
-  if (dateValue === formatDateKey(today)) {
-    return `${t("Today")} · ${calendarDate}`;
-  }
-  if (dateValue === formatDateKey(yesterday)) {
-    return `${t("Yesterday")} · ${calendarDate}`;
-  }
-
-  return formatLocalizedDateLabel(date, locale, {
-    includeWeekday: true,
-    includeYear,
-  });
-};
+import { useTranslation } from "../../i18n/helper";
+import { formatSectionDate } from "../../utils/date";
 
 export default function TransactionManagementList(
   props: TransactionManagementListProps,
@@ -72,6 +34,7 @@ export default function TransactionManagementList(
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+
   const {
     isFetchingNextPage,
     isLoading,
@@ -169,8 +132,8 @@ export default function TransactionManagementList(
       }}
       renderItem={({ item }) => {
         const isAdjustment = item.transactionType === TXN_TYPE_ENUM.ADJUSTMENT;
-        const isPositiveEffect = item.balanceEffect > 0;
-        const isNegativeEffect = item.balanceEffect < 0;
+        const isPositiveEffect = compareAmounts(item.balanceEffect, 0) > 0;
+        const isNegativeEffect = compareAmounts(item.balanceEffect, 0) < 0;
         const amountColor = isNegativeEffect
           ? THEME.error
           : isPositiveEffect

@@ -42,11 +42,11 @@ import {
 } from "../../sql/service/categoryMgmtService";
 import { createNewTransactionMgmt } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 import {
   getCategoryDisplayDescription,
   getCategoryDisplayLabel,
-} from "../../utils/category";
+} from "../category_management/categoryManagementList.utils";
 
 export default function useTransactionManagementCreate() {
   const { t } = useTranslation();
