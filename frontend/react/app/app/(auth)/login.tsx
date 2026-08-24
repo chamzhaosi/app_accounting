@@ -19,9 +19,11 @@ import {
 } from "../../forms/schemas/auth/login.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { OTP_URL } from "../../constants/urls";
+import { useTranslation } from "../../i18n";
 
 export default function Loign() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
@@ -59,7 +61,7 @@ export default function Loign() {
     <AppScrollView className="pt-8 rounded-t-[50]">
       <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
-          SIGN IN
+          {t("SIGN IN")}
         </AppText>
 
         <AppSpacer />
@@ -111,7 +113,7 @@ export default function Loign() {
 
         <Link href={"/(auth)/forget_password"} style={{ marginBlock: 12 }}>
           <AppText style={{ color: THEME.outline }}>
-            {"Forget Your Password?"}
+            {t("Forget Your Password?")}
           </AppText>
         </Link>
 
@@ -135,9 +137,9 @@ export default function Loign() {
         <AppSpacer height={20} />
 
         <View className="w-full justify-center items-center flex flex-row">
-          <AppText>{"Don't have an account yet?"}</AppText>
+          <AppText>{t("Don't have an account yet?")}</AppText>
           <Link href={"/(auth)/register"} style={{ marginStart: 8 }}>
-            <AppText type={TextTypEnum.LINK}>{"Sign Up"}</AppText>
+            <AppText type={TextTypEnum.LINK}>{t("Sign Up")}</AppText>
           </Link>
         </View>
       </AppView>

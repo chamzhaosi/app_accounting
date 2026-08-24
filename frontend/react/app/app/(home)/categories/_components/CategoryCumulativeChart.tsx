@@ -9,6 +9,8 @@ import { CATEGORY_DETAIL_CARD_HEIGHT } from "../../../../constants/size";
 import { getCategoryDailyTotals } from "../../../../sql/service/transactionMgmtService";
 import { useThemeStore } from "../../../../stores/useThemeStore";
 import { DEBUG_TAG } from "../../../../utils/debugLog";
+import { useTranslation } from "../../../../i18n";
+import { formatLocalizedDateLabel } from "../../../../utils/date";
 
 type CategoryCumulativeChartProps = {
   categoryId: string;
@@ -24,6 +26,7 @@ export default function CategoryCumulativeChart({
   endDate,
 }: CategoryCumulativeChartProps) {
   const { THEME } = useThemeStore();
+  const { locale } = useTranslation();
   const query = useQuery({
     queryKey: transactionManagementQueryKeys.categoryDailyTotal({
       categoryId,
@@ -61,10 +64,10 @@ export default function CategoryCumulativeChart({
           index % labelInterval === 0 || index === days - 1
             ? date.format("D/M")
             : "",
-        date: date.format("D MMM YYYY"),
+        date: formatLocalizedDateLabel(date.toDate(), locale),
       };
     });
-  }, [endDate, query.data, startDate]);
+  }, [endDate, locale, query.data, startDate]);
 
   const isIncome = typeId === 1;
   return (

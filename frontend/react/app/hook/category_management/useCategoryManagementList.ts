@@ -20,9 +20,15 @@ import {
 } from "../../sql/service/categoryMgmtService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { getCategoryOrderIds } from "./categoryManagementList.utils";
+import { useTranslation } from "../../i18n";
+import {
+  getCategoryDisplayDescription,
+  getCategoryDisplayLabel,
+} from "../../utils/category";
 
 export default function useCategoryManagementList(typeId: number) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const query = useInfiniteQuery({
     queryKey: categoryManagementQueryKeys.list({
       typeId,
@@ -36,14 +42,22 @@ export default function useCategoryManagementList(typeId: number) {
   });
   const queriedCategoryItems = useMemo<AppListCardItemType[]>(
     () =>
-      query.data?.pages.flat().map((item) => ({
-        id: item.id,
-        icon: item.icon as AppIconProps["name"],
-        label: item.label,
-        description: item.descriptions ?? undefined,
-        isEditable: !Boolean(item.is_system),
-      })) ?? [],
-    [query.data],
+      query.data?.pages.flat().map((item) => {
+        const translationKey = item.translation_key;
+
+        return {
+          id: item.id,
+          icon: item.icon as AppIconProps["name"],
+          label: getCategoryDisplayLabel(item.label, translationKey, t),
+          description: getCategoryDisplayDescription(
+            item.descriptions,
+            translationKey,
+            t,
+          ),
+          isEditable: !Boolean(item.is_system),
+        };
+      }) ?? [],
+    [query.data, t],
   );
   const [categoryItems, setCategoryItems] = useState<AppListCardItemType[]>([]);
   const hasOrderChanges = useMemo(

@@ -9,8 +9,10 @@ import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { ACCOUNT_TYPE_DETAIL_URL } from "../../constants/urls";
 import { getAccTypeList } from "../../sql/service/accTypeService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
 
 export default function useAccountTypeList() {
+  const { t } = useTranslation();
   const {
     data,
     error,
@@ -32,11 +34,11 @@ export default function useAccountTypeList() {
     () =>
       data?.pages.flat().map((item) => ({
         id: item.id,
-        label: item.label,
+        label: item.is_system ? t(item.label) : item.label,
         icon: item.icon as AppIconProps["name"],
         isEditable: !Boolean(item.is_system),
       })) ?? [],
-    [data],
+    [data, t],
   );
 
   useEffect(() => {

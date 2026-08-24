@@ -7,6 +7,8 @@ import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { getTransactionMgmtList } from "../../sql/service/transactionMgmtService";
 import { capitalizeFirst } from "../../utils/text";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
+import { getCategoryDisplayLabel } from "../../utils/category";
 
 export type TransactionManagementListProps = {
   startDate: string;
@@ -41,6 +43,7 @@ export default function useTransactionManagementList({
   accountId,
   categoryId,
 }: TransactionManagementListProps) {
+  const { t } = useTranslation();
   const {
     data,
     error,
@@ -96,17 +99,30 @@ export default function useTransactionManagementList({
             : transaction.amount;
       const title =
         isIncome || isExpense
-          ? (transaction.category_label ??
-            capitalizeFirst(transaction.transaction_type))
+          ? getCategoryDisplayLabel(
+              transaction.category_label ??
+                capitalizeFirst(transaction.transaction_type),
+              transaction.category_translation_key,
+              t,
+            )
           : isTransfer
-            ? "Transfer"
-            : "Balance Adjustment";
+            ? t("Transfer")
+            : t("Balance Adjustment");
       const subtitle =
         isIncome || isExpense
-          ? `${transaction.account_label ?? "Account"} · ${capitalizeFirst(transaction.transaction_type)}`
+          ? `${transaction.account_label ?? t("Account")} · ${t(
+              capitalizeFirst(transaction.transaction_type),
+            )}`
           : isTransfer
             ? `${transaction.from_account_label ?? "Account"} → ${transaction.to_account_label ?? "Account"}`
-            : `${transaction.account_label ?? "Account"} · Balance ${transaction.amount > 0 ? "increased" : "decreased"}`;
+            : `${transaction.account_label ?? t("Account")} · ${t(
+                "Balance {{direction}}",
+                {
+                  direction: t(
+                    transaction.amount > 0 ? "increased" : "decreased",
+                  ),
+                },
+              )}`;
       const item: TransactionListItem = {
         id: transaction.id,
         icon: (transaction.category_icon ??
@@ -116,10 +132,10 @@ export default function useTransactionManagementList({
         title,
         subtitle,
         fromAccountLabel: isTransfer
-          ? (transaction.from_account_label ?? "Account")
+          ? (transaction.from_account_label ?? t("Account"))
           : undefined,
         toAccountLabel: isTransfer
-          ? (transaction.to_account_label ?? "Account")
+          ? (transaction.to_account_label ?? t("Account"))
           : undefined,
         accountId: transaction.account_id ?? undefined,
         amount: transaction.amount,
@@ -137,7 +153,7 @@ export default function useTransactionManagementList({
       netTotal: items.reduce((total, item) => total + item.balanceEffect, 0),
       data: items,
     }));
-  }, [accountId, data]);
+  }, [accountId, data, t]);
 
   useEffect(() => {
     if (!error) return;

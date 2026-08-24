@@ -42,8 +42,14 @@ import {
 } from "../../sql/service/categoryMgmtService";
 import { createNewTransactionMgmt } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
+import {
+  getCategoryDisplayDescription,
+  getCategoryDisplayLabel,
+} from "../../utils/category";
 
 export default function useTransactionManagementCreate() {
+  const { t } = useTranslation();
   const {
     accountId: initialAccountId,
     categoryId: initialCategoryId,
@@ -141,8 +147,16 @@ export default function useTransactionManagementCreate() {
       categories?.pages.flat().map((category) => ({
         id: category.id.toString(),
         icon: category.icon as AppIconProps["name"],
-        label: category.label,
-        description: category.descriptions ?? undefined,
+        label: getCategoryDisplayLabel(
+          category.label,
+          category.translation_key,
+          t,
+        ),
+        description: getCategoryDisplayDescription(
+          category.descriptions,
+          category.translation_key,
+          t,
+        ),
       })) ?? [];
 
     if (
@@ -157,12 +171,20 @@ export default function useTransactionManagementCreate() {
       {
         id: initialCategory.id,
         icon: initialCategory.icon as AppIconProps["name"],
-        label: initialCategory.label,
-        description: initialCategory.descriptions ?? undefined,
+        label: getCategoryDisplayLabel(
+          initialCategory.label,
+          initialCategory.translation_key,
+          t,
+        ),
+        description: getCategoryDisplayDescription(
+          initialCategory.descriptions,
+          initialCategory.translation_key,
+          t,
+        ),
       },
       ...items,
     ];
-  }, [categories, categoryTypeId, initialCategory]);
+  }, [categories, categoryTypeId, initialCategory, t]);
 
   const accountItems = useMemo<AccountPickerItemType[]>(
     () =>

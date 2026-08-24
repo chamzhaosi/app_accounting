@@ -9,6 +9,8 @@ import { ACCOUNT_DETAIL_CARD_HEIGHT } from "../../../../constants/size";
 import { getAccountDailyBalanceChanges } from "../../../../sql/service/transactionMgmtService";
 import { useThemeStore } from "../../../../stores/useThemeStore";
 import { DEBUG_TAG } from "../../../../utils/debugLog";
+import { useTranslation } from "../../../../i18n";
+import { formatLocalizedDateLabel } from "../../../../utils/date";
 
 type AccountBalanceHistoryChartProps = {
   accountId: string;
@@ -26,6 +28,7 @@ export default function AccountBalanceHistoryChart({
   isForwardBalanceLoading,
 }: AccountBalanceHistoryChartProps) {
   const { THEME } = useThemeStore();
+  const { locale } = useTranslation();
   const query = useQuery({
     queryKey: transactionManagementQueryKeys.accountDailyBalance({
       accountId,
@@ -63,10 +66,10 @@ export default function AccountBalanceHistoryChart({
           index % labelInterval === 0 || index === days - 1
             ? date.format("D/M")
             : "",
-        date: date.format("D MMM YYYY"),
+        date: formatLocalizedDateLabel(date.toDate(), locale),
       };
     });
-  }, [endDate, forwardBalance, query.data, startDate]);
+  }, [endDate, forwardBalance, locale, query.data, startDate]);
 
   return (
     <CumulativeLineChartCard

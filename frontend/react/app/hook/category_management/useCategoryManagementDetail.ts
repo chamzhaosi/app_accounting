@@ -19,10 +19,16 @@ import {
   updateCategoryMgmt,
 } from "../../sql/service/categoryMgmtService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
+import {
+  getCategoryDisplayDescription,
+  getCategoryDisplayLabel,
+} from "../../utils/category";
 
 export default function useCategoryManagementDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [rspErrorMsg, setRspErrorMsg] = useState("");
@@ -33,13 +39,18 @@ export default function useCategoryManagementDetail() {
     queryFn: () => getCategoryMgmtById(id),
     enabled: Boolean(id),
   });
-  const { control, handleSubmit, reset, setFocus } =
-    useForm<CategoryManagementFormType>({
-      resolver: zodResolver(categoryManagementFormSchema),
-      mode: "onChange",
-      reValidateMode: "onChange",
-      defaultValues: categoryManagementFormDefaultValues,
-    });
+  const {
+    control,
+    formState: { dirtyFields },
+    handleSubmit,
+    reset,
+    setFocus,
+  } = useForm<CategoryManagementFormType>({
+    resolver: zodResolver(categoryManagementFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    defaultValues: categoryManagementFormDefaultValues,
+  });
 
   const onDelete = async () => {
     try {
@@ -76,7 +87,17 @@ export default function useCategoryManagementDetail() {
     }
   };
   const onSubmit = async (value: CategoryManagementFormType) => {
-    const data = { ...value, id, descriptions: value.descriptions?.trim() };
+    const isLabelCustomized = Boolean(dirtyFields.label);
+    const data = {
+      ...value,
+      id,
+      label: isLabelCustomized || !query.data ? value.label : query.data.label,
+      descriptions:
+        dirtyFields.descriptions || !query.data
+          ? value.descriptions?.trim()
+          : (query.data.descriptions ?? undefined),
+      isLabelCustomized,
+    };
     try {
       setRspErrorMsg("");
       setIsSaving(true);
@@ -114,11 +135,20 @@ export default function useCategoryManagementDetail() {
     if (query.data)
       reset({
         typeId: query.data.type_id,
-        label: query.data.label,
+        label: getCategoryDisplayLabel(
+          query.data.label,
+          query.data.translation_key,
+          t,
+        ),
         icon: query.data.icon,
-        descriptions: query.data.descriptions ?? "",
+        descriptions:
+          getCategoryDisplayDescription(
+            query.data.descriptions,
+            query.data.translation_key,
+            t,
+          ) ?? "",
       });
-  }, [query.data, reset]);
+  }, [query.data, reset, t]);
   useEffect(() => {
     if (!query.isLoading && query.data === null) {
       console.warn(DEBUG_TAG.CATEGORY_MANAGEMENT, "Category id not found", {

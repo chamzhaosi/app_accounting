@@ -3,9 +3,11 @@ import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon from "./AppIcon";
 import AppText from "./AppText";
 import { cn } from "../utils/className";
+import { useTranslation } from "../i18n";
 
 export default function AppEmpty({ className }: { className?: string }) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
 
   return (
     <View className={cn("justify-center items-center my-4", className)}>
@@ -14,7 +16,7 @@ export default function AppEmpty({ className }: { className?: string }) {
         variant="headlineSmall"
         style={{ color: THEME.onSurfaceVariant }}
       >
-        No Data
+        {t("No Data")}
       </AppText>
     </View>
   );

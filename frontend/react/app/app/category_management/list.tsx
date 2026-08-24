@@ -16,6 +16,7 @@ import {
   CATEGORY_REORDER_HEADER_ICON_SIZE,
   type CategoryManagementTabRoute,
 } from "./_components/categoryManagement.constants";
+import { useTranslation } from "../../i18n";
 
 export default function CategoryManagementList() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function CategoryManagementList() {
     type?: CategoryManagementTabRoute["key"];
   }>();
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const layout = useWindowDimensions();
   const [index, setIndex] = React.useState(type === "exp" ? 1 : 0);
   const [adjustingTypeId, setAdjustingTypeId] = React.useState<number>();
@@ -72,8 +74,10 @@ export default function CategoryManagementList() {
         options={{
           headerRight: () => (
             <IconButton
-              accessibilityHint="Select two category cards to swap positions."
-              accessibilityLabel="Reorder categories"
+              accessibilityHint={t(
+                "Select two category cards to swap positions.",
+              )}
+              accessibilityLabel={t("Reorder categories")}
               disabled={isAdjusting}
               icon={({ color, size }) => (
                 <ArrowLeftRight color={color} size={size} />
@@ -91,7 +95,13 @@ export default function CategoryManagementList() {
       />
       <TabView
         renderTabBar={renderTabBar}
-        navigationState={{ index, routes: CATEGORY_MANAGEMENT_TAB_ROUTES }}
+        navigationState={{
+          index,
+          routes: CATEGORY_MANAGEMENT_TAB_ROUTES.map((route) => ({
+            ...route,
+            title: t(route.title),
+          })),
+        }}
         renderScene={renderScene}
         onIndexChange={setIndex}
         initialLayout={{ width: layout.width }}

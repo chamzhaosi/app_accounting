@@ -99,6 +99,7 @@ export const getBudgetCategoryProgressFromDB = async (
          COALESCE(bc.id, 'unallocated:' || c.id) AS allocation_id,
          c.id AS category_id,
          c.label,
+         c.translation_key,
          c.icon,
          COALESCE(bc.amount, 0) AS allocated_amount,
          COALESCE(category_spending.spent_amount, 0) AS spent_amount
@@ -134,6 +135,7 @@ export const getBudgetManageCategoriesFromDB = async (
       `SELECT
          c.id AS category_id,
          c.label,
+         c.translation_key,
          c.icon,
          bc.id AS allocation_id,
          COALESCE(bc.amount, 0) AS amount

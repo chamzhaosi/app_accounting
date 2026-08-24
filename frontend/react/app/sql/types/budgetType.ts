@@ -9,6 +9,7 @@ export type BudgetCategoryProgressType = {
   allocation_id: string;
   category_id: string;
   label: string;
+  translation_key: string | null;
   icon: string;
   allocated_amount: number;
   spent_amount: number;
@@ -33,6 +34,7 @@ export type BudgetDailyRemainingType = {
 export type BudgetManageCategoryType = {
   category_id: string;
   label: string;
+  translation_key: string | null;
   icon: string;
   allocation_id: string | null;
   amount: number;

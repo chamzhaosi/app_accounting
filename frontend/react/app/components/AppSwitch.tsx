@@ -3,6 +3,7 @@ import { Switch as RNSwitch, StyleSheet, View } from "react-native";
 import { Switch, SwitchProps } from "react-native-paper";
 import { SWITCH_LABEL_FONTSIZE } from "../constants/size";
 import AppText from "./AppText";
+import { useTranslation } from "../i18n";
 
 type AppSwitchProps = SwitchProps & {
   label: string;
@@ -10,9 +11,10 @@ type AppSwitchProps = SwitchProps & {
 
 const AppSwitch = forwardRef<RNSwitch, AppSwitchProps>(
   ({ label, ...props }, ref) => {
+    const { t } = useTranslation();
     return (
       <View className="flex-row items-center mx-1 my-2 justify-between">
-        <AppText style={[defaultStyle.swtichLbl]}>{label}</AppText>
+        <AppText style={[defaultStyle.swtichLbl]}>{t(label)}</AppText>
         <Switch ref={ref} {...props} style={[defaultStyle.swtichBtn]} />
       </View>
     );

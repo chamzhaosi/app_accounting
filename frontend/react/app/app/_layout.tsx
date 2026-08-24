@@ -28,7 +28,9 @@ import { queryClient } from "../config/queryClient";
 import { DARK, LIGHT } from "../constants/colors";
 import { initDB } from "../sql/db/database";
 import { useToastStore } from "../stores/useToastStore";
+import { useLanguageStore } from "../stores/useLanguageStore";
 import { DEBUG_TAG, debugLog } from "../utils/debugLog";
+import { useTranslation } from "../i18n";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -39,6 +41,9 @@ export default function StackLayout() {
   const { isDark, THEME, toggleTheme } = useThemeStore() ?? { THEME: LIGHT };
   const { startLoading, stopLoading } = useLoadingStore();
   const hydrateAmountPrivacy = useAmountPrivacyStore((state) => state.hydrate);
+  const hydrateLanguage = useLanguageStore((state) => state.hydrate);
+  const isLanguageHydrated = useLanguageStore((state) => state.isHydrated);
+  const { t } = useTranslation();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
 
@@ -92,11 +97,16 @@ export default function StackLayout() {
   }, [hydrateAmountPrivacy]);
 
   useEffect(() => {
-    if (!loaded || !isDatabaseReady || isAppReady) return;
+    void hydrateLanguage();
+  }, [hydrateLanguage]);
+
+  useEffect(() => {
+    if (!loaded || !isDatabaseReady || !isLanguageHydrated || isAppReady)
+      return;
 
     debugLog(DEBUG_TAG.APP, "Database and assets ready; starting application");
     setIsAppReady(true);
-  }, [isAppReady, isDatabaseReady, loaded]);
+  }, [isAppReady, isDatabaseReady, isLanguageHydrated, loaded]);
 
   if (!isAppReady) {
     return null;
@@ -113,7 +123,7 @@ export default function StackLayout() {
             <Stack.Screen name="(home)" options={{ headerShown: false }} />
             <Stack.Screen
               name="category_detail/[id]"
-              options={{ title: "Category Detail" }}
+              options={{ title: t("Category Detail") }}
             />
 
             <Stack.Screen
@@ -133,6 +143,10 @@ export default function StackLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen name="security" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="account_settings"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen
               name="transaction_management"
               options={{ headerShown: false }}

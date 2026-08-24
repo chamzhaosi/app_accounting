@@ -32,6 +32,8 @@ import { getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import { formatPrivateAmount } from "../../utils/number";
 import BudgetCategoryPickerModal from "./_components/BudgetCategoryPickerModal";
+import { useTranslation } from "../../i18n";
+import { getCategoryDisplayLabel } from "../../utils/category";
 
 const AMOUNT_MAX_LENGTH = 11;
 
@@ -42,6 +44,7 @@ export default function BudgetManagement() {
   const [isSaving, setIsSaving] = useState(false);
   const [rspErrorMsg, setRspErrorMsg] = useState("");
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: budgetQueryKeys.management(month),
@@ -162,7 +165,7 @@ export default function BudgetManagement() {
       <AppView className="items-center justify-center p-6">
         <AppIcon name="CircleAlert" size={64} color={THEME.error} />
         <Text variant="headlineSmall" style={styles.errorTitle}>
-          Unable to load budget
+          {t("Unable to load budget")}
         </Text>
         <AppButton
           {...SUBMIT_BTN_CONTENT_STYLE}
@@ -226,12 +229,12 @@ export default function BudgetManagement() {
             render={({ field: { value, onChange } }) => (
               <View style={styles.switchRow}>
                 <View style={styles.flex}>
-                  <Text variant="titleMedium">Budget tracking</Text>
+                  <Text variant="titleMedium">{t("Budget tracking")}</Text>
                   <Text
                     variant="bodySmall"
                     style={{ color: THEME.onSurfaceVariant }}
                   >
-                    Pause tracking without removing this month’s plan.
+                    {t("Pause tracking without removing this month's plan.")}
                   </Text>
                 </View>
                 <Switch
@@ -260,7 +263,7 @@ export default function BudgetManagement() {
         </Surface>
 
         <Text variant="titleLarge" style={styles.sectionTitle}>
-          Expense allocations
+          {t("Expense allocations")}
         </Text>
         {selectedCategories.map((category) => (
           <Surface
@@ -280,7 +283,11 @@ export default function BudgetManagement() {
               <AppIcon name={category.icon as AppIconProps["name"]} size={22} />
             </View>
             <Text variant="titleMedium" style={styles.categoryLabel}>
-              {category.label}
+              {getCategoryDisplayLabel(
+                category.label,
+                category.translation_key,
+                t,
+              )}
             </Text>
             <AppAmtInput
               mode="outlined"
@@ -302,7 +309,13 @@ export default function BudgetManagement() {
             />
             <AppIconButton
               iconName="Trash2"
-              accessibilityLabel={`Remove ${category.label} allocation`}
+              accessibilityLabel={t("Remove {{name}} allocation", {
+                name: getCategoryDisplayLabel(
+                  category.label,
+                  category.translation_key,
+                  t,
+                ),
+              })}
               disabled={isSaving}
               onPress={() =>
                 setAllocations((current) => {
@@ -324,8 +337,9 @@ export default function BudgetManagement() {
               { color: THEME.onSurfaceVariant },
             ]}
           >
-            No categories selected. Add the expense categories you want to
-            track.
+            {t(
+              "No categories selected. Add the expense categories you want to track.",
+            )}
           </Text>
         ) : null}
         {query.data?.categories.length ? (
@@ -373,12 +387,13 @@ function SummaryValue({
   value: number;
   color?: string;
 }) {
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
   return (
     <View style={styles.summaryValue}>
-      <Text variant="labelLarge">{label}</Text>
+      <Text variant="labelLarge">{t(label)}</Text>
       <Text variant="titleLarge" style={color ? { color } : undefined}>
         {formatPrivateAmount(value, areAmountsVisible)}
       </Text>

@@ -1,6 +1,7 @@
 import { Button, ButtonProps } from "react-native-paper";
 import { StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import { useThemeStore } from "../stores/useThemeStore";
+import { useTranslation } from "../i18n";
 
 export enum ButtonType {
   PRIMARY,
@@ -10,6 +11,7 @@ export enum ButtonType {
 
 export type AppButtonProps = ButtonProps & {
   variant?: ButtonType;
+  shouldTranslateText?: boolean;
 };
 
 export default function AppButton({
@@ -18,9 +20,12 @@ export default function AppButton({
   variant = ButtonType.PRIMARY,
   disabled,
   style,
+  children,
+  shouldTranslateText = true,
   ...props
 }: AppButtonProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
 
   let variantStyle: StyleProp<ViewStyle> = {};
   let variantContentStyle: StyleProp<ViewStyle> = {};
@@ -66,7 +71,11 @@ export default function AppButton({
       style={[...(!disabled ? [variantStyle] : []), style]}
       disabled={disabled}
       {...props}
-    />
+    >
+      {shouldTranslateText && typeof children === "string"
+        ? t(children)
+        : children}
+    </Button>
   );
 }
 

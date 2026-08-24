@@ -9,6 +9,7 @@ import { TransactionManagementFormType } from "../../../forms/schemas/transactio
 import { useKeyboardVisible } from "../../../hook/useKeyboardVisible";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { TXN_TYPE_ENUM } from "../../../constants/enum";
+import { useTranslation } from "../../../i18n";
 
 type CategoryIdFieldProps = {
   categoryItems: AppListCardItemType[];
@@ -33,6 +34,7 @@ export default function CategoryIdField({
 }: CategoryIdFieldProps) {
   const isKeyboardVisible = useKeyboardVisible();
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const { height: screenHeight } = useWindowDimensions();
 
   if (transactionType === TXN_TYPE_ENUM.TRANSFER) return <></>;
@@ -47,7 +49,7 @@ export default function CategoryIdField({
       }) => (
         <View className="my-4">
           <AppText variant="titleMedium" className="mb-2">
-            Category
+            {t("Category")}
           </AppText>
 
           <View

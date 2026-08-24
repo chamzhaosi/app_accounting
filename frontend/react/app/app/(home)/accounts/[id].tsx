@@ -27,10 +27,12 @@ import TransactionManagementList from "../../transaction_management/list";
 import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
 import { formatPrivateAmount } from "../../../utils/number";
 import AccountBalanceHistoryChart from "./_components/AccountBalanceHistoryChart";
+import { useTranslation } from "../../../i18n";
 
 export default function AccountDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -122,14 +124,14 @@ export default function AccountDetail() {
           <View style={styles.accountHeading}>
             <View style={styles.accountName}>
               <Text variant="titleLarge" numberOfLines={1}>
-                {account?.label ?? "Account unavailable"}
+                {account?.label ?? t("Account unavailable")}
               </Text>
               {account && (
                 <Text
                   variant="bodyMedium"
                   style={{ color: THEME.onSurfaceVariant }}
                 >
-                  {account.type_label}
+                  {t(account.type_label)}
                 </Text>
               )}
             </View>
@@ -138,7 +140,7 @@ export default function AccountDetail() {
                 variant="labelMedium"
                 style={{ color: THEME.onSurfaceVariant }}
               >
-                Current Balance
+                {t("Current Balance")}
               </Text>
               <Text variant="titleLarge" style={styles.balanceAmount}>
                 {formatPrivateAmount(
@@ -163,25 +165,29 @@ export default function AccountDetail() {
             ]}
           >
             <View style={styles.periodTotal}>
-              <Text style={{ color: THEME.onSurfaceVariant }}>Opening</Text>
+              <Text style={{ color: THEME.onSurfaceVariant }}>
+                {t("Opening")}
+              </Text>
               <Text style={styles.periodAmount}>
                 {formatPrivateAmount(forwardBalance, areAmountsVisible)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
-              <Text style={{ color: THEME.onSurfaceVariant }}>Closing</Text>
+              <Text style={{ color: THEME.onSurfaceVariant }}>
+                {t("Closing")}
+              </Text>
               <Text style={styles.periodAmount}>
                 {formatPrivateAmount(periodEndBalance, areAmountsVisible)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
-              <Text style={{ color: THEME.onSurfaceVariant }}>Out</Text>
+              <Text style={{ color: THEME.onSurfaceVariant }}>{t("Out")}</Text>
               <Text style={[styles.periodAmount, { color: THEME.error }]}>
                 {formatPrivateAmount(moneyOut, areAmountsVisible)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
-              <Text style={{ color: THEME.onSurfaceVariant }}>In</Text>
+              <Text style={{ color: THEME.onSurfaceVariant }}>{t("In")}</Text>
               <Text style={[styles.periodAmount, { color: THEME.primary }]}>
                 {formatPrivateAmount(moneyIn, areAmountsVisible)}
               </Text>
@@ -210,7 +216,9 @@ export default function AccountDetail() {
       {account && (
         <AppFloatingButton
           icon="plus"
-          accessibilityLabel={`Add transaction for ${account.label}`}
+          accessibilityLabel={t("Add transaction for {{name}}", {
+            name: account.label,
+          })}
           onPress={() =>
             router.push({
               pathname: TRANSACTION_MANAGEMENT_CREATE_URL,

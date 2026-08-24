@@ -43,8 +43,14 @@ import {
   updateTransactionMgmt,
 } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
+import {
+  getCategoryDisplayDescription,
+  getCategoryDisplayLabel,
+} from "../../utils/category";
 
 export default function useTransactionManagementDetail() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [isAccountPickerVisible, setIsAccountPickerVisible] = useState(false);
@@ -133,8 +139,16 @@ export default function useTransactionManagementDetail() {
       categories?.pages.flat().map((category) => ({
         id: category.id.toString(),
         icon: category.icon as AppIconProps["name"],
-        label: category.label,
-        description: category.descriptions ?? undefined,
+        label: getCategoryDisplayLabel(
+          category.label,
+          category.translation_key,
+          t,
+        ),
+        description: getCategoryDisplayDescription(
+          category.descriptions,
+          category.translation_key,
+          t,
+        ),
       })) ?? [];
     const savedCategoryId = transaction?.category_id;
 
@@ -150,11 +164,15 @@ export default function useTransactionManagementDetail() {
       {
         id: savedCategoryId,
         icon: (transaction.category_icon ?? "Tag") as AppIconProps["name"],
-        label: transaction.category_label ?? "Selected Category",
+        label: getCategoryDisplayLabel(
+          transaction.category_label ?? "Selected Category",
+          transaction.category_translation_key,
+          t,
+        ),
       },
       ...items,
     ];
-  }, [categories, transaction, transactionType]);
+  }, [categories, t, transaction, transactionType]);
 
   const accountItems = useMemo<AccountPickerItemType[]>(
     () =>

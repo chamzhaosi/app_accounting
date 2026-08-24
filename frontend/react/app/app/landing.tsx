@@ -24,9 +24,11 @@ import {
 } from "../stores/useLocalAuthStore";
 import { useThemeStore } from "../stores/useThemeStore";
 import { APP_PIN_LOGIN_URL, DASHBOARD_URL } from "../constants/urls";
+import { useTranslation } from "../i18n";
 
 export default function Landing() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const { isLoading } = useLoadingStore();
   const {
     lastErrorAuthDateTime,
@@ -147,7 +149,7 @@ export default function Landing() {
       <View className="flex-[0.8] justify-center items-center">
         <View>
           <AppText isTitle>Finora</AppText>
-          <AppText variant="labelLarge">Personal Accounting App</AppText>
+          <AppText variant="labelLarge">{t("Personal Accounting App")}</AppText>
         </View>
       </View>
 
@@ -184,7 +186,7 @@ export default function Landing() {
                 ]}
                 className="self-center"
               >
-                Too many incorrect PIN attempts.
+                {t("Too many incorrect PIN attempts.")}
               </AppText>
               <AppText
                 style={[
@@ -192,17 +194,9 @@ export default function Landing() {
                   { color: THEME.onErrorContainer },
                 ]}
               >
-                <>Please try again in </>
-                <AppText
-                  style={[
-                    ,
-                    defaultStyle.accFrozenTime,
-                    { color: THEME.onErrorContainer },
-                  ]}
-                >
-                  {remainingTime}
-                </AppText>
-                <> seconds.</>
+                {t("Please try again in {{seconds}} seconds.", {
+                  seconds: remainingTime,
+                })}
               </AppText>
             </View>
           )}

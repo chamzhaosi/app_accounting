@@ -15,6 +15,7 @@ import useAccountBalanceSummary from "../../../hook/dashboard/useAccountBalanceS
 import useAmountPrivacyToggle from "../../../hook/security/useAmountPrivacyToggle";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { formatPrivateAmount } from "../../../utils/number";
+import { useTranslation } from "../../../i18n";
 
 type AccountBalanceSummaryProps = {
   dateRange: AppDateRangeValue;
@@ -30,6 +31,7 @@ export default function AccountBalanceSummary({
   onDateRangeChange,
 }: AccountBalanceSummaryProps) {
   const { isDark, THEME } = useThemeStore();
+  const { t } = useTranslation();
   const {
     areAmountsVisible,
     dismissPinDialog,
@@ -81,7 +83,7 @@ export default function AccountBalanceSummary({
 
         <View style={styles.balanceContainer}>
           <Text variant="labelLarge" style={{ color: THEME.onSurfaceVariant }}>
-            Balance
+            {t("Balance")}
           </Text>
           {isBalanceLoading ? (
             <ActivityIndicator style={styles.loader} />
@@ -101,8 +103,8 @@ export default function AccountBalanceSummary({
                 size={20}
                 accessibilityLabel={
                   areAmountsVisible
-                    ? "Hide overview amounts"
-                    : "Show overview amounts"
+                    ? t("Hide overview amounts")
+                    : t("Show overview amounts")
                 }
                 accessibilityState={{ expanded: areAmountsVisible }}
                 disabled={!isHydrated || isAuthenticating || isPinDialogVisible}
@@ -119,7 +121,7 @@ export default function AccountBalanceSummary({
                 variant="labelSmall"
                 style={{ color: THEME.onSurfaceVariant }}
               >
-                Expense
+                {t("Expense")}
               </Text>
               <Text
                 variant="titleMedium"
@@ -144,7 +146,7 @@ export default function AccountBalanceSummary({
                 variant="labelSmall"
                 style={{ color: THEME.onSurfaceVariant }}
               >
-                Income
+                {t("Income")}
               </Text>
               <Text
                 variant="titleMedium"
@@ -166,7 +168,7 @@ export default function AccountBalanceSummary({
           ]}
         >
           <Text variant="labelMedium" style={{ color: THEME.onSurfaceVariant }}>
-            {isBudgetOver ? "Budget Over" : "Budget Left"}
+            {t(isBudgetOver ? "Budget Over" : "Budget Left")}
           </Text>
           {isBudgetLoading ? (
             <ActivityIndicator size="small" style={styles.budgetLoader} />

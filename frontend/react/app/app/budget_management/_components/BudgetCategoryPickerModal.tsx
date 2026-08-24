@@ -4,6 +4,8 @@ import AppEmpty from "../../../components/AppEmpty";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
 import type { BudgetManageCategoryType } from "../../../sql/types/budgetType";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import { useTranslation } from "../../../i18n";
+import { getCategoryDisplayLabel } from "../../../utils/category";
 
 type BudgetCategoryPickerModalProps = {
   categories: BudgetManageCategoryType[];
@@ -19,6 +21,7 @@ export default function BudgetCategoryPickerModal({
   onSelect,
 }: BudgetCategoryPickerModalProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const { height, width } = useWindowDimensions();
 
   return (
@@ -36,10 +39,10 @@ export default function BudgetCategoryPickerModal({
         ]}
       >
         <View style={styles.header}>
-          <Text variant="titleLarge">Choose expense category</Text>
+          <Text variant="titleLarge">{t("Choose expense category")}</Text>
           <IconButton
             icon="close"
-            accessibilityLabel="Close category picker"
+            accessibilityLabel={t("Close category picker")}
             onPress={onDismiss}
           />
         </View>
@@ -52,7 +55,11 @@ export default function BudgetCategoryPickerModal({
           }
           renderItem={({ item }) => (
             <List.Item
-              title={item.label}
+              title={getCategoryDisplayLabel(
+                item.label,
+                item.translation_key,
+                t,
+              )}
               style={{ backgroundColor: THEME.surfaceContainer }}
               onPress={() => onSelect(item)}
               left={({ style }) => (

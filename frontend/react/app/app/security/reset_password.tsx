@@ -14,8 +14,10 @@ import AppButton, {
 } from "../../components/AppButton";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppSpacer from "../../components/AppSpacer";
+import { useTranslation } from "../../i18n";
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
 
@@ -45,7 +47,7 @@ export default function ResetPassword() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <AppView className="p-4 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
-        <AppText>{"Create a new password for your account."}</AppText>
+        <AppText>{t("Create a new password for your account.")}</AppText>
         <AppSpacer height={8} />
 
         <Controller

@@ -8,6 +8,7 @@ export const BIOMETRIC_LOCK_ENABLED_BY_PIN_PATTERN_KEY =
   "biometric_lock_enabled_by_pin_pattern";
 export const DB_KEY = "finora-db-key";
 export const AMOUNTS_VISIBLE_KEY = "amounts_visible";
+export const LANGUAGE_KEY = "language";
 
 export const setStoredItem = async (
   key: string,

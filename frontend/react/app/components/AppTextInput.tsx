@@ -6,11 +6,13 @@ import { useThemeStore } from "../stores/useThemeStore";
 import AppText, { TextTypEnum } from "./AppText";
 import AppView from "./AppView";
 import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/size";
+import { useTranslation } from "../i18n";
 
 type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;
   errorField?: FieldError;
   showClear?: boolean;
+  shouldTranslateText?: boolean;
 };
 
 const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
@@ -25,11 +27,15 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
       style,
       numberOfLines,
       multiline,
+      label,
+      placeholder,
+      shouldTranslateText = true,
       ...props
     },
     ref,
   ) => {
     const { THEME } = useThemeStore();
+    const { t } = useTranslation();
     const [showValue, setShowValue] = useState<boolean>(false);
 
     return (
@@ -71,7 +77,14 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
               )
             )
           }
-          placeholder="Please enter"
+          label={
+            shouldTranslateText && typeof label === "string" ? t(label) : label
+          }
+          placeholder={
+            shouldTranslateText
+              ? t(placeholder ?? "Please enter")
+              : (placeholder ?? "Please enter")
+          }
           value={value}
           error={!!errorField?.message}
           maxLength={maxLength}
@@ -83,8 +96,12 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
 
         <AppView className="flex-0 flex-row ms-auto bg-inherit dark:bg-inherit">
           {errorField?.message && (
-            <AppText className="flex-1" type={TextTypEnum.ERROR}>
-              {errorField.message}
+            <AppText
+              className="flex-1"
+              type={TextTypEnum.ERROR}
+              shouldTranslateText={shouldTranslateText}
+            >
+              {t(errorField.message)}
             </AppText>
           )}
           {maxLength && (

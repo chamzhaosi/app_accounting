@@ -5,6 +5,8 @@ import { transactionManagementQueryKeys } from "../../constants/queryKeys";
 import { getTransactionDailyTotals } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import useBudgetDailyRemaining from "./useBudgetDailyRemaining";
+import { useTranslation } from "../../i18n";
+import { formatLocalizedDateLabel } from "../../utils/date";
 
 export type ChartPoint = {
   value: number;
@@ -23,6 +25,7 @@ export default function useDailyTransactionChart(
   startDate: string,
   endDate: string,
 ) {
+  const { locale } = useTranslation();
   const [mode, setMode] = useState<ChartMode>("daily");
   const isCumulative = mode === "cumulative";
   const queryStartDate = dayjs(startDate).startOf("month").format("YYYY-MM-DD");
@@ -102,7 +105,7 @@ export default function useDailyTransactionChart(
         index % labelInterval === 0 || index === days - 1
           ? date.format("D/M")
           : "";
-      const pointDate = date.format("D MMM YYYY");
+      const pointDate = formatLocalizedDateLabel(date.toDate(), locale);
 
       income.push({
         value: totals?.income_total ?? 0,
@@ -157,6 +160,7 @@ export default function useDailyTransactionChart(
     endDate,
     queryStartDate,
     startDate,
+    locale,
   ]);
 
   const incomeData = isCumulative
@@ -168,7 +172,13 @@ export default function useDailyTransactionChart(
 
   return {
     budgetPaceData: chartData.cumulative.budgetPace,
-    dateRangeLabel: `${dayjs(startDate).format("D MMM")} - ${dayjs(endDate).format("D MMM")}`,
+    dateRangeLabel: `${formatLocalizedDateLabel(
+      dayjs(startDate).toDate(),
+      locale,
+      { includeYear: false },
+    )} - ${formatLocalizedDateLabel(dayjs(endDate).toDate(), locale, {
+      includeYear: false,
+    })}`,
     expenseData,
     incomeData,
     isCumulative,

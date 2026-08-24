@@ -272,6 +272,10 @@ export const updateCategoryMgmtToDB = async (
       `
         UPDATE categories
         SET
+          translation_key = CASE
+            WHEN ? = 1 THEN NULL
+            ELSE translation_key
+          END,
           sort_order = CASE
             WHEN type_id <> ? THEN (
               SELECT COALESCE(MAX(sort_order), -1) + 1
@@ -292,6 +296,7 @@ export const updateCategoryMgmtToDB = async (
           AND is_system = 0;
       `,
       [
+        data.isLabelCustomized ? 1 : 0,
         data.typeId,
         data.typeId,
         data.typeId,

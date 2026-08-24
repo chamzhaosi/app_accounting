@@ -24,6 +24,7 @@ import AppIcon, { AppIconProps } from "./AppIcon";
 import AppSpacer from "./AppSpacer";
 import AppText from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "../i18n";
 
 export type AppListCardItemType = {
   id: number | string;
@@ -76,6 +77,7 @@ export default function AppListCardView({
   ...props
 }: AppListViewProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -155,7 +157,7 @@ export default function AppListCardView({
 
   const genNoMoreData = (
     <AppText className="py-4 self-center" style={{ color: THEME.outline }}>
-      ----- No more data -----
+      {t("----- No more data -----")}
     </AppText>
   );
 

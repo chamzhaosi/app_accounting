@@ -5,6 +5,7 @@ import { TextInput, TextInputProps } from "react-native-paper";
 import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppText, { TextTypEnum } from "./AppText";
+import { useTranslation } from "../i18n";
 
 type AppTextInputProps = TextInputProps & {
   errorField?: FieldError;
@@ -32,11 +33,14 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
       fixedDecimalInput = false,
       caretHidden,
       selection,
+      label,
+      placeholder,
       ...props
     },
     ref,
   ) => {
     const { THEME } = useThemeStore();
+    const { t } = useTranslation();
     return (
       <View className={continerClassName}>
         <TextInput
@@ -58,7 +62,8 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
               />
             )
           }
-          placeholder="Please enter"
+          label={typeof label === "string" ? t(label) : label}
+          placeholder={t(placeholder ?? "Please enter")}
           value={value}
           error={!!errorField?.message}
           maxLength={maxLength}
@@ -84,7 +89,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
         <View className="flex-row ms-auto bg-inherit dark:bg-inherit">
           {errorField?.message && (
             <AppText className="flex-1" type={TextTypEnum.ERROR}>
-              {errorField.message}
+              {t(errorField.message)}
             </AppText>
           )}
         </View>

@@ -1,27 +1,29 @@
 import { Stack } from "expo-router";
 import { AppStack } from "../../components/AppStack";
+import { useTranslation } from "../../i18n";
 
 export default function StackLayout() {
+  const { t } = useTranslation();
   return (
     <AppStack>
       <Stack.Screen
         name="local_authenticate"
         options={{
-          title: "Security",
+          title: t("Security"),
         }}
       />
 
       <Stack.Screen
         name="reset_password"
         options={{
-          title: "Reset Password",
+          title: t("Reset Password"),
         }}
       />
 
       <Stack.Screen
         name="app_pin"
         options={{
-          title: "Set/ Change App PIN",
+          title: t("Set/ Change App PIN"),
         }}
       />
     </AppStack>

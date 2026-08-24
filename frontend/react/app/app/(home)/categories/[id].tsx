@@ -30,6 +30,8 @@ import {
 } from "../../../utils/date";
 import { formatPrivateAmount } from "../../../utils/number";
 import CategoryCumulativeChart from "./_components/CategoryCumulativeChart";
+import { useTranslation } from "../../../i18n";
+import { getCategoryDisplayLabel } from "../../../utils/category";
 
 const getInitialDateRange = (
   startDate?: string,
@@ -56,6 +58,7 @@ export default function CategoryDetail() {
     endDate?: string;
   }>();
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -140,14 +143,20 @@ export default function CategoryDetail() {
             )}
             <View style={styles.categoryName}>
               <Text variant="titleLarge" numberOfLines={1}>
-                {category?.label ?? "Category unavailable"}
+                {category
+                  ? getCategoryDisplayLabel(
+                      category.label,
+                      category.translation_key,
+                      t,
+                    )
+                  : t("Category unavailable")}
               </Text>
               {category && (
                 <Text
                   variant="bodyMedium"
                   style={{ color: THEME.onSurfaceVariant }}
                 >
-                  {typeLabel}
+                  {t(typeLabel)}
                 </Text>
               )}
             </View>
@@ -168,7 +177,7 @@ export default function CategoryDetail() {
           >
             <View style={styles.summaryItem}>
               <Text style={{ color: THEME.onSurfaceVariant }}>
-                Period Total
+                {t("Period Total")}
               </Text>
               <Text
                 style={[
@@ -187,7 +196,7 @@ export default function CategoryDetail() {
             </View>
             <View style={styles.summaryItem}>
               <Text style={{ color: THEME.onSurfaceVariant }}>
-                Transactions
+                {t("Transactions")}
               </Text>
               <Text style={styles.summaryAmount}>
                 {summaryQuery.data?.transaction_count ?? 0}
@@ -216,7 +225,13 @@ export default function CategoryDetail() {
       {category && (
         <AppFloatingButton
           icon="plus"
-          accessibilityLabel={`Add transaction for ${category.label}`}
+          accessibilityLabel={t("Add transaction for {{name}}", {
+            name: getCategoryDisplayLabel(
+              category.label,
+              category.translation_key,
+              t,
+            ),
+          })}
           onPress={() =>
             router.push({
               pathname: TRANSACTION_MANAGEMENT_CREATE_URL,

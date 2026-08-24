@@ -17,9 +17,11 @@ import {
   registerSchema,
 } from "../../forms/schemas/auth/register.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useTranslation } from "../../i18n";
 
 export default function Register() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -55,7 +57,7 @@ export default function Register() {
     <AppScrollView className="pt-8 rounded-t-[50]">
       <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
-          SIGN UP
+          {t("SIGN UP")}
         </AppText>
 
         <AppSpacer />
@@ -149,9 +151,9 @@ export default function Register() {
         <AppSpacer height={20} />
 
         <View className="w-full justify-center items-center flex flex-row">
-          <AppText>Already have an account?</AppText>
+          <AppText>{t("Already have an account?")}</AppText>
           <Link href={"/(auth)/login"} style={{ marginStart: 8 }}>
-            <AppText type={TextTypEnum.LINK}>Log In</AppText>
+            <AppText type={TextTypEnum.LINK}>{t("Log In")}</AppText>
           </Link>
         </View>
       </AppView>

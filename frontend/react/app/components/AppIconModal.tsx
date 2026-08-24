@@ -6,6 +6,7 @@ import { AppIconProps } from "./AppIcon";
 import AppIconButton from "./AppIconButton";
 import AppListCardView, { AppListCardItemType } from "./AppListCardView";
 import AppText from "./AppText";
+import { useTranslation } from "../i18n";
 
 const normalizeSearchTerm = (value: string) =>
   value.replace(/[^a-z0-9]/gi, "").toLowerCase();
@@ -24,6 +25,7 @@ export default function AppIconModal({
   onSelectedIcon,
 }: AppIconModalProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const { height, width } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState("");
   const containerWidth = Math.min(width - 32, 560);
@@ -75,25 +77,28 @@ export default function AppIconModal({
       >
         <View style={defaultStyle.header}>
           <View style={defaultStyle.titleContainer}>
-            <AppText variant="titleLarge">Choose an icon</AppText>
+            <AppText variant="titleLarge">{t("Choose an icon")}</AppText>
             <AppText
               variant="bodyMedium"
               style={{ color: THEME.onSurfaceVariant }}
             >
-              {filteredIconData.length} of {iconData.length} icons
+              {t("{{filtered}} of {{total}} icons", {
+                filtered: filteredIconData.length,
+                total: iconData.length,
+              })}
             </AppText>
           </View>
           <AppIconButton
             iconName="X"
-            accessibilityLabel="Close icon picker"
+            accessibilityLabel={t("Close icon picker")}
             onPress={dismissModal}
             style={defaultStyle.closeButton}
           />
         </View>
 
         <Searchbar
-          accessibilityLabel="Search icons"
-          placeholder="Search icons, e.g. food"
+          accessibilityLabel={t("Search icons")}
+          placeholder={t("Search icons, e.g. food")}
           value={searchQuery}
           onChangeText={setSearchQuery}
           elevation={0}
@@ -122,12 +127,12 @@ export default function AppIconModal({
           />
           {isEmpty && (
             <View style={defaultStyle.emptyContainer}>
-              <AppText variant="titleMedium">No matching icons</AppText>
+              <AppText variant="titleMedium">{t("No matching icons")}</AppText>
               <AppText
                 variant="bodyMedium"
                 style={{ color: THEME.onSurfaceVariant }}
               >
-                Try another search term.
+                {t("Try another search term.")}
               </AppText>
             </View>
           )}

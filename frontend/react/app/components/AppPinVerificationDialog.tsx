@@ -3,6 +3,7 @@ import { Keyboard, StyleSheet } from "react-native";
 import { Button, Dialog, Portal, Text } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppTextInput from "./AppTextInput";
+import { useTranslation } from "../i18n";
 
 type AppPinVerificationDialogProps = {
   visible: boolean;
@@ -18,6 +19,7 @@ export default function AppPinVerificationDialog({
   onVerify,
 }: AppPinVerificationDialogProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const [pin, setPin] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -51,14 +53,14 @@ export default function AppPinVerificationDialog({
         style={{ backgroundColor: THEME.surfaceContainerHigh }}
       >
         <Dialog.Title style={{ color: THEME.onSurface }}>
-          Authentication required
+          {t("Authentication required")}
         </Dialog.Title>
         <Dialog.Content>
           <Text
             variant="bodyMedium"
             style={[styles.description, { color: THEME.onSurfaceVariant }]}
           >
-            Enter your app PIN to show financial amounts.
+            {t("Enter your app PIN to show financial amounts.")}
           </Text>
           <AppTextInput
             autoFocus
@@ -80,7 +82,7 @@ export default function AppPinVerificationDialog({
               variant="bodySmall"
               style={[styles.error, { color: THEME.error }]}
             >
-              {errorMessage}
+              {t(errorMessage)}
             </Text>
           ) : null}
         </Dialog.Content>
@@ -90,7 +92,7 @@ export default function AppPinVerificationDialog({
             disabled={isVerifying}
             onPress={onDismiss}
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             mode="contained"
@@ -98,7 +100,7 @@ export default function AppPinVerificationDialog({
             disabled={isVerifying || pin.length !== 6}
             onPress={() => void verify()}
           >
-            Verify
+            {t("Verify")}
           </Button>
         </Dialog.Actions>
       </Dialog>

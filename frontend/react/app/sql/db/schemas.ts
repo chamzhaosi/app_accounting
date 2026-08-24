@@ -10,6 +10,24 @@ import {
   LABEL_MAX_LEN as CATEGORY_LABEL_MAX_LEN,
 } from "../../forms/schemas/category_management.schema";
 import { DESCRIPTION_MAX_LEN as TRANSACTION_DESCRIPTION_MAX_LEN } from "../../forms/schemas/transaction_management.schema";
+import {
+  EMAIL_MAX_LEN as ACCOUNT_SETTINGS_EMAIL_MAX_LEN,
+  NICKNAME_MAX_LEN as ACCOUNT_SETTINGS_NICKNAME_MAX_LEN,
+} from "../../forms/schemas/account_settings.schema";
+
+export const createAccountSettingsTable = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS account_settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      nickname VARCHAR(${ACCOUNT_SETTINGS_NICKNAME_MAX_LEN}) NOT NULL,
+      email VARCHAR(${ACCOUNT_SETTINGS_EMAIL_MAX_LEN}) NOT NULL COLLATE NOCASE,
+      language VARCHAR(10) NOT NULL
+        CHECK (language IN ('en', 'zh-Hans', 'ms')),
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+};
 
 export const createAccTypTable = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
@@ -74,6 +92,7 @@ export const createCategoryMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         label VARCHAR(${CATEGORY_LABEL_MAX_LEN}) NOT NULL COLLATE NOCASE,
         icon VARCHAR(100) NOT NULL,
         descriptions VARCHAR(${CATEGORY_DESCRIPTION_MAX_LEN}),
+        translation_key VARCHAR(${CATEGORY_LABEL_MAX_LEN}),
         sort_order INTEGER NOT NULL DEFAULT 0,
 
         is_active BOOLEAN NOT NULL DEFAULT 1,

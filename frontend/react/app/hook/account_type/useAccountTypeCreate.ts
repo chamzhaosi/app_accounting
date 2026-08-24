@@ -18,8 +18,10 @@ import type { AccountTypeFormType } from "../../forms/schemas/accout_type.schema
 import { createNewAccType } from "../../sql/service/accTypeService";
 import { toTitleCase } from "../../utils/text";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
 
 export default function useAccountTypeCreate() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedItem, setSelectedItem] = useState<AppIconProps["name"]>(
     ICONS.ACCOUNT_TYPE[0],
@@ -77,7 +79,9 @@ export default function useAccountTypeCreate() {
         { label: data.label },
       );
       AppToast.success({
-        message: `${value.label} account type created successfully`,
+        message: t("{{name}} account type created successfully", {
+          name: value.label,
+        }),
       });
       formReset();
       if (!saveAnotherType) router.back();

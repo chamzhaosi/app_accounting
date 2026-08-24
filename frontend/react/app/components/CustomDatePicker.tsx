@@ -7,6 +7,12 @@ import {
   ViewStyle,
 } from "react-native";
 import { IconButton, Text, useTheme } from "react-native-paper";
+import { useTranslation } from "../i18n";
+import {
+  formatLocalizedDateLabel,
+  formatMonthName,
+  formatMonthYearLabel,
+} from "../utils/date";
 
 const WEEK_DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const CALENDAR_CELL_COUNT = 42;
@@ -38,6 +44,7 @@ export default function CustomDatePicker({
   style,
 }: CustomDatePickerProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(value);
   const [visibleMonth, setVisibleMonth] = useState<Date>(() =>
     startOfMonth(value ?? new Date()),
@@ -66,9 +73,7 @@ export default function CustomDatePicker({
   const months = useMemo(
     () =>
       Array.from({ length: 12 }, (_, month) =>
-        new Date(2000, month, 1).toLocaleDateString(locale, {
-          month: "short",
-        }),
+        formatMonthName(new Date(2000, month, 1), locale),
       ),
     [locale],
   );
@@ -80,10 +85,6 @@ export default function CustomDatePicker({
     { length: YEAR_PAGE_SIZE },
     (_, index) => yearRangeStart + index,
   );
-  const visibleMonthName = visibleMonth.toLocaleDateString(locale, {
-    month: "short",
-  });
-
   const changePeriod = (offset: number) => {
     setVisibleMonth((current) => {
       if (pickerView === "days") {
@@ -101,7 +102,7 @@ export default function CustomDatePicker({
 
   const headerLabel =
     pickerView === "days"
-      ? `${visibleMonthName} ${visibleYear}`
+      ? formatMonthYearLabel(visibleMonth, locale)
       : pickerView === "months"
         ? String(visibleYear)
         : `${yearRangeStart} - ${yearRangeStart + YEAR_PAGE_SIZE - 1}`;
@@ -132,7 +133,7 @@ export default function CustomDatePicker({
       <View style={styles.monthHeader}>
         <IconButton
           icon="chevron-left"
-          accessibilityLabel={`Previous ${periodName}`}
+          accessibilityLabel={t(`Previous ${periodName}`)}
           iconColor={theme.colors.onSurface}
           onPress={() => changePeriod(-1)}
         />
@@ -141,9 +142,9 @@ export default function CustomDatePicker({
           accessibilityRole="button"
           accessibilityLabel={
             pickerView === "days"
-              ? "Select month"
+              ? t("Select month")
               : pickerView === "months"
-                ? "Select year"
+                ? t("Select year")
                 : headerLabel
           }
           disabled={pickerView === "years"}
@@ -157,7 +158,7 @@ export default function CustomDatePicker({
 
         <IconButton
           icon="chevron-right"
-          accessibilityLabel={`Next ${periodName}`}
+          accessibilityLabel={t(`Next ${periodName}`)}
           iconColor={theme.colors.onSurface}
           onPress={() => changePeriod(1)}
         />
@@ -166,7 +167,10 @@ export default function CustomDatePicker({
       {pickerView === "days" ? (
         <>
           <View style={styles.weekRow}>
-            {WEEK_DAYS.map((day, index) => (
+            {(locale.startsWith("zh")
+              ? ["一", "二", "三", "四", "五", "六", "日"]
+              : WEEK_DAYS
+            ).map((day, index) => (
               <View key={`${day}-${index}`} style={styles.cell}>
                 <Text
                   variant="labelMedium"
@@ -201,8 +205,8 @@ export default function CustomDatePicker({
                 >
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={date.toLocaleDateString(locale, {
-                      dateStyle: "long",
+                    accessibilityLabel={formatLocalizedDateLabel(date, locale, {
+                      includeWeekday: true,
                     })}
                     accessibilityState={{ selected }}
                     hitSlop={4}

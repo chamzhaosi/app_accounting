@@ -16,6 +16,7 @@ import {
   LABEL_MAX_LEN,
 } from "../../../forms/schemas/category_management.schema";
 import type { CategoryManagementFormType } from "../../../forms/schemas/category_management.schema";
+import { useTranslation } from "../../../i18n";
 
 type Props = {
   control: Control<CategoryManagementFormType>;
@@ -32,6 +33,7 @@ export default function CategoryManagementFormFields({
   onSubmit,
   setFocus,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <>
       <Controller
@@ -47,7 +49,10 @@ export default function CategoryManagementFormFields({
             value={value?.toString() ?? ""}
             onChange={(selected) => onChange(Number(selected ?? 0))}
             onBlur={onBlur}
-            options={CATEGORY_TRANSACTION_TYPE_OPTIONS}
+            options={CATEGORY_TRANSACTION_TYPE_OPTIONS.map((option) => ({
+              ...option,
+              label: t(option.label),
+            }))}
             errorField={error}
             editable={!isSubmitting}
             disabled={isSubmitting}
