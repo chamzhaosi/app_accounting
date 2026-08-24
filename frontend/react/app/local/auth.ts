@@ -1,4 +1,5 @@
 import * as LocalAuthentication from "expo-local-authentication";
+import { translate } from "../i18n";
 import {
   APP_PIN_HASH_KEY,
   APP_PIN_LOCK_KEY,
@@ -70,12 +71,17 @@ export const getLocalAuthStatus = async (): Promise<LocalAuthStatus> => {
   if (!hasHardware) {
     return {
       canUseBiometricLock: false,
-      biometricDescription:
+      biometricDescription: translate(
         "Biometric lock is unavailable because this device does not have supported biometric hardware.",
+      ),
       canUsePinPatternLock,
       pinPatternDescription: canUsePinPatternLock
-        ? `PIN or pattern lock can use your enrolled device credential.`
-        : "PIN or pattern lock is unavailable because no device credential is enrolled.",
+        ? translate(
+            "PIN or pattern lock can use your enrolled device credential.",
+          )
+        : translate(
+            "PIN or pattern lock is unavailable because no device credential is enrolled.",
+          ),
       authenticationType: "None",
     };
   }
@@ -83,12 +89,17 @@ export const getLocalAuthStatus = async (): Promise<LocalAuthStatus> => {
   if (!isEnrolled) {
     return {
       canUseBiometricLock: false,
-      biometricDescription:
+      biometricDescription: translate(
         "Biometric lock is unavailable because no biometric authentication is enrolled. Add fingerprint, face, or iris authentication in your device settings.",
+      ),
       canUsePinPatternLock,
       pinPatternDescription: canUsePinPatternLock
-        ? `PIN or pattern lock can use your enrolled device credential.`
-        : "PIN or pattern lock is unavailable because no device credential is enrolled.",
+        ? translate(
+            "PIN or pattern lock can use your enrolled device credential.",
+          )
+        : translate(
+            "PIN or pattern lock is unavailable because no device credential is enrolled.",
+          ),
       authenticationType: "None",
     };
   }
@@ -103,14 +114,17 @@ export const getLocalAuthStatus = async (): Promise<LocalAuthStatus> => {
     securityLevel >= LocalAuthentication.SecurityLevel.BIOMETRIC_WEAK &&
     highestAuthenticationType !== null;
   const pinPatternDescription = canUsePinPatternLock
-    ? `PIN or pattern lock can use your enrolled device credential.`
-    : "PIN or pattern lock is unavailable because no device PIN, pattern, or passcode is enrolled.";
+    ? translate("PIN or pattern lock can use your enrolled device credential.")
+    : translate(
+        "PIN or pattern lock is unavailable because no device PIN, pattern, or passcode is enrolled.",
+      );
 
   if (!canUseBiometricLock) {
     return {
       canUseBiometricLock: false,
-      biometricDescription:
+      biometricDescription: translate(
         "Biometric lock is unavailable because the enrolled local authentication is not a supported biometric method.",
+      ),
       canUsePinPatternLock,
       pinPatternDescription,
       authenticationType,
@@ -119,7 +133,9 @@ export const getLocalAuthStatus = async (): Promise<LocalAuthStatus> => {
 
   return {
     canUseBiometricLock: true,
-    biometricDescription: `Biometric lock will use ${authenticationType}.`,
+    biometricDescription: translate("Biometric lock will use {{type}}.", {
+      type: translate(authenticationType),
+    }),
     canUsePinPatternLock,
     pinPatternDescription,
     authenticationType,
@@ -151,10 +167,10 @@ export const authenticateWithLocalAuth = async (
   isEnabledPinPatternAuth: boolean,
 ): Promise<boolean> => {
   const result = await LocalAuthentication.authenticateAsync({
-    promptMessage: "Unlock with biometric authentication",
-    promptSubtitle: "Use your enrolled biometric method",
-    promptDescription: "Confirm your identity to continue.",
-    cancelLabel: "Cancel",
+    promptMessage: translate("Unlock with biometric authentication"),
+    promptSubtitle: translate("Use your enrolled biometric method"),
+    promptDescription: translate("Confirm your identity to continue."),
+    cancelLabel: translate("Cancel"),
     disableDeviceFallback: !isEnabledPinPatternAuth,
   });
 

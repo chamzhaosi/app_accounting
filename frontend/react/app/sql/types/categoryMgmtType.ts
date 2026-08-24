@@ -4,6 +4,7 @@ export type CategoryMgmtRspType = {
   label: string;
   icon: string;
   descriptions?: string | null;
+  translation_key?: string | null;
   sort_order: number;
   is_active: boolean;
   is_system: boolean;
@@ -23,4 +24,5 @@ export type CategoryMgmtCreateReqType = {
 
 export type CategoryMgmtUpdateReqType = CategoryMgmtCreateReqType & {
   id: string;
+  isLabelCustomized: boolean;
 };

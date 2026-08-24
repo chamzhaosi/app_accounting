@@ -200,6 +200,7 @@ const TRANSACTION_DETAIL_SELECT = `
   SELECT
     transactions.*,
     categories.label AS category_label,
+    categories.translation_key AS category_translation_key,
     categories.icon AS category_icon,
     accounts.label AS account_label,
     from_accounts.label AS from_account_label,

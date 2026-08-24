@@ -1,13 +1,15 @@
 import { Stack } from "expo-router";
 import { AppStack } from "../../components/AppStack";
+import { useTranslation } from "../../i18n";
 
 export default function StackLayout() {
+  const { t } = useTranslation();
   return (
     <AppStack>
       <Stack.Screen
         name="list"
         options={{
-          title: "Transaction Management",
+          title: t("Transaction Management"),
           headerShown: false,
         }}
       />
@@ -15,14 +17,14 @@ export default function StackLayout() {
       <Stack.Screen
         name="create"
         options={{
-          title: "New Transaction",
+          title: t("New Transaction"),
         }}
       />
 
       <Stack.Screen
         name="[id]"
         options={{
-          title: "Transaction Detail",
+          title: t("Transaction Detail"),
         }}
       />
     </AppStack>

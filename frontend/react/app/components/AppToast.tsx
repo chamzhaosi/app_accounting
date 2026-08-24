@@ -1,4 +1,5 @@
 import Toast, { ToastShowParams } from "react-native-toast-message";
+import { translate } from "../i18n";
 
 type ToastType = ToastShowParams & {
   title?: string;
@@ -15,8 +16,8 @@ export const AppToast = {
   }: ToastType) => {
     Toast.show({
       type: "success",
-      text1: title ?? "Success",
-      text2: message,
+      text1: translate(title ?? "Success"),
+      text2: translate(message),
       visibilityTime: duration,
       position: position,
     });
@@ -29,8 +30,8 @@ export const AppToast = {
   }: ToastType) => {
     Toast.show({
       type: "error",
-      text1: title ?? "Error",
-      text2: message,
+      text1: translate(title ?? "Error"),
+      text2: translate(message),
       visibilityTime: duration,
       position: position,
     });
@@ -44,8 +45,8 @@ export const AppToast = {
   }: ToastType) => {
     Toast.show({
       type: "warning",
-      text1: title ?? "Warning",
-      text2: message,
+      text1: translate(title ?? "Warning"),
+      text2: translate(message),
       visibilityTime: duration,
       position: position,
     });
@@ -59,8 +60,8 @@ export const AppToast = {
   }: ToastType) => {
     Toast.show({
       type: "info",
-      text1: title ?? "Info",
-      text2: message,
+      text1: translate(title ?? "Info"),
+      text2: translate(message),
       visibilityTime: duration,
       position: position,
     });

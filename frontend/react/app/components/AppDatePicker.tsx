@@ -11,6 +11,7 @@ import { TextInput, TextInputProps, useTheme } from "react-native-paper";
 import { formatDateValue } from "../utils/date";
 import AppTextInput from "./AppTextInput";
 import CustomDatePicker from "./CustomDatePicker";
+import { useTranslation } from "../i18n";
 
 type AppDatePickerProps = Omit<
   TextInputProps,
@@ -26,6 +27,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
   ({ value, onChange, errorField, onBlur, disabled, ...props }, ref) => {
     const [visible, setVisible] = useState(false);
     const theme = useTheme();
+    const { locale, t } = useTranslation();
 
     const openPicker = () => {
       if (!disabled) setVisible(true);
@@ -71,7 +73,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
           <View style={styles.modalRoot}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Dismiss date picker"
+              accessibilityLabel={t("Dismiss date picker")}
               style={[
                 StyleSheet.absoluteFill,
                 { backgroundColor: theme.colors.backdrop },
@@ -82,6 +84,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
             <View style={styles.dialog}>
               <CustomDatePicker
                 value={value}
+                locale={locale}
                 onChange={(date) => {
                   onChange(date);
                   dismissPicker();

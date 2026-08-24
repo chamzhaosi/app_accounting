@@ -32,5 +32,7 @@ export const insertCategoryMgmtTable = async (db: SQLite.SQLiteDatabase) => {
     INSERT INTO categories (id, type_id, label, icon, descriptions) VALUES ('${randomUUID()}', 2, 'Insurance', 'Shield', NULL);
     INSERT INTO categories (id, type_id, label, icon, descriptions) VALUES ('${randomUUID()}', 2, 'Travel', 'Plane', NULL);
     INSERT INTO categories (id, type_id, label, icon, descriptions) VALUES ('${randomUUID()}', 2, 'Other Expense', 'CircleEllipsis', NULL);
+
+    UPDATE categories SET translation_key = label;
   `);
 };

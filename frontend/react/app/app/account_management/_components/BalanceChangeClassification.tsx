@@ -5,6 +5,7 @@ import AppSelect, { SelectOptionType } from "../../../components/AppSelect";
 import type { BalanceChangeKind } from "../../../sql/types/accMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { formatDateValue, parseDateValue } from "../../../utils/date";
+import { useTranslation } from "../../../i18n";
 
 type BalanceChangeClassificationProps = {
   difference: number;
@@ -30,6 +31,7 @@ export default function BalanceChangeClassification({
   onDateChange,
 }: BalanceChangeClassificationProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   if (difference === 0) return null;
 
   const transactionKind = difference < 0 ? "expense" : "income";
@@ -46,13 +48,18 @@ export default function BalanceChangeClassification({
         },
       ]}
     >
-      <Text variant="titleMedium">Explain balance difference</Text>
+      <Text variant="titleMedium">{t("Explain balance difference")}</Text>
       <Text
         variant="bodyMedium"
         style={[styles.description, { color: THEME.onSurfaceVariant }]}
       >
-        Balance {difference < 0 ? "decreased" : "increased"} by {amount}. Choose
-        how it should appear in your records.
+        {t(
+          "Balance {{direction}} by {{amount}}. Choose how it should appear in your records.",
+          {
+            direction: t(difference < 0 ? "decreased" : "increased"),
+            amount,
+          },
+        )}
       </Text>
 
       <SegmentedButtons
@@ -61,13 +68,13 @@ export default function BalanceChangeClassification({
         buttons={[
           {
             value: transactionKind,
-            label: `Missing ${transactionKind}`,
+            label: t(`Missing ${transactionKind}`),
             icon: difference < 0 ? "arrow-up" : "arrow-down",
             disabled,
           },
           {
             value: "correction",
-            label: "Correction",
+            label: t("Correction"),
             icon: "calculator",
             disabled,
           },
@@ -94,13 +101,16 @@ export default function BalanceChangeClassification({
             onChange={(date) => onDateChange(formatDateValue(date))}
           />
           <Text variant="bodySmall" style={{ color: THEME.onSurfaceVariant }}>
-            This creates a normal {transactionKind} and updates budget reports.
+            {t("This creates a normal {{kind}} and updates budget reports.", {
+              kind: t(transactionKind),
+            })}
           </Text>
         </View>
       ) : kind === "correction" ? (
         <Text variant="bodySmall" style={{ color: THEME.onSurfaceVariant }}>
-          A bookkeeping correction changes the account balance without affecting
-          the budget.
+          {t(
+            "A bookkeeping correction changes the account balance without affecting the budget.",
+          )}
         </Text>
       ) : null}
     </Surface>

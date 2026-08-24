@@ -27,9 +27,11 @@ import {
 } from "../../stores/useLocalAuthStore";
 import { DASHBOARD_URL, LANDING_URL } from "../../constants/urls";
 import { getDB } from "../../sql/db/database";
+import { useTranslation } from "../../i18n";
 
 export default function AppPINLogin() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const {
     authErrorCounter,
     lastErrorAuthDateTime,
@@ -97,11 +99,11 @@ export default function AppPINLogin() {
     <AppScrollView className="pt-8 rounded-t-[50]">
       <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
-          APP PIN
+          {t("APP PIN")}
         </AppText>
 
         <AppSpacer height={8} />
-        <AppText>Enter your app PIN to continue.</AppText>
+        <AppText>{t("Enter your app PIN to continue.")}</AppText>
 
         <AppSpacer height={8} />
 

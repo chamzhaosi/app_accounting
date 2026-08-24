@@ -58,6 +58,7 @@ export type TransactionMgmtRspType = {
   transaction_date: string;
   is_active: boolean;
   category_label: string | null;
+  category_translation_key: string | null;
   category_icon: string | null;
   account_label: string | null;
   from_account_label: string | null;

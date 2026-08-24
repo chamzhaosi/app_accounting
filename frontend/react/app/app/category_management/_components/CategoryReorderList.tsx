@@ -27,6 +27,7 @@ import {
   CATEGORY_REORDER_ICON_SIZE,
 } from "./categoryManagement.constants";
 import { swapCategoryItems } from "./categoryReorderList.utils";
+import { useTranslation } from "../../../i18n";
 
 type Props = {
   data: AppListCardItemType[];
@@ -58,6 +59,7 @@ export default function CategoryReorderList({
   onSave,
 }: Props) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const [selectedKey, setSelectedKey] = useState<string>();
   const cardWidth = Math.floor(
@@ -101,9 +103,9 @@ export default function CategoryReorderList({
         accessibilityHint={
           isAdjusting
             ? isSelected
-              ? "Selected. Tap another card to swap positions."
-              : "Tap to select this card for swapping."
-            : "Tap to edit."
+              ? t("Selected. Tap another card to swap positions.")
+              : t("Tap to select this card for swapping.")
+            : t("Tap to edit.")
         }
         accessibilityLabel={item.label}
         accessibilityRole="button"
@@ -170,13 +172,13 @@ export default function CategoryReorderList({
               variant="bodySmall"
               style={[styles.hintText, { color: THEME.onSurfaceVariant }]}
             >
-              Tap two cards to swap, then save.
+              {t("Tap two cards to swap, then save.")}
             </AppText>
           </View>
           <View style={styles.actions}>
-            <Tooltip title="Cancel">
+            <Tooltip title={t("Cancel")}>
               <IconButton
-                accessibilityLabel="Cancel category reordering"
+                accessibilityLabel={t("Cancel category reordering")}
                 disabled={isReordering}
                 icon={({ color, size }) => <X color={color} size={size} />}
                 iconColor={THEME.error}
@@ -188,9 +190,9 @@ export default function CategoryReorderList({
                 style={styles.actionIcon}
               />
             </Tooltip>
-            <Tooltip title="Save order">
+            <Tooltip title={t("Save order")}>
               <IconButton
-                accessibilityLabel="Save category order"
+                accessibilityLabel={t("Save category order")}
                 disabled={!hasOrderChanges || isReordering}
                 icon={({ color, size }) => <Check color={color} size={size} />}
                 iconColor={THEME.primary}

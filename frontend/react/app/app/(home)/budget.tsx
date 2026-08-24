@@ -36,9 +36,12 @@ import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { getMonthEndKey, getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import { formatPrivateAmount, MASKED_AMOUNT } from "../../utils/number";
+import { useTranslation } from "../../i18n";
+import { getCategoryDisplayLabel } from "../../utils/category";
 
 export default function Budget() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -81,7 +84,7 @@ export default function Budget() {
           <AppMonthNavigator month={month} onChange={setMonth} />
           <AppIcon name="CircleAlert" size={64} color={THEME.error} />
           <Text variant="headlineSmall" style={styles.emptyTitle}>
-            Unable to load budget
+            {t("Unable to load budget")}
           </Text>
           <AppButton
             {...SUBMIT_BTN_CONTENT_STYLE}
@@ -152,15 +155,17 @@ export default function Budget() {
               color={THEME.onSurfaceVariant}
             />
             <Text variant="headlineSmall" style={styles.emptyTitle}>
-              No budget for this month
+              {t("No budget for this month")}
             </Text>
             <Text
               variant="bodyMedium"
               style={[styles.emptyText, { color: THEME.onSurfaceVariant }]}
             >
-              {isCurrentMonth
-                ? "Set a monthly total and allocate it across your expense categories."
-                : "Budgets follow the latest active plan when each new month begins."}
+              {t(
+                isCurrentMonth
+                  ? "Set a monthly total and allocate it across your expense categories."
+                  : "Budgets follow the latest active plan when each new month begins.",
+              )}
             </Text>
             {isCurrentMonth && (
               <AppButton
@@ -186,7 +191,7 @@ export default function Budget() {
               <AppMonthNavigator month={month} onChange={setMonth} />
               <View style={styles.titleRow}>
                 <View style={styles.flex}>
-                  <Text variant="labelLarge">Monthly budget</Text>
+                  <Text variant="labelLarge">{t("Monthly budget")}</Text>
                   <Text variant="headlineLarge">
                     {formatPrivateAmount(
                       overview.budget.total_budget,
@@ -201,7 +206,7 @@ export default function Budget() {
                       { backgroundColor: THEME.surfaceContainerHighest },
                     ]}
                   >
-                    <Text variant="labelMedium">Paused</Text>
+                    <Text variant="labelMedium">{t("Paused")}</Text>
                   </View>
                 )}
               </View>
@@ -266,11 +271,11 @@ export default function Budget() {
             </Surface>
 
             <View style={styles.sectionHeader}>
-              <Text variant="titleLarge">Category progress</Text>
+              <Text variant="titleLarge">{t("Category progress")}</Text>
               {isCurrentMonth && (
                 <AppIconButton
                   iconName="Settings2"
-                  accessibilityLabel="Manage budget"
+                  accessibilityLabel={t("Manage budget")}
                   onPress={openManagement}
                   style={styles.manageButton}
                 />
@@ -320,7 +325,13 @@ export default function Budget() {
                         />
                       </View>
                       <View style={styles.flex}>
-                        <Text variant="titleMedium">{category.label}</Text>
+                        <Text variant="titleMedium">
+                          {getCategoryDisplayLabel(
+                            category.label,
+                            category.translation_key,
+                            t,
+                          )}
+                        </Text>
                         <Text
                           variant="bodySmall"
                           style={{ color: THEME.onSurfaceVariant }}
@@ -329,12 +340,12 @@ export default function Budget() {
                             category.spent_amount,
                             areAmountsVisible,
                           )}{" "}
-                          of{" "}
+                          {t("of")}{" "}
                           {formatPrivateAmount(
                             category.allocated_amount,
                             areAmountsVisible,
                           )}{" "}
-                          · {progressLabel}
+                          · {t(progressLabel)}
                         </Text>
                       </View>
                       <Text
@@ -367,7 +378,7 @@ export default function Budget() {
                   { color: THEME.onSurfaceVariant },
                 ]}
               >
-                No category allocations for this month.
+                {t("No category allocations for this month.")}
               </Text>
             )}
           </ScrollView>
@@ -386,12 +397,13 @@ function Stat({
   value: number;
   color?: string;
 }) {
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
   return (
     <View style={styles.stat}>
-      <Text variant="labelMedium">{label}</Text>
+      <Text variant="labelMedium">{t(label)}</Text>
       <Text variant="titleLarge" style={color ? { color } : undefined}>
         {formatPrivateAmount(value, areAmountsVisible)}
       </Text>
@@ -440,6 +452,7 @@ function BudgetExpenseDonutChart({
   overview: BudgetOverviewType;
 }) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -482,7 +495,7 @@ function BudgetExpenseDonutChart({
       ]}
     >
       <Text variant="titleMedium" style={styles.expenseDonutTitle}>
-        Expense breakdown
+        {t("Expense breakdown")}
       </Text>
       {chartCategories.length ? (
         <View style={styles.expenseDonutContent}>
@@ -502,7 +515,7 @@ function BudgetExpenseDonutChart({
                   variant="labelSmall"
                   style={{ color: THEME.onSurfaceVariant }}
                 >
-                  Spent
+                  {t("Spent")}
                 </Text>
                 <Text variant="titleSmall" style={styles.expenseDonutTotal}>
                   {formatPrivateAmount(overview.spentAmount, areAmountsVisible)}
@@ -527,7 +540,13 @@ function BudgetExpenseDonutChart({
                 ]}
               />
               <Text variant="labelMedium" numberOfLines={1} style={styles.flex}>
-                {selectedCategory.label}
+                {"category_id" in selectedCategory
+                  ? getCategoryDisplayLabel(
+                      selectedCategory.label,
+                      selectedCategory.translation_key,
+                      t,
+                    )
+                  : t(selectedCategory.label)}
               </Text>
               <Text variant="labelMedium" style={styles.expenseDonutAmount}>
                 {formatPrivateAmount(
@@ -542,7 +561,7 @@ function BudgetExpenseDonutChart({
       ) : (
         <View style={styles.expenseDonutEmpty}>
           <Text style={{ color: THEME.onSurfaceVariant }}>
-            No category expenses this month.
+            {t("No category expenses this month.")}
           </Text>
         </View>
       )}

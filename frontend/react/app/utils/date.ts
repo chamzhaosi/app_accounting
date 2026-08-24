@@ -30,15 +30,139 @@ export const shiftMonth = (month: string, amount: number): string => {
   return getMonthKey(new Date(date.getFullYear(), date.getMonth() + amount, 1));
 };
 
-export const formatMonthLabel = (month: string): string => {
+export const formatMonthLabel = (month: string, locale = "en-US"): string => {
   const date = parseDateValue(month);
-  return date
-    ? new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        year: "numeric",
-      }).format(date)
-    : "";
+  return date ? formatMonthYearLabel(date, locale, "long") : "";
 };
+
+export const formatMonthName = (
+  date: Date,
+  locale = "en-US",
+  month: "long" | "short" = "long",
+) => {
+  if (locale.startsWith("zh")) return `${date.getMonth() + 1}月`;
+
+  const monthNames = locale.startsWith("ms")
+    ? month === "long"
+      ? MALAY_MONTHS
+      : MALAY_SHORT_MONTHS
+    : month === "long"
+      ? ENGLISH_MONTHS
+      : ENGLISH_SHORT_MONTHS;
+  return monthNames[date.getMonth()];
+};
+
+export const formatMonthYearLabel = (
+  date: Date,
+  locale = "en-US",
+  month: "long" | "short" = "long",
+) => {
+  const monthName = formatMonthName(date, locale, month);
+  return locale.startsWith("zh")
+    ? `${date.getFullYear()}年${monthName}`
+    : `${monthName} ${date.getFullYear()}`;
+};
+
+export const formatLocalizedDateLabel = (
+  date: Date,
+  locale = "en-US",
+  options: {
+    includeWeekday?: boolean;
+    includeYear?: boolean;
+    month?: "long" | "short";
+  } = {},
+) => {
+  const {
+    includeWeekday = false,
+    includeYear = true,
+    month = "long",
+  } = options;
+  const monthName = formatMonthName(date, locale, month);
+  const weekday = locale.startsWith("zh")
+    ? CHINESE_WEEKDAYS[date.getDay()]
+    : locale.startsWith("ms")
+      ? MALAY_WEEKDAYS[date.getDay()]
+      : ENGLISH_WEEKDAYS[date.getDay()];
+  const dateLabel = locale.startsWith("zh")
+    ? `${includeYear ? `${date.getFullYear()}年` : ""}${monthName}${date.getDate()}日`
+    : locale.startsWith("ms")
+      ? `${date.getDate()} ${monthName}${includeYear ? ` ${date.getFullYear()}` : ""}`
+      : `${monthName} ${date.getDate()}${includeYear ? `, ${date.getFullYear()}` : ""}`;
+
+  return includeWeekday ? `${weekday}, ${dateLabel}` : dateLabel;
+};
+
+const ENGLISH_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+const ENGLISH_SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+const MALAY_MONTHS = [
+  "Januari",
+  "Februari",
+  "Mac",
+  "April",
+  "Mei",
+  "Jun",
+  "Julai",
+  "Ogos",
+  "September",
+  "Oktober",
+  "November",
+  "Disember",
+] as const;
+
+const MALAY_SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mac",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Ogo",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Dis",
+] as const;
+
+const ENGLISH_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MALAY_WEEKDAYS = ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"];
+const CHINESE_WEEKDAYS = [
+  "周日",
+  "周一",
+  "周二",
+  "周三",
+  "周四",
+  "周五",
+  "周六",
+];
 
 export const getMonthEndKey = (month: string): string => {
   const date = parseDateValue(month) ?? new Date();

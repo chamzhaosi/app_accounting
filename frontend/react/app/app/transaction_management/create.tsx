@@ -21,8 +21,10 @@ import {
 import useTransactionManagementCreate from "../../hook/transaction_management/useTransactionManagementCreate";
 import AccountIdField from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
+import { useTranslation } from "../../i18n";
 
 export default function TransactionManagementCreate() {
+  const { t } = useTranslation();
   const {
     accountFieldProps,
     activeAccountField,
@@ -51,7 +53,7 @@ export default function TransactionManagementCreate() {
     <View className="flex flex-1">
       <View className="p-4 pb-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
         <AppText variant="titleMedium" className="mb-2">
-          Transaction Type
+          {t("Transaction Type")}
         </AppText>
         <Controller
           control={control}
@@ -82,17 +84,17 @@ export default function TransactionManagementCreate() {
               buttons={[
                 {
                   value: TXN_TYPE_ENUM.EXPENSE,
-                  label: "Expense",
+                  label: t("Expense"),
                   icon: "arrow-up",
                 },
                 {
                   value: TXN_TYPE_ENUM.INCOME,
-                  label: "Income",
+                  label: t("Income"),
                   icon: "arrow-down",
                 },
                 {
                   value: TXN_TYPE_ENUM.TRANSFER,
-                  label: "Transfer",
+                  label: t("Transfer"),
                   icon: "swap-horizontal",
                 },
               ]}

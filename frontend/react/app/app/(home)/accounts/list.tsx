@@ -20,6 +20,7 @@ import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
 import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
 import { formatPrivateAmount } from "../../../utils/number";
+import { useTranslation } from "../../../i18n";
 
 type AccountTypeSection = {
   typeId: string;
@@ -30,6 +31,7 @@ type AccountTypeSection = {
 
 export default function AccountsList() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -124,7 +126,7 @@ export default function AccountsList() {
             ]}
           >
             <AppIcon name={section.icon} color={THEME.primary} size={22} />
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <Text style={styles.sectionTitle}>{t(section.title)}</Text>
             <Text
               variant="labelMedium"
               style={{ color: THEME.onSurfaceVariant }}

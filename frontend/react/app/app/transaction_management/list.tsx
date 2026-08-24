@@ -21,6 +21,8 @@ import {
   formatPrivateAbsoluteAmount,
   formatPrivateSignedAmount,
 } from "../../utils/number";
+import { useTranslation } from "../../i18n";
+import { formatLocalizedDateLabel } from "../../utils/date";
 
 const formatDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -29,7 +31,11 @@ const formatDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const formatSectionDate = (dateValue: string) => {
+const formatSectionDate = (
+  dateValue: string,
+  locale: string,
+  t: (text: string) => string,
+) => {
   const date = new Date(`${dateValue}T00:00:00`);
   if (Number.isNaN(date.getTime())) return dateValue;
 
@@ -39,24 +45,21 @@ const formatSectionDate = (dateValue: string) => {
     today.getMonth(),
     today.getDate() - 1,
   );
-  const calendarDate = date.toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "short",
-    ...(date.getFullYear() !== today.getFullYear() && { year: "numeric" }),
+  const includeYear = date.getFullYear() !== today.getFullYear();
+  const calendarDate = formatLocalizedDateLabel(date, locale, {
+    includeYear,
   });
 
   if (dateValue === formatDateKey(today)) {
-    return `Today · ${calendarDate}`;
+    return `${t("Today")} · ${calendarDate}`;
   }
   if (dateValue === formatDateKey(yesterday)) {
-    return `Yesterday · ${calendarDate}`;
+    return `${t("Yesterday")} · ${calendarDate}`;
   }
 
-  return date.toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "short",
-    weekday: "short",
-    ...(date.getFullYear() !== today.getFullYear() && { year: "numeric" }),
+  return formatLocalizedDateLabel(date, locale, {
+    includeWeekday: true,
+    includeYear,
   });
 };
 
@@ -65,6 +68,7 @@ export default function TransactionManagementList(
 ) {
   const { accountId } = props;
   const { THEME } = useThemeStore();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -137,13 +141,13 @@ export default function TransactionManagementList(
                   { color: THEME.onSurfaceVariant },
                 ]}
               >
-                Daily summary
+                {t("Daily summary")}
               </Text>
               <Text
                 variant="titleMedium"
                 style={[styles.sectionDate, { color: THEME.onSurface }]}
               >
-                {formatSectionDate(section.transactionDate)}
+                {formatSectionDate(section.transactionDate, locale, t)}
               </Text>
             </View>
 
@@ -151,7 +155,7 @@ export default function TransactionManagementList(
               style={[styles.netBadge, { backgroundColor: netBackgroundColor }]}
             >
               <Text variant="labelSmall" style={{ color: netColor }}>
-                Net
+                {t("Net")}
               </Text>
               <Text
                 variant="titleLarge"
@@ -191,8 +195,8 @@ export default function TransactionManagementList(
             accessibilityLabel={`${item.title}, ${displayAmount}`}
             accessibilityHint={
               isAdjustment
-                ? "Opens the account for balance editing"
-                : "Opens transaction details for editing"
+                ? t("Opens the account for balance editing")
+                : t("Opens transaction details for editing")
             }
             android_ripple={{ color: THEME.outlineVariant }}
             onPress={() => router.push(transactionUrl as Href)}

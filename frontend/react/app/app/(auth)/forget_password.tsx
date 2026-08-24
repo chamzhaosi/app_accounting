@@ -22,6 +22,7 @@ import {
   ForgetPasswordResetFormType,
 } from "../../forms/schemas/auth/forget_password.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useTranslation } from "../../i18n";
 
 enum ForgetPasswordStepEnum {
   STEP_1_EMAIL = "EMAIL",
@@ -31,6 +32,7 @@ enum ForgetPasswordStepEnum {
 
 export default function ForgetPassword() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const [step, setStep] = useState<ForgetPasswordStepEnum>(
     ForgetPasswordStepEnum.STEP_1_EMAIL,
   );
@@ -160,11 +162,11 @@ export default function ForgetPassword() {
     <AppScrollView className="pt-8 rounded-t-[50]">
       <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
-          {title}
+          {title ? t(title) : null}
         </AppText>
 
         <AppSpacer height={8} />
-        <AppText>{description}</AppText>
+        <AppText>{description ? t(description) : null}</AppText>
 
         <AppSpacer height={8} />
 

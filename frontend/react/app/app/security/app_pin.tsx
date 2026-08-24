@@ -28,8 +28,10 @@ import {
   PIN_PATTERN_LOCK_KEY,
   setStoredItem,
 } from "../../local/secureStore";
+import { useTranslation } from "../../i18n";
 
 export default function AppPin() {
+  const { t } = useTranslation();
   const { localAuthType, canUseBiometricLock, isBiometricLockEnabled } =
     useLocalSearchParams<{
       localAuthType: string;
@@ -172,9 +174,11 @@ export default function AppPin() {
         />
         <View className="-mt-4 mb-4 flex flex-col gap-1">
           <AppText>
-            {isDeviceLockEnabled
-              ? "Use this PIN if your device's biometric or screen lock authentication becomes unavailable."
-              : "Set an App PIN to protect your Finora account."}
+            {t(
+              isDeviceLockEnabled
+                ? "Use this PIN if your device's biometric or screen lock authentication becomes unavailable."
+                : "Set an App PIN to protect your Finora account.",
+            )}
           </AppText>
         </View>
 

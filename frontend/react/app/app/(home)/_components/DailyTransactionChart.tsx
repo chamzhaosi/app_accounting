@@ -16,6 +16,7 @@ import {
   formatPrivateAmount,
   formatPrivateCompactAmount,
 } from "../../../utils/number";
+import { useTranslation } from "../../../i18n";
 
 type DailyTransactionChartProps = {
   startDate: string;
@@ -28,6 +29,7 @@ export default function DailyTransactionChart({
 }: DailyTransactionChartProps) {
   const { width } = useWindowDimensions();
   const { isDark, THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -67,7 +69,7 @@ export default function DailyTransactionChart({
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text variant="titleMedium" style={styles.title}>
-            Cash flow
+            {t("Cash flow")}
           </Text>
           <Text variant="labelSmall" style={{ color: THEME.onSurfaceVariant }}>
             {dateRangeLabel}
@@ -79,7 +81,7 @@ export default function DailyTransactionChart({
           <IconButton
             icon="calendar-today"
             size={18}
-            accessibilityLabel="Daily chart"
+            accessibilityLabel={t("Daily chart")}
             selected={mode === "daily"}
             iconColor={
               mode === "daily"
@@ -95,7 +97,7 @@ export default function DailyTransactionChart({
           <IconButton
             icon="chart-line"
             size={18}
-            accessibilityLabel="Cumulative chart"
+            accessibilityLabel={t("Cumulative chart")}
             selected={mode === "cumulative"}
             iconColor={
               mode === "cumulative"
@@ -257,11 +259,12 @@ function TooltipValue({
   textColor: string;
   areAmountsVisible: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.tooltipRow}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
       <Text variant="labelSmall" style={{ color: textColor }}>
-        {label}
+        {t(label)}
       </Text>
       <Text
         variant="labelSmall"
@@ -274,10 +277,11 @@ function TooltipValue({
 }
 
 function LegendItem({ color, label }: { color: string; label: string }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <Text variant="labelSmall">{label}</Text>
+      <Text variant="labelSmall">{t(label)}</Text>
     </View>
   );
 }

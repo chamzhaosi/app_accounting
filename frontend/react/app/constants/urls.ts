@@ -5,6 +5,7 @@ export const SETTINGS_URL = "/(home)/settings";
 
 export const APP_PIN_SETUP_URL = "/security/app_pin";
 export const LOCAL_AUTHENTICATE_URL = "/security/local_authenticate";
+export const ACCOUNT_SETTINGS_URL = "/account_settings";
 
 export const APP_PIN_LOGIN_URL = "/(auth)/app_pin_login";
 export const OTP_URL = "/(auth)/otp";

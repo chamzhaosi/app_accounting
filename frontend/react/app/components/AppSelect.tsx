@@ -1,10 +1,12 @@
 import { Fragment, useMemo, useRef, useState } from "react";
 import {
   LayoutRectangle,
+  StyleProp,
   TextInput as RNTextInput,
   ScrollView,
   StyleSheet,
   View,
+  ViewStyle,
 } from "react-native";
 import { Menu, TextInput, TextInputProps } from "react-native-paper";
 import {
@@ -20,6 +22,7 @@ import AppIcon, { AppIconProps } from "./AppIcon";
 import { FieldError } from "react-hook-form";
 import AppText, { TextTypEnum } from "./AppText";
 import AppDivider from "./AppDivider";
+import { useTranslation } from "../i18n";
 
 export type SelectOptionType = {
   id: number | string;
@@ -35,6 +38,8 @@ type AppSelectProps = TextInputProps & {
   onChange: (value: number | string | null) => void;
   errorField?: FieldError;
   showClear: boolean;
+  containerStyle?: StyleProp<ViewStyle>;
+  shouldTranslateText?: boolean;
 };
 
 export default function AppSelect({
@@ -45,9 +50,12 @@ export default function AppSelect({
   mode,
   errorField,
   showClear = false,
+  containerStyle,
+  shouldTranslateText = true,
   ...textInputProps
 }: AppSelectProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const textInputRef = useRef<RNTextInput>(null);
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [textInputLayout, setTextInputLayout] = useState<LayoutRectangle>({
@@ -96,13 +104,15 @@ export default function AppSelect({
           marginTop: textInputLayout.height,
         }}
         anchor={
-          <View className="mb-4">
+          <View className="mb-4" style={containerStyle}>
             <TextInput
               ref={textInputRef}
-              label={label}
+              label={shouldTranslateText ? t(label) : label}
               value={selectedLabel}
               onPress={() => setShowOptions(true)}
-              placeholder="Please select"
+              placeholder={
+                shouldTranslateText ? t("Please select") : "Please select"
+              }
               showSoftInputOnFocus={false}
               error={!!errorField?.message}
               caretHidden
@@ -129,7 +139,7 @@ export default function AppSelect({
         >
           {isEmptyOptions ? (
             <Menu.Item
-              title="No data"
+              title={shouldTranslateText ? t("No data") : "No data"}
               leadingIcon={() => (
                 <AppIcon name="PackageOpen" color={THEME.outlineVariant} />
               )}
@@ -205,8 +215,12 @@ export default function AppSelect({
         </ScrollView>
       </Menu>
       {errorField?.message && (
-        <AppText style={{ marginTop: -8 }} type={TextTypEnum.ERROR}>
-          {errorField.message}
+        <AppText
+          style={{ marginTop: -8 }}
+          type={TextTypEnum.ERROR}
+          shouldTranslateText={shouldTranslateText}
+        >
+          {t(errorField.message)}
         </AppText>
       )}
     </>

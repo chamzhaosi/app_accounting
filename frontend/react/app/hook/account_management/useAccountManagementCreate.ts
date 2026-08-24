@@ -19,8 +19,10 @@ import type { AccountManagementFormType } from "../../forms/schemas/account_mana
 import { createNewAccMgmt } from "../../sql/service/accMgmtService";
 import { getAccTypeList } from "../../sql/service/accTypeService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
 
 export default function useAccountManagementCreate() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isSavingAndNewAcc, setIsSavingAndNewAcc] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,10 +51,10 @@ export default function useAccountManagementCreate() {
       accountTypes.map((item) => ({
         id: item.id,
         icon: item.icon as AppIconProps["name"],
-        label: item.label,
+        label: item.is_system ? t(item.label) : item.label,
         value: item.id,
       })),
-    [accountTypes],
+    [accountTypes, t],
   );
 
   const onSubmit = async (
@@ -85,7 +87,9 @@ export default function useAccountManagementCreate() {
         { label: data.label },
       );
       AppToast.success({
-        message: `${value.label} account created successfully`,
+        message: t("{{name}} account created successfully", {
+          name: value.label,
+        }),
       });
       reset();
       if (!saveAnotherAcc) router.back();

@@ -29,8 +29,11 @@ import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
 import type { BalanceChangeKind } from "../../sql/types/accMgmtType";
 import { formatDateValue } from "../../utils/date";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n";
+import { getCategoryDisplayLabel } from "../../utils/category";
 
 export default function useAccountManagementDetail() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -60,10 +63,10 @@ export default function useAccountManagementDetail() {
       accountTypes.map((item) => ({
         id: item.id,
         icon: item.icon as AppIconProps["name"],
-        label: item.label,
+        label: item.is_system ? t(item.label) : item.label,
         value: item.id,
       })),
-    [accountTypes],
+    [accountTypes, t],
   );
 
   const { control, handleSubmit, reset, setFocus, watch } =
@@ -104,10 +107,10 @@ export default function useAccountManagementDetail() {
       balanceChangeCategories.map((item) => ({
         id: item.id,
         icon: item.icon as AppIconProps["name"],
-        label: item.label,
+        label: getCategoryDisplayLabel(item.label, item.translation_key, t),
         value: item.id,
       })),
-    [balanceChangeCategories],
+    [balanceChangeCategories, t],
   );
   const isBalanceChangeReady =
     balanceDifference === 0 ||

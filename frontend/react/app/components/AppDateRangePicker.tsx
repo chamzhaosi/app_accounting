@@ -18,6 +18,7 @@ import CustomDateRangePicker, {
   AppDateRangeValue,
 } from "./CustomDateRangePicker";
 import { formatDateValue } from "../utils/date";
+import { useTranslation } from "../i18n";
 
 export type { AppDateRangeValue } from "./CustomDateRangePicker";
 
@@ -98,6 +99,7 @@ const AppDateRangePicker = forwardRef<RNTextInput, AppDateRangePickerProps>(
       value,
     );
     const theme = useTheme();
+    const { locale, t } = useTranslation();
 
     const openPicker = () => {
       if (disabled) return;
@@ -138,7 +140,7 @@ const AppDateRangePicker = forwardRef<RNTextInput, AppDateRangePickerProps>(
             size={20}
             hitSlop={6}
             style={styles.quickNavigationButton}
-            accessibilityLabel="Previous month"
+            accessibilityLabel={t("Previous month")}
             disabled={disabled}
             onPress={() => navigateMonth(-1)}
           />
@@ -173,7 +175,7 @@ const AppDateRangePicker = forwardRef<RNTextInput, AppDateRangePickerProps>(
             size={20}
             hitSlop={6}
             style={styles.quickNavigationButton}
-            accessibilityLabel="Next month"
+            accessibilityLabel={t("Next month")}
             disabled={disabled || !nextMonthRange}
             onPress={() => navigateMonth(1)}
           />
@@ -189,7 +191,7 @@ const AppDateRangePicker = forwardRef<RNTextInput, AppDateRangePickerProps>(
           <View style={styles.modalRoot}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Dismiss date range picker"
+              accessibilityLabel={t("Dismiss date range picker")}
               style={[
                 StyleSheet.absoluteFill,
                 { backgroundColor: theme.colors.backdrop },
@@ -200,6 +202,7 @@ const AppDateRangePicker = forwardRef<RNTextInput, AppDateRangePickerProps>(
             <View style={styles.dialog}>
               <CustomDateRangePicker
                 value={draftValue}
+                locale={locale}
                 disableFutureDates={disableFutureDates}
                 maxRangeDays={maxRangeDays}
                 onChange={(range) => {

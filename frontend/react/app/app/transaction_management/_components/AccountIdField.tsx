@@ -7,6 +7,7 @@ import { TEXTINPUT_HEIGHT } from "../../../constants/size";
 import { TransactionManagementFormType } from "../../../forms/schemas/transaction_management.schema";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import AccountPickerModal from "./AccountPickerModal";
+import { useTranslation } from "../../../i18n";
 
 export type AccountFieldName = "accountId" | "fromAccountId" | "toAccountId";
 
@@ -51,6 +52,7 @@ export default function AccountIdField({
   showQueryError = true,
 }: AccountIdFieldProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
 
   return (
     <View className="flex-1">
@@ -84,16 +86,16 @@ export default function AccountIdField({
                 }}
                 visible={isPickerVisible}
                 selectedItem={selectedAccount}
-                title={`Select ${label}`}
+                title={t("Select {{label}}", { label: t(label) })}
               />
 
               <View className="mb-4">
                 <TextInput
                   ref={ref}
-                  label={label}
+                  label={t(label)}
                   value={selectedAccount?.inputLabel ?? ""}
                   mode="outlined"
-                  placeholder="Please select"
+                  placeholder={t("Please select")}
                   showSoftInputOnFocus={false}
                   caretHidden
                   error={!!error?.message}

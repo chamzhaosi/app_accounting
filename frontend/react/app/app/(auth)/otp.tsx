@@ -16,9 +16,11 @@ import {
   otpSchema,
 } from "../../forms/schemas/auth/otp.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useTranslation } from "../../i18n";
 
 export default function OTP() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [rspErrorMsg, setRspErrorMsg] = useState<string>("");
@@ -55,12 +57,14 @@ export default function OTP() {
     <AppScrollView className="pt-8 rounded-t-[50]">
       <AppView className="w-[90%] self-center bg-inherit dark:bg-inherit">
         <AppText variant="headlineLarge" style={{ color: THEME.secondary }}>
-          VERIFICATION
+          {t("VERIFICATION")}
         </AppText>
 
         <AppSpacer height={8} />
         <AppText>
-          Please enter the verification code we send to your email address.
+          {t(
+            "Please enter the verification code we send to your email address.",
+          )}
         </AppText>
 
         <AppSpacer height={8} />

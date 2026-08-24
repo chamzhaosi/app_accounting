@@ -4,6 +4,7 @@ import { Dialog, Portal } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppText from "./AppText";
+import { useTranslation } from "../i18n";
 
 type AppDialogProps = {
   title: string;
@@ -23,6 +24,7 @@ export default function AppDialog({
   actionRender,
 }: AppDialogProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const bgColor = THEME.tertiaryContainer;
   const textColor = THEME.onTertiaryContainer;
 
@@ -42,12 +44,12 @@ export default function AppDialog({
             variant="headlineMedium"
             style={{ padding: 8, color: textColor }}
           >
-            {title}
+            {t(title)}
           </AppText>
         </View>
         <Dialog.Content>
           <AppText variant="bodyLarge" style={{ color: textColor }}>
-            {description}
+            {t(description)}
           </AppText>
         </Dialog.Content>
         <Dialog.Actions>

@@ -1,27 +1,29 @@
 import { Stack } from "expo-router";
 import { AppStack } from "../../components/AppStack";
+import { useTranslation } from "../../i18n";
 
 export default function StackLayout() {
+  const { t } = useTranslation();
   return (
     <AppStack>
       <Stack.Screen
         name="list"
         options={{
-          title: "Category Management",
+          title: t("Category Management"),
         }}
       />
 
       <Stack.Screen
         name="create"
         options={{
-          title: "New Category",
+          title: t("New Category"),
         }}
       />
 
       <Stack.Screen
         name="[id]"
         options={{
-          title: "Category Detail",
+          title: t("Category Detail"),
         }}
       />
     </AppStack>

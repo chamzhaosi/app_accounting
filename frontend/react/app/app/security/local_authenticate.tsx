@@ -20,8 +20,10 @@ import {
   setStoredItem,
 } from "../../local/secureStore";
 import { APP_PIN_SETUP_URL } from "../../constants/urls";
+import { useTranslation } from "../../i18n";
 
 export default function Security() {
+  const { t } = useTranslation();
   const [isBiometricLockEnabled, setIsBiometricLockEnabled] =
     useState<boolean>(false);
   const [isBiometricEnabledByPIN, setIsBiomertricEnabledByPIN] =
@@ -172,16 +174,19 @@ export default function Security() {
       />
       {!isBiometricLockEnabled && (
         <AppText style={defaultStyles.description}>
-          {localAuthStatus?.biometricDescription ??
-            "Checking biometric lock support..."}
+          {t(
+            localAuthStatus?.biometricDescription ??
+              "Checking biometric lock support...",
+          )}
         </AppText>
       )}
 
       {(isBiometricEnabledByPIN ||
         (isBiometricLockEnabled && isPinPatternLockEnabled)) && (
         <AppText style={defaultStyles.description}>
-          Biometric authentication will always be used first when available,
-          even if PIN or Pattern Lock is enabled.
+          {t(
+            "Biometric authentication will always be used first when available, even if PIN or Pattern Lock is enabled.",
+          )}
         </AppText>
       )}
 
@@ -195,8 +200,10 @@ export default function Security() {
       />
       {!isPinPatternLockEnabled && (
         <AppText style={defaultStyles.description}>
-          {localAuthStatus?.pinPatternDescription ??
-            "Checking PIN or pattern lock support..."}
+          {t(
+            localAuthStatus?.pinPatternDescription ??
+              "Checking PIN or pattern lock support...",
+          )}
         </AppText>
       )}
 
@@ -222,11 +229,14 @@ const SectionItem = ({
   desciption?: string;
   onPress: () => void;
 }) => {
+  const { t } = useTranslation();
   return (
     <TouchableRipple style={defaultStyles.item_container} onPress={onPress}>
       <View className="my-2">
-        <AppText style={defaultStyles.item_label}>{label}</AppText>
-        <AppText style={defaultStyles.item_description}>{desciption}</AppText>
+        <AppText style={defaultStyles.item_label}>{t(label)}</AppText>
+        <AppText style={defaultStyles.item_description}>
+          {desciption ? t(desciption) : null}
+        </AppText>
       </View>
     </TouchableRipple>
   );

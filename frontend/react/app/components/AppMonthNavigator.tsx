@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { IconButton, Text } from "react-native-paper";
 import { formatMonthLabel, shiftMonth } from "../utils/date";
+import { useTranslation } from "../i18n";
 
 type AppMonthNavigatorProps = {
   month: string;
@@ -11,19 +12,20 @@ export default function AppMonthNavigator({
   month,
   onChange,
 }: AppMonthNavigatorProps) {
+  const { locale, t } = useTranslation();
   return (
     <View style={styles.container}>
       <IconButton
         icon="chevron-left"
-        accessibilityLabel="Previous month"
+        accessibilityLabel={t("Previous month")}
         onPress={() => onChange(shiftMonth(month, -1))}
       />
       <View style={styles.labelContainer}>
-        <Text variant="titleLarge">{formatMonthLabel(month)}</Text>
+        <Text variant="titleLarge">{formatMonthLabel(month, locale)}</Text>
       </View>
       <IconButton
         icon="chevron-right"
-        accessibilityLabel="Next month"
+        accessibilityLabel={t("Next month")}
         onPress={() => onChange(shiftMonth(month, 1))}
       />
     </View>

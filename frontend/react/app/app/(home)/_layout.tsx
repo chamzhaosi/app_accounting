@@ -8,9 +8,11 @@ import {
 } from "lucide-react-native";
 import { FONTS } from "../../constants/fonts";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useTranslation } from "../../i18n";
 
 export default function StackLayout() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const segments = useSegments();
   const activeSegments = segments as readonly string[];
   const isAccountsList =
@@ -41,7 +43,7 @@ export default function StackLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: "Dashboard",
+          title: t("Dashboard"),
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Gauge color={color} size={size} />,
         }}
@@ -49,7 +51,7 @@ export default function StackLayout() {
       <Tabs.Screen
         name="accounts"
         options={{
-          title: "Accounts",
+          title: t("Accounts"),
           headerShown: isAccountsList,
           tabBarIcon: ({ color, size }) => (
             <WalletCards color={color} size={size} />
@@ -59,7 +61,7 @@ export default function StackLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          title: "Categories",
+          title: t("Categories"),
           headerShown: isCategoriesList,
           tabBarIcon: ({ color, size }) => <Tags color={color} size={size} />,
         }}
@@ -67,7 +69,7 @@ export default function StackLayout() {
       <Tabs.Screen
         name="budget"
         options={{
-          title: "Budget",
+          title: t("Budget"),
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <HandCoins color={color} size={size} />
@@ -77,7 +79,7 @@ export default function StackLayout() {
       <Tabs.Screen
         name="setting"
         options={{
-          title: "Setting",
+          title: t("Setting"),
           tabBarIcon: ({ color, size }) => (
             <Settings color={color} size={size} />
           ),

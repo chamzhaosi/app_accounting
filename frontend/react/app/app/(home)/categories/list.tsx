@@ -25,6 +25,8 @@ import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
 import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
 import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
 import { formatPrivateAmount } from "../../../utils/number";
+import { useTranslation } from "../../../i18n";
+import { getCategoryDisplayLabel } from "../../../utils/category";
 
 type TabRoute = Route & {
   key: "expense" | "income";
@@ -39,6 +41,7 @@ const ROUTES: TabRoute[] = [
 
 export default function CategoriesList() {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(
@@ -77,7 +80,13 @@ export default function CategoriesList() {
       <TabView
         style={styles.tabView}
         renderTabBar={renderTabBar}
-        navigationState={{ index, routes: ROUTES }}
+        navigationState={{
+          index,
+          routes: ROUTES.map((route) => ({
+            ...route,
+            title: t(route.title),
+          })),
+        }}
         renderScene={({ route }) => (
           <CategoryPeriodTab
             typeId={route.typeId}
@@ -104,6 +113,7 @@ function CategoryPeriodTab({
   endDate,
 }: CategoryPeriodTabProps) {
   const { THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -188,9 +198,15 @@ function CategoryPeriodTab({
       renderItem={({ item: category }) => (
         <List.Item
           centered
-          title={category.label}
+          title={getCategoryDisplayLabel(
+            category.label,
+            category.translation_key,
+            t,
+          )}
           titleStyle={styles.categoryLabel}
-          description={`${category.transaction_count} ${category.transaction_count === 1 ? "transaction" : "transactions"}`}
+          description={`${category.transaction_count} ${t(
+            category.transaction_count === 1 ? "transaction" : "transactions",
+          )}`}
           descriptionStyle={styles.categoryDescription}
           style={[
             styles.categoryItem,

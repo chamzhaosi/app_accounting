@@ -4,6 +4,7 @@ import { ActivityIndicator, Surface, Text } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../stores/useAmountPrivacyStore";
 import { MASKED_AMOUNT } from "../utils/number";
+import { useTranslation } from "../i18n";
 
 export type CumulativeChartPoint = {
   value: number;
@@ -39,6 +40,7 @@ export default function CumulativeLineChartCard({
 }: CumulativeLineChartCardProps) {
   const { width } = useWindowDimensions();
   const { isDark, THEME } = useThemeStore();
+  const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -68,11 +70,11 @@ export default function CumulativeLineChartCard({
     >
       <View style={styles.header}>
         <Text variant="titleMedium" style={styles.title}>
-          {title}
+          {t(title)}
         </Text>
         <View style={styles.legend}>
           <View style={[styles.legendDot, { backgroundColor: color }]} />
-          <Text variant="labelSmall">{seriesLabel}</Text>
+          <Text variant="labelSmall">{t(seriesLabel)}</Text>
         </View>
       </View>
 

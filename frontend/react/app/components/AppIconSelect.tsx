@@ -7,6 +7,7 @@ import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppIconModal from "./AppIconModal";
 import AppText, { TextTypEnum } from "./AppText";
+import { useTranslation } from "../i18n";
 
 const formatIconLabel = (icon: AppIconProps["name"]) =>
   icon.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
@@ -37,6 +38,7 @@ const AppIconSelect = forwardRef<any, AppIconSelectProps>(
     ref,
   ) => {
     const { THEME } = useThemeStore();
+    const { t } = useTranslation();
     const isError = error?.message;
     const isAvailabled = editable && !disabled;
 
@@ -106,7 +108,7 @@ const AppIconSelect = forwardRef<any, AppIconSelectProps>(
                   },
                 ]}
               >
-                Icon
+                {t("Icon")}
               </AppText>
             )}
           </>
@@ -117,7 +119,7 @@ const AppIconSelect = forwardRef<any, AppIconSelectProps>(
             style={defaultStyle.errorMsg}
             type={TextTypEnum.ERROR}
           >
-            {error.message}
+            {t(error.message ?? "")}
           </AppText>
         )}
       </>
