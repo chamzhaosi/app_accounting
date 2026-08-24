@@ -383,8 +383,14 @@ export const zhHans: Record<string, string> = {
   "Description must be less than 100 characters": "说明必须少于 100 个字符",
   "Label must not exceed 30 characters": "名称不能超过 30 个字符",
   "Description must not exceed 100 characters": "说明不能超过 100 个字符",
-  "Maximum 10 integer digits and 2 decimal places":
-    "整数最多 10 位，小数最多 2 位",
+  "Maximum 13 integer digits and 2 decimal places":
+    "整数最多 13 位，小数最多 2 位",
+  "Enter a balance with up to 13 integer digits and 2 decimal places.":
+    "请输入整数最多 13 位且小数最多 2 位的余额。",
+  "Enter an amount with up to 13 integer digits and 2 decimal places.":
+    "请输入整数最多 13 位且小数最多 2 位的金额。",
+  "Enter allocations with up to 13 integer digits and 2 decimal places.":
+    "请输入整数最多 13 位且小数最多 2 位的分配金额。",
   "Please enter a total budget": "请输入总预算",
   "Enter a valid amount with up to 2 decimal places":
     "请输入有效金额，小数最多 2 位",

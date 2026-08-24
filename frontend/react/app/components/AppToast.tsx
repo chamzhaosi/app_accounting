@@ -1,5 +1,5 @@
 import Toast, { ToastShowParams } from "react-native-toast-message";
-import { translate } from "../i18n";
+import { translate } from "../i18n/helper";
 
 type ToastType = ToastShowParams & {
   title?: string;

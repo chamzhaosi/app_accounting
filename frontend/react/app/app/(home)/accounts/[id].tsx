@@ -1,115 +1,48 @@
-import { useQuery } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
-import AppDateRangePicker, {
-  AppDateRangeValue,
-} from "../../../components/AppDateRangePicker";
+import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
-import {
-  accountManagementQueryKeys,
-  transactionManagementQueryKeys,
-} from "../../../constants/queryKeys";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
 import { ACCOUNT_DETAIL_CARD_HEIGHT } from "../../../constants/size";
-import { getAccMgmtById } from "../../../sql/service/accMgmtService";
-import {
-  getAccountDateRangeFlowTotals,
-  getAccountForwardBalance,
-} from "../../../sql/service/transactionMgmtService";
+import useAccountDetail from "../../../hook/account_management/useAccountDetail";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
-import { DEBUG_TAG } from "../../../utils/debugLog";
 import TransactionManagementList from "../../transaction_management/list";
-import { formatDateValue, getCurrentMonthDateRange } from "../../../utils/date";
 import { formatPrivateAmount } from "../../../utils/number";
 import AccountBalanceHistoryChart from "./_components/AccountBalanceHistoryChart";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 export default function AccountDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const [dateRange, setDateRange] = useState<AppDateRangeValue>(
-    getCurrentMonthDateRange,
-  );
-  const startDate = formatDateValue(dateRange.startDate);
-  const endDate = formatDateValue(dateRange.endDate);
+  const {
+    account,
+    dateRange,
+    endDate,
+    forwardBalance,
+    id,
+    isForwardBalanceLoading,
+    isLoading,
+    moneyIn,
+    moneyOut,
+    periodEndBalance,
+    setDateRange,
+    startDate,
+  } = useAccountDetail();
 
-  const accountQuery = useQuery({
-    queryKey: accountManagementQueryKeys.detail(id),
-    queryFn: () => getAccMgmtById(id),
-    enabled: Boolean(id),
-  });
-  const flowTotalsQuery = useQuery({
-    queryKey: transactionManagementQueryKeys.accountFlowTotals({
-      accountId: id,
-      startDate,
-      endDate,
-    }),
-    queryFn: () => getAccountDateRangeFlowTotals(id, startDate, endDate),
-    enabled: Boolean(id && startDate && endDate),
-    placeholderData: (previousData) => previousData,
-  });
-  const forwardBalanceQuery = useQuery({
-    queryKey: transactionManagementQueryKeys.accountForwardBalance({
-      accountId: id,
-      startDate,
-    }),
-    queryFn: () => getAccountForwardBalance(id, startDate),
-    enabled: Boolean(id && startDate),
-    placeholderData: (previousData) => previousData,
-  });
-
-  useEffect(() => {
-    if (accountQuery.error) {
-      console.error(
-        DEBUG_TAG.ACCOUNT_MANAGEMENT,
-        "Error when loading account detail page",
-        accountQuery.error,
-      );
-    }
-  }, [accountQuery.error]);
-
-  useEffect(() => {
-    if (flowTotalsQuery.error) {
-      console.error(
-        DEBUG_TAG.TRANSACTION_MANAGEMENT,
-        "Error when loading account flow totals",
-        flowTotalsQuery.error,
-      );
-    }
-  }, [flowTotalsQuery.error]);
-
-  useEffect(() => {
-    if (forwardBalanceQuery.error) {
-      console.error(
-        DEBUG_TAG.TRANSACTION_MANAGEMENT,
-        "Error when loading account forward balance",
-        forwardBalanceQuery.error,
-      );
-    }
-  }, [forwardBalanceQuery.error]);
-
-  if (accountQuery.isLoading) {
+  if (isLoading) {
     return (
       <View className="h-full items-center justify-center">
         <ActivityIndicator size="large" />
       </View>
     );
   }
-
-  const account = accountQuery.data;
-  const moneyIn = flowTotalsQuery.data?.in_total ?? 0;
-  const moneyOut = flowTotalsQuery.data?.out_total ?? 0;
-  const forwardBalance = forwardBalanceQuery.data ?? 0;
-  const periodEndBalance = forwardBalance - moneyOut + moneyIn;
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
@@ -200,7 +133,7 @@ export default function AccountDetail() {
             startDate={startDate}
             endDate={endDate}
             forwardBalance={forwardBalance}
-            isForwardBalanceLoading={forwardBalanceQuery.isLoading}
+            isForwardBalanceLoading={isForwardBalanceLoading}
           />
         ) : null}
       </AppSwipePager>

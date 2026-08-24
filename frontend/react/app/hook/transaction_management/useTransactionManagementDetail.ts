@@ -43,11 +43,12 @@ import {
   updateTransactionMgmt,
 } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
+import { toAmountString } from "../../utils/amount";
+import { useTranslation } from "../../i18n/helper";
 import {
   getCategoryDisplayDescription,
   getCategoryDisplayLabel,
-} from "../../utils/category";
+} from "../category_management/categoryManagementList.utils";
 
 export default function useTransactionManagementDetail() {
   const { t } = useTranslation();
@@ -255,7 +256,7 @@ export default function useTransactionManagementDetail() {
       accountId: transaction.account_id ?? "",
       fromAccountId: transaction.from_account_id ?? "",
       toAccountId: transaction.to_account_id ?? "",
-      amount: transaction.amount.toFixed(2),
+      amount: toAmountString(transaction.amount),
       description: transaction.descriptions ?? "",
       transactionDate: transaction.transaction_date,
     });

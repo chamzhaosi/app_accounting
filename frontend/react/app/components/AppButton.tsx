@@ -1,7 +1,7 @@
 import { Button, ButtonProps } from "react-native-paper";
 import { StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import { useThemeStore } from "../stores/useThemeStore";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export enum ButtonType {
   PRIMARY,

@@ -14,7 +14,7 @@ import AppButton, {
 } from "../../components/AppButton";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppSpacer from "../../components/AppSpacer";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function ResetPassword() {
   const { t } = useTranslation();

@@ -1,5 +1,5 @@
 import * as LocalAuthentication from "expo-local-authentication";
-import { translate } from "../i18n";
+import { translate } from "../i18n/helper";
 import {
   APP_PIN_HASH_KEY,
   APP_PIN_LOCK_KEY,

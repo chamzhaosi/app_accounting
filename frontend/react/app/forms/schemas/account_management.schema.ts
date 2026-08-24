@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AMOUNT_MAX_LENGTH, AMOUNT_PATTERN } from "../../utils/amount";
 
 export type AccountManagementFormType = z.infer<
   typeof accountManagementFormSchema
@@ -6,7 +7,7 @@ export type AccountManagementFormType = z.infer<
 
 export const LABEL_MAX_LEN = 30;
 export const DESCRIPTION_MAX_LEN = 100;
-export const CURRENT_BALANCE_MAX_LEN = 13;
+export const CURRENT_BALANCE_MAX_LEN = AMOUNT_MAX_LENGTH;
 
 export const accountManagementFormSchema = z.object({
   typeId: z.string().min(1, "Please select a type"),
@@ -26,8 +27,8 @@ export const accountManagementFormSchema = z.object({
   currentBalance: z
     .string()
     .optional()
-    .refine((value) => !value || /^\d{1,10}(\.\d{1,2})?$/.test(value), {
-      message: "Maximum 10 integer digits and 2 decimal places",
+    .refine((value) => !value || AMOUNT_PATTERN.test(value), {
+      message: "Maximum 13 integer digits and 2 decimal places",
     }),
   isMainAccount: z.boolean(),
 });

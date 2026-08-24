@@ -24,7 +24,7 @@ import {
 } from "../stores/useLocalAuthStore";
 import { useThemeStore } from "../stores/useThemeStore";
 import { APP_PIN_LOGIN_URL, DASHBOARD_URL } from "../constants/urls";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export default function Landing() {
   const { THEME } = useThemeStore();

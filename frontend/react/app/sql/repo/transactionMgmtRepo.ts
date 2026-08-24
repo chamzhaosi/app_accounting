@@ -1,5 +1,11 @@
 import { randomUUID } from "expo-crypto";
 import { DB_SYNC_STATUS, TXN_TYPE_ENUM } from "../../constants/enum";
+import {
+  addAmounts,
+  isAmountWithinRange,
+  multiplyAmount,
+  toAmountNumber,
+} from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
   buildOrderBy,
@@ -30,7 +36,7 @@ export const getAccountDailyBalanceChangesFromDB = async (
     const result = await db.getAllAsync<AccountDailyBalanceChangeType>(
       `SELECT
          transaction_date,
-         COALESCE(SUM(
+         ROUND(COALESCE(SUM(
            CASE
              WHEN transaction_type = 'income' AND account_id = ? THEN amount
              WHEN transaction_type = 'expense' AND account_id = ? THEN -amount
@@ -39,7 +45,7 @@ export const getAccountDailyBalanceChangesFromDB = async (
              WHEN transaction_type = 'transfer' AND to_account_id = ? THEN amount
              ELSE 0
            END
-         ), 0) AS balance_change
+         ), 0), 2) AS balance_change
        FROM transactions
        WHERE deleted_at IS NULL
          AND transaction_date >= ?
@@ -91,7 +97,7 @@ export const getCategoryDailyTotalsFromDB = async (
     const result = await db.getAllAsync<CategoryDailyTotalType>(
       `SELECT
          transaction_date,
-         COALESCE(SUM(amount), 0) AS daily_total
+         ROUND(COALESCE(SUM(amount), 0), 2) AS daily_total
        FROM transactions
        WHERE category_id = ?
          AND transaction_date >= ?
@@ -132,22 +138,22 @@ export const getTransactionDailyTotalsFromDB = async (
       `
         SELECT
           transaction_date,
-          COALESCE(SUM(
+          ROUND(COALESCE(SUM(
             CASE
               WHEN transaction_type = 'income' THEN amount
               WHEN transaction_type = 'adjustment' AND amount > 0 THEN amount
               ELSE 0
             END
-          ), 0) AS income_total,
-          COALESCE(SUM(
+          ), 0), 2) AS income_total,
+          ROUND(COALESCE(SUM(
             CASE
               WHEN transaction_type = 'expense' THEN amount
               WHEN transaction_type = 'adjustment' AND amount < 0 THEN ABS(amount)
               ELSE 0
             END
-          ), 0) AS expense_total,
-          COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0) AS recorded_income_total,
-          COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0) AS recorded_expense_total
+          ), 0), 2) AS expense_total,
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0), 2) AS recorded_income_total,
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0), 2) AS recorded_expense_total
         FROM transactions
         WHERE deleted_at IS NULL
           AND transaction_date >= ?
@@ -225,7 +231,7 @@ export const getAccountForwardBalanceFromDB = async (
     const result = await db.getFirstAsync<{ forward_balance: number }>(
       `
         SELECT
-          accounts.current_balance - COALESCE((
+          ROUND(accounts.current_balance - COALESCE((
             SELECT SUM(
               CASE
                 WHEN transaction_type = 'income' AND account_id = ? THEN amount
@@ -239,7 +245,7 @@ export const getAccountForwardBalanceFromDB = async (
             FROM transactions
             WHERE deleted_at IS NULL
               AND transaction_date >= ?
-          ), 0) AS forward_balance
+          ), 0), 2) AS forward_balance
         FROM accounts
         WHERE id = ?
           AND deleted_at IS NULL;
@@ -283,22 +289,22 @@ export const getAccountDateRangeFlowTotalsFromDB = async (
     const result = await db.getFirstAsync<AccountDateRangeFlowTotalsType>(
       `
         SELECT
-          COALESCE(SUM(
+          ROUND(COALESCE(SUM(
             CASE
               WHEN transaction_type = 'income' AND account_id = ? THEN amount
               WHEN transaction_type = 'adjustment' AND account_id = ? AND amount > 0 THEN amount
               WHEN transaction_type = 'transfer' AND to_account_id = ? THEN amount
               ELSE 0
             END
-          ), 0) AS in_total,
-          COALESCE(SUM(
+          ), 0), 2) AS in_total,
+          ROUND(COALESCE(SUM(
             CASE
               WHEN transaction_type = 'expense' AND account_id = ? THEN amount
               WHEN transaction_type = 'adjustment' AND account_id = ? AND amount < 0 THEN ABS(amount)
               WHEN transaction_type = 'transfer' AND from_account_id = ? THEN amount
               ELSE 0
             END
-          ), 0) AS out_total
+          ), 0), 2) AS out_total
         FROM transactions
         WHERE deleted_at IS NULL
           AND transaction_date >= ?
@@ -344,7 +350,7 @@ export const getCategoryDateRangeSummaryFromDB = async (
     const result = await db.getFirstAsync<CategoryDateRangeSummaryType>(
       `
         SELECT
-          COALESCE(SUM(amount), 0) AS total_amount,
+          ROUND(COALESCE(SUM(amount), 0), 2) AS total_amount,
           COUNT(*) AS transaction_count
         FROM transactions
         WHERE category_id = ?
@@ -383,8 +389,8 @@ export const getTransactionDateRangeTotalsFromDB = async (
     const result = await db.getFirstAsync<TransactionDateRangeTotalsType>(
       `
         SELECT
-          COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0) AS income_total,
-          COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0) AS expense_total
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0), 2) AS income_total,
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0), 2) AS expense_total
         FROM transactions
         WHERE deleted_at IS NULL
           AND transaction_date >= ?
@@ -419,7 +425,7 @@ const getBalanceTransaction = (
   accountId: data.accountId || null,
   fromAccountId: data.fromAccountId || null,
   toAccountId: data.toAccountId || null,
-  amount: Number(data.amount),
+  amount: toAmountNumber(data.amount),
 });
 
 const getStoredBalanceTransaction = (
@@ -441,7 +447,7 @@ const getBalanceAdjustments = (
     return [
       {
         accountId: transaction.accountId,
-        amount: transaction.amount * multiplier,
+        amount: multiplyAmount(transaction.amount, multiplier),
       },
     ];
   }
@@ -451,7 +457,7 @@ const getBalanceAdjustments = (
     return [
       {
         accountId: transaction.accountId,
-        amount: -transaction.amount * multiplier,
+        amount: multiplyAmount(transaction.amount, -multiplier),
       },
     ];
   }
@@ -462,7 +468,7 @@ const getBalanceAdjustments = (
     return [
       {
         accountId: transaction.accountId,
-        amount: transaction.amount * multiplier,
+        amount: multiplyAmount(transaction.amount, multiplier),
       },
     ];
   }
@@ -475,11 +481,11 @@ const getBalanceAdjustments = (
     return [
       {
         accountId: transaction.fromAccountId,
-        amount: -transaction.amount * multiplier,
+        amount: multiplyAmount(transaction.amount, -multiplier),
       },
       {
         accountId: transaction.toAccountId,
-        amount: transaction.amount * multiplier,
+        amount: multiplyAmount(transaction.amount, multiplier),
       },
     ];
   }
@@ -495,17 +501,31 @@ const applyBalanceAdjustments = async (
   requireActiveAccount: boolean,
 ) => {
   for (const adjustment of adjustments) {
+    const account = await db.getFirstAsync<{ current_balance: number }>(
+      `SELECT current_balance
+       FROM accounts
+       WHERE id = ?
+         ${requireActiveAccount ? "AND is_active = 1 AND deleted_at IS NULL" : ""};`,
+      [adjustment.accountId],
+    );
+    if (!account) {
+      throw new Error(`Account is unavailable: ${adjustment.accountId}`);
+    }
+    const nextBalance = addAmounts(account.current_balance, adjustment.amount);
+    if (!isAmountWithinRange(nextBalance)) {
+      throw new Error(`Account balance exceeds the supported amount range.`);
+    }
     const result = await db.runAsync(
       `
         UPDATE accounts
         SET
-          current_balance = ROUND(current_balance + ?, 2),
+          current_balance = ?,
           sync_status = ?,
           updated_at = datetime('now')
         WHERE id = ?
           ${requireActiveAccount ? "AND is_active = 1 AND deleted_at IS NULL" : ""};
       `,
-      [adjustment.amount, DB_SYNC_STATUS.PENDING, adjustment.accountId],
+      [nextBalance, DB_SYNC_STATUS.PENDING, adjustment.accountId],
     );
 
     if (result.changes !== 1) {
@@ -674,7 +694,7 @@ export const createNewTransactionMgmtToDB = async (
           isTransfer ? null : data.accountId,
           isTransfer ? data.fromAccountId : null,
           isTransfer ? data.toAccountId : null,
-          Number(data.amount),
+          toAmountNumber(data.amount),
           data.description || null,
           data.transactionDate,
         ],
@@ -747,7 +767,7 @@ export const updateTransactionMgmtToDB = async (
           isTransfer ? null : data.accountId,
           isTransfer ? data.fromAccountId : null,
           isTransfer ? data.toAccountId : null,
-          Number(data.amount),
+          toAmountNumber(data.amount),
           data.description || null,
           data.transactionDate,
           DB_SYNC_STATUS.PENDING,

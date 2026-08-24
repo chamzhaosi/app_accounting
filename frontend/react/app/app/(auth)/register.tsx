@@ -17,7 +17,7 @@ import {
   registerSchema,
 } from "../../forms/schemas/auth/register.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function Register() {
   const { THEME } = useThemeStore();

@@ -3,7 +3,7 @@ import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
 import AppText from "../../components/AppText";
 import AppView from "../../components/AppView";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function StackLayout() {
   const { THEME } = useThemeStore();

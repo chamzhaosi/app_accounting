@@ -18,7 +18,7 @@ import CustomDateRangePicker, {
   AppDateRangeValue,
 } from "./CustomDateRangePicker";
 import { formatDateValue } from "../utils/date";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 export type { AppDateRangeValue } from "./CustomDateRangePicker";
 

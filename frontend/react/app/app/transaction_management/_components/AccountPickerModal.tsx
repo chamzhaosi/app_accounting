@@ -20,7 +20,7 @@ import {
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { formatPrivateAmount } from "../../../utils/number";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 type AccountPickerModalItem = AppListItemType & {
   balance: number;

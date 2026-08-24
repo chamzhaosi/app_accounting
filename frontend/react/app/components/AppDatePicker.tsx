@@ -11,7 +11,7 @@ import { TextInput, TextInputProps, useTheme } from "react-native-paper";
 import { formatDateValue } from "../utils/date";
 import AppTextInput from "./AppTextInput";
 import CustomDatePicker from "./CustomDatePicker";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 type AppDatePickerProps = Omit<
   TextInputProps,

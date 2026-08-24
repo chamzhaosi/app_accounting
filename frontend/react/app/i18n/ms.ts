@@ -415,8 +415,14 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Label must not exceed 30 characters": "Nama tidak boleh melebihi 30 aksara",
   "Description must not exceed 100 characters":
     "Penerangan tidak boleh melebihi 100 aksara",
-  "Maximum 10 integer digits and 2 decimal places":
-    "Maksimum 10 digit integer dan 2 tempat perpuluhan",
+  "Maximum 13 integer digits and 2 decimal places":
+    "Maksimum 13 digit integer dan 2 tempat perpuluhan",
+  "Enter a balance with up to 13 integer digits and 2 decimal places.":
+    "Masukkan baki dengan sehingga 13 digit integer dan 2 tempat perpuluhan.",
+  "Enter an amount with up to 13 integer digits and 2 decimal places.":
+    "Masukkan jumlah dengan sehingga 13 digit integer dan 2 tempat perpuluhan.",
+  "Enter allocations with up to 13 integer digits and 2 decimal places.":
+    "Masukkan peruntukan dengan sehingga 13 digit integer dan 2 tempat perpuluhan.",
   "Please enter a total budget": "Sila masukkan jumlah bajet",
   "Enter a valid amount with up to 2 decimal places":
     "Masukkan jumlah yang sah dengan sehingga 2 tempat perpuluhan",

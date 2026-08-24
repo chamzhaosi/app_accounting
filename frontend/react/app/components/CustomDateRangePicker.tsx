@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { IconButton, Text, useTheme } from "react-native-paper";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 import { useThemeStore } from "../stores/useThemeStore";
 import {
   formatLocalizedDateLabel,

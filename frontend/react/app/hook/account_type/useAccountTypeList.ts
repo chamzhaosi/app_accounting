@@ -9,7 +9,7 @@ import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { ACCOUNT_TYPE_DETAIL_URL } from "../../constants/urls";
 import { getAccTypeList } from "../../sql/service/accTypeService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function useAccountTypeList() {
   const { t } = useTranslation();

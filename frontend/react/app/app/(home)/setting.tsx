@@ -9,7 +9,7 @@ import {
   BUDGET_MANAGEMENT_URL,
   LOCAL_AUTHENTICATE_URL,
 } from "../../constants/urls";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function Setting() {
   const { t } = useTranslation();

@@ -92,6 +92,38 @@ export const formatLocalizedDateLabel = (
   return includeWeekday ? `${weekday}, ${dateLabel}` : dateLabel;
 };
 
+export const formatSectionDate = (
+  dateValue: string,
+  locale: string,
+  t: (text: string) => string,
+) => {
+  const date = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return dateValue;
+
+  const today = new Date();
+  const yesterday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - 1,
+  );
+  const includeYear = date.getFullYear() !== today.getFullYear();
+  const calendarDate = formatLocalizedDateLabel(date, locale, {
+    includeYear,
+  });
+
+  if (dateValue === formatDateValue(today)) {
+    return `${t("Today")} · ${calendarDate}`;
+  }
+  if (dateValue === formatDateValue(yesterday)) {
+    return `${t("Yesterday")} · ${calendarDate}`;
+  }
+
+  return formatLocalizedDateLabel(date, locale, {
+    includeWeekday: true,
+    includeYear,
+  });
+};
+
 const ENGLISH_MONTHS = [
   "January",
   "February",

@@ -16,7 +16,7 @@ import {
   otpSchema,
 } from "../../forms/schemas/auth/otp.schema";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function OTP() {
   const { THEME } = useThemeStore();

@@ -32,4 +32,5 @@ export const TRANSACTION_MANAGEMENT_CREATE_URL = `${TRANSACTION_MANAGEMENT_BASE_
 
 export const BUDGET_MANAGEMENT_BASE_URL = "/budget_management";
 export const BUDGET_MANAGEMENT_URL = `${BUDGET_MANAGEMENT_BASE_URL}/manage`;
+export const CATEGORY_DETAIL_URL = "/(home)/categories/[id]";
 export const BUDGET_CATEGORY_DETAIL_URL = "/category_detail/[id]";

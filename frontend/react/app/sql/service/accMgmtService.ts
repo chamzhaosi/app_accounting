@@ -1,5 +1,10 @@
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
+  compareAmounts,
+  isValidAmount,
+  subtractAmounts,
+} from "../../utils/amount";
+import {
   createNewAccMgmtToDB,
   deleteAccMgmtFromDB,
   getAccMgmtByIdFromDB,
@@ -35,6 +40,9 @@ export const getAccMgmtList = async (
 export const createNewAccMgmt = async (
   data: AccMgmtCreateReqType,
 ): Promise<string | void> => {
+  if (!isValidAmount(data.currentBalance || "0"))
+    return "Enter a balance with up to 13 integer digits and 2 decimal places.";
+
   const existData = await getAccMgmtByTypeAndLabelFromDB(
     data.typeId,
     data.label,
@@ -62,6 +70,9 @@ export const getAccMgmtById = async (
 };
 
 export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
+  if (!isValidAmount(data.currentBalance || "0"))
+    return "Enter a balance with up to 13 integer digits and 2 decimal places.";
+
   const existData = await getAccMgmtByTypeAndLabelFromDB(
     data.typeId,
     data.label,
@@ -83,20 +94,22 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
   const currentAccount = await getAccMgmtByIdFromDB(data.id);
   if (!currentAccount) return "Account not found.";
 
-  const nextBalance = Number(data.currentBalance ?? 0);
-  const balanceDifference =
-    Math.round((nextBalance - currentAccount.current_balance) * 100) / 100;
+  const balanceDifference = subtractAmounts(
+    data.currentBalance,
+    currentAccount.current_balance,
+  );
 
-  if (balanceDifference !== 0) {
+  if (compareAmounts(balanceDifference, 0) !== 0) {
     if (!data.balanceChangeKind)
       return "Choose how to record the balance difference.";
 
-    const expectedKind = balanceDifference < 0 ? "expense" : "income";
+    const expectedKind =
+      compareAmounts(balanceDifference, 0) < 0 ? "expense" : "income";
     if (
       data.balanceChangeKind !== "correction" &&
       data.balanceChangeKind !== expectedKind
     )
-      return `A ${balanceDifference < 0 ? "decrease" : "increase"} must be recorded as ${expectedKind} or a balance correction.`;
+      return `A ${compareAmounts(balanceDifference, 0) < 0 ? "decrease" : "increase"} must be recorded as ${expectedKind} or a balance correction.`;
 
     if (data.balanceChangeKind !== "correction") {
       if (!data.balanceChangeCategoryId)

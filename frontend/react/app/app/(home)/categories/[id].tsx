@@ -1,121 +1,49 @@
-import { useQuery } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
-import AppDateRangePicker, {
-  AppDateRangeValue,
-} from "../../../components/AppDateRangePicker";
+import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
 import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
-import { TXN_TYPE_ENUM } from "../../../constants/enum";
-import {
-  categoryManagementQueryKeys,
-  transactionManagementQueryKeys,
-} from "../../../constants/queryKeys";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
 import { CATEGORY_DETAIL_CARD_HEIGHT } from "../../../constants/size";
-import { getCategoryMgmtById } from "../../../sql/service/categoryMgmtService";
-import { getCategoryDateRangeSummary } from "../../../sql/service/transactionMgmtService";
+import useCategoryDetail from "../../../hook/category_management/useCategoryDetail";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
-import { DEBUG_TAG } from "../../../utils/debugLog";
 import TransactionManagementList from "../../transaction_management/list";
-import {
-  formatDateValue,
-  getCurrentMonthDateRange,
-  parseDateValue,
-} from "../../../utils/date";
 import { formatPrivateAmount } from "../../../utils/number";
 import CategoryCumulativeChart from "./_components/CategoryCumulativeChart";
-import { useTranslation } from "../../../i18n";
-import { getCategoryDisplayLabel } from "../../../utils/category";
-
-const getInitialDateRange = (
-  startDate?: string,
-  endDate?: string,
-): AppDateRangeValue => {
-  const parsedStartDate = parseDateValue(startDate);
-  const parsedEndDate = parseDateValue(endDate);
-
-  if (parsedStartDate && parsedEndDate) {
-    return { startDate: parsedStartDate, endDate: parsedEndDate };
-  }
-
-  return getCurrentMonthDateRange();
-};
+import { useTranslation } from "../../../i18n/helper";
+import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
 
 export default function CategoryDetail() {
-  const {
-    id,
-    startDate: initialStartDate,
-    endDate: initialEndDate,
-  } = useLocalSearchParams<{
-    id: string;
-    startDate?: string;
-    endDate?: string;
-  }>();
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const [dateRange, setDateRange] = useState<AppDateRangeValue>(() =>
-    getInitialDateRange(initialStartDate, initialEndDate),
-  );
-  const startDate = formatDateValue(dateRange.startDate);
-  const endDate = formatDateValue(dateRange.endDate);
+  const {
+    category,
+    dateRange,
+    endDate,
+    id,
+    isLoading,
+    periodTotal,
+    setDateRange,
+    startDate,
+    transactionCount,
+    transactionType,
+    typeLabel,
+  } = useCategoryDetail();
 
-  const categoryQuery = useQuery({
-    queryKey: categoryManagementQueryKeys.detail(id),
-    queryFn: () => getCategoryMgmtById(id),
-    enabled: Boolean(id),
-  });
-  const summaryQuery = useQuery({
-    queryKey: transactionManagementQueryKeys.categoryDateRangeSummary({
-      categoryId: id,
-      startDate,
-      endDate,
-    }),
-    queryFn: () => getCategoryDateRangeSummary(id, startDate, endDate),
-    enabled: Boolean(id && startDate && endDate),
-    placeholderData: (previousData) => previousData,
-  });
-
-  useEffect(() => {
-    if (categoryQuery.error) {
-      console.error(
-        DEBUG_TAG.CATEGORY_MANAGEMENT,
-        "Error when loading category detail page",
-        categoryQuery.error,
-      );
-    }
-  }, [categoryQuery.error]);
-
-  useEffect(() => {
-    if (summaryQuery.error) {
-      console.error(
-        DEBUG_TAG.TRANSACTION_MANAGEMENT,
-        "Error when loading category period summary",
-        summaryQuery.error,
-      );
-    }
-  }, [summaryQuery.error]);
-
-  if (categoryQuery.isLoading) {
+  if (isLoading) {
     return (
       <View className="h-full items-center justify-center">
         <ActivityIndicator size="large" />
       </View>
     );
   }
-
-  const category = categoryQuery.data;
-  const transactionType =
-    category?.type_id === 1 ? TXN_TYPE_ENUM.INCOME : TXN_TYPE_ENUM.EXPENSE;
-  const typeLabel = category?.type_id === 1 ? "Income" : "Expense";
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
@@ -188,19 +116,14 @@ export default function CategoryDetail() {
                   },
                 ]}
               >
-                {formatPrivateAmount(
-                  summaryQuery.data?.total_amount ?? 0,
-                  areAmountsVisible,
-                )}
+                {formatPrivateAmount(periodTotal, areAmountsVisible)}
               </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={{ color: THEME.onSurfaceVariant }}>
                 {t("Transactions")}
               </Text>
-              <Text style={styles.summaryAmount}>
-                {summaryQuery.data?.transaction_count ?? 0}
-              </Text>
+              <Text style={styles.summaryAmount}>{transactionCount}</Text>
             </View>
           </View>
         </Surface>

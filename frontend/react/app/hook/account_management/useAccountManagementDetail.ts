@@ -27,10 +27,15 @@ import {
 import { getAccTypeList } from "../../sql/service/accTypeService";
 import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
 import type { BalanceChangeKind } from "../../sql/types/accMgmtType";
+import {
+  compareAmounts,
+  subtractAmounts,
+  toAmountString,
+} from "../../utils/amount";
 import { formatDateValue } from "../../utils/date";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
-import { getCategoryDisplayLabel } from "../../utils/category";
+import { useTranslation } from "../../i18n/helper";
+import { getCategoryDisplayLabel } from "../category_management/categoryManagementList.utils";
 
 export default function useAccountManagementDetail() {
   const { t } = useTranslation();
@@ -78,14 +83,12 @@ export default function useAccountManagementDetail() {
     });
   const currentBalance = watch("currentBalance");
   const balanceDifference = accountQuery.data
-    ? Math.round(
-        (Number(currentBalance ?? 0) - accountQuery.data.current_balance) * 100,
-      ) / 100
+    ? subtractAmounts(currentBalance, accountQuery.data.current_balance)
     : 0;
   const balanceDirection =
-    balanceDifference === 0
+    compareAmounts(balanceDifference, 0) === 0
       ? undefined
-      : balanceDifference < 0
+      : compareAmounts(balanceDifference, 0) < 0
         ? "expense"
         : "income";
   const categoryTypeId =
@@ -113,7 +116,7 @@ export default function useAccountManagementDetail() {
     [balanceChangeCategories, t],
   );
   const isBalanceChangeReady =
-    balanceDifference === 0 ||
+    compareAmounts(balanceDifference, 0) === 0 ||
     balanceChangeKind === "correction" ||
     Boolean(balanceChangeKind && balanceChangeCategoryId && balanceChangeDate);
 
@@ -128,11 +131,17 @@ export default function useAccountManagementDetail() {
       id,
       descriptions: value.descriptions?.trim(),
       balanceChangeKind:
-        balanceDifference === 0 ? undefined : balanceChangeKind,
+        compareAmounts(balanceDifference, 0) === 0
+          ? undefined
+          : balanceChangeKind,
       balanceChangeCategoryId:
-        balanceDifference === 0 ? undefined : balanceChangeCategoryId,
+        compareAmounts(balanceDifference, 0) === 0
+          ? undefined
+          : balanceChangeCategoryId,
       balanceChangeDate:
-        balanceDifference === 0 ? undefined : balanceChangeDate,
+        compareAmounts(balanceDifference, 0) === 0
+          ? undefined
+          : balanceChangeDate,
     };
     try {
       setRspErrorMsg("");
@@ -213,7 +222,7 @@ export default function useAccountManagementDetail() {
       typeId: accountQuery.data.type_id,
       label: accountQuery.data.label,
       descriptions: accountQuery.data.descriptions ?? "",
-      currentBalance: accountQuery.data.current_balance.toFixed(2),
+      currentBalance: toAmountString(accountQuery.data.current_balance),
       isMainAccount: Boolean(accountQuery.data.is_main_account),
     });
   }, [accountQuery.data, reset]);

@@ -1,5 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import { DB_SYNC_STATUS } from "../../constants/enum";
+import { AMOUNT_MAX_VALUE } from "../../utils/amount";
 import { LABEL_MAX_LEN as ACCOUNT_TYPE_LABEL_MAX_LEN } from "../../forms/schemas/accout_type.schema";
 import {
   DESCRIPTION_MAX_LEN as ACCOUNT_DESCRIPTION_MAX_LEN,
@@ -62,7 +63,11 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         type_id TEXT NOT NULL,
         label VARCHAR(${ACCOUNT_LABEL_MAX_LEN}) NOT NULL COLLATE NOCASE,
         descriptions VARCHAR(${ACCOUNT_DESCRIPTION_MAX_LEN}),
-        current_balance REAL NOT NULL DEFAULT 0,
+        current_balance REAL NOT NULL DEFAULT 0
+          CHECK (
+            ABS(current_balance) <= ${AMOUNT_MAX_VALUE}
+            AND current_balance = ROUND(current_balance, 2)
+          ),
         is_main_account BOOLEAN NOT NULL DEFAULT 0,
 
         is_active BOOLEAN NOT NULL DEFAULT 1,
@@ -131,7 +136,11 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         from_account_id TEXT,
         to_account_id TEXT,
 
-        amount REAL NOT NULL,
+        amount REAL NOT NULL
+          CHECK (
+            ABS(amount) <= ${AMOUNT_MAX_VALUE}
+            AND amount = ROUND(amount, 2)
+          ),
         descriptions VARCHAR(${TRANSACTION_DESCRIPTION_MAX_LEN}),
         transaction_date DATE NOT NULL
           CHECK (
@@ -220,7 +229,12 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
             date(month) IS NOT NULL
             AND month = date(month, 'start of month')
           ),
-        total_budget REAL NOT NULL CHECK (total_budget > 0),
+        total_budget REAL NOT NULL
+          CHECK (
+            total_budget > 0
+            AND total_budget <= ${AMOUNT_MAX_VALUE}
+            AND total_budget = ROUND(total_budget, 2)
+          ),
         is_active BOOLEAN NOT NULL DEFAULT 1,
 
         sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
@@ -234,7 +248,12 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
         id TEXT PRIMARY KEY,
         budget_id TEXT NOT NULL,
         category_id TEXT NOT NULL,
-        amount REAL NOT NULL CHECK (amount > 0),
+        amount REAL NOT NULL
+          CHECK (
+            amount > 0
+            AND amount <= ${AMOUNT_MAX_VALUE}
+            AND amount = ROUND(amount, 2)
+          ),
 
         sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
         synced_at DATETIME DEFAULT NULL,

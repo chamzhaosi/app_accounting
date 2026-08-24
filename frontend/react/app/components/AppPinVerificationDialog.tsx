@@ -3,7 +3,7 @@ import { Keyboard, StyleSheet } from "react-native";
 import { Button, Dialog, Portal, Text } from "react-native-paper";
 import { useThemeStore } from "../stores/useThemeStore";
 import AppTextInput from "./AppTextInput";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 type AppPinVerificationDialogProps = {
   visible: boolean;

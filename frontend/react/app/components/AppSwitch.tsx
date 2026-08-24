@@ -3,7 +3,7 @@ import { Switch as RNSwitch, StyleSheet, View } from "react-native";
 import { Switch, SwitchProps } from "react-native-paper";
 import { SWITCH_LABEL_FONTSIZE } from "../constants/size";
 import AppText from "./AppText";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 type AppSwitchProps = SwitchProps & {
   label: string;

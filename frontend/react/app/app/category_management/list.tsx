@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeftRight } from "lucide-react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useWindowDimensions, View } from "react-native";
 import { ActivityIndicator, IconButton } from "react-native-paper";
 import type { TabBarProps } from "react-native-tab-view";
@@ -8,33 +8,39 @@ import { TabBar, TabView } from "react-native-tab-view";
 import AppFloatingButton from "../../components/AppFloatingButton";
 import AppView from "../../components/AppView";
 import { CATEGORY_MANAGEMENT_CREATE_URL } from "../../constants/urls";
-import useCategoryManagementList from "../../hook/category_management/useCategoryManagementList";
+import useCategoryManagementList, {
+  CategoryManagementTabRoute,
+  TxnTypeTabViewProps,
+} from "../../hook/category_management/useCategoryManagementList";
 import { useThemeStore } from "../../stores/useThemeStore";
 import CategoryReorderList from "./_components/CategoryReorderList";
-import {
-  CATEGORY_MANAGEMENT_TAB_ROUTES,
-  CATEGORY_REORDER_HEADER_ICON_SIZE,
-  type CategoryManagementTabRoute,
-} from "./_components/categoryManagement.constants";
-import { useTranslation } from "../../i18n";
+
+import { useTranslation } from "../../i18n/helper";
+import { CATEGORY_MANAGEMENT_TAB_ROUTES } from "../../constants/options";
+import { CATEGORY_REORDER_HEADER_ICON_SIZE } from "../../constants/size";
 
 export default function CategoryManagementList() {
   const router = useRouter();
+
   const { type } = useLocalSearchParams<{
     type?: CategoryManagementTabRoute["key"];
   }>();
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
   const layout = useWindowDimensions();
-  const [index, setIndex] = React.useState(type === "exp" ? 1 : 0);
-  const [adjustingTypeId, setAdjustingTypeId] = React.useState<number>();
+
+  const [index, setIndex] = useState<number>(type === "exp" ? 1 : 0);
+  const [adjustingTypeId, setAdjustingTypeId] = useState<number>();
+
   const isAdjusting = adjustingTypeId !== undefined;
+
   useEffect(() => {
     const requestedIndex = CATEGORY_MANAGEMENT_TAB_ROUTES.findIndex(
       (route) => route.key === type,
     );
     if (requestedIndex >= 0) setIndex(requestedIndex);
   }, [type]);
+
   const renderTabBar = (props: TabBarProps<CategoryManagementTabRoute>) => (
     <TabBar
       {...props}
@@ -47,6 +53,7 @@ export default function CategoryManagementList() {
       style={{ backgroundColor: THEME.secondaryContainer }}
     />
   );
+
   const renderScene = ({ route }: { route: CategoryManagementTabRoute }) => (
     <AppView className="relative">
       <TxnTypeTabView
@@ -68,6 +75,7 @@ export default function CategoryManagementList() {
       />
     </AppView>
   );
+
   return (
     <>
       <Stack.Screen
@@ -110,12 +118,6 @@ export default function CategoryManagementList() {
     </>
   );
 }
-
-type TxnTypeTabViewProps = {
-  isAdjusting: boolean;
-  onAdjustingChange: (isAdjusting: boolean) => void;
-  typeId: number;
-};
 
 function TxnTypeTabView({
   isAdjusting,

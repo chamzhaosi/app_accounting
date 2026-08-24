@@ -5,10 +5,11 @@ import { TXN_TYPE_ENUM } from "../../constants/enum";
 import { transactionManagementQueryKeys } from "../../constants/queryKeys";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { getTransactionMgmtList } from "../../sql/service/transactionMgmtService";
+import { compareAmounts, multiplyAmount, sumAmounts } from "../../utils/amount";
 import { capitalizeFirst } from "../../utils/text";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
-import { getCategoryDisplayLabel } from "../../utils/category";
+import { useTranslation } from "../../i18n/helper";
+import { getCategoryDisplayLabel } from "../category_management/categoryManagementList.utils";
 
 export type TransactionManagementListProps = {
   startDate: string;
@@ -89,11 +90,11 @@ export default function useTransactionManagementList({
       const balanceEffect = isIncome
         ? transaction.amount
         : isExpense
-          ? -transaction.amount
+          ? multiplyAmount(transaction.amount, -1)
           : isTransfer
             ? accountId
               ? isOutgoingTransfer
-                ? -transaction.amount
+                ? multiplyAmount(transaction.amount, -1)
                 : transaction.amount
               : 0
             : transaction.amount;
@@ -119,7 +120,9 @@ export default function useTransactionManagementList({
                 "Balance {{direction}}",
                 {
                   direction: t(
-                    transaction.amount > 0 ? "increased" : "decreased",
+                    compareAmounts(transaction.amount, 0) > 0
+                      ? "increased"
+                      : "decreased",
                   ),
                 },
               )}`;
@@ -150,7 +153,7 @@ export default function useTransactionManagementList({
 
     return Array.from(groups, ([transactionDate, items]) => ({
       transactionDate,
-      netTotal: items.reduce((total, item) => total + item.balanceEffect, 0),
+      netTotal: sumAmounts(items.map((item) => item.balanceEffect)),
       data: items,
     }));
   }, [accountId, data, t]);

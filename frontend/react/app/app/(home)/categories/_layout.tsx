@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { AppStack } from "../../../components/AppStack";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 export default function CategoriesStackLayout() {
   const { t } = useTranslation();

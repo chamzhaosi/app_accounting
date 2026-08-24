@@ -1,33 +1,20 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { Href, router } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
-import { useEffect, useMemo } from "react";
 import { SectionList, StyleSheet, View } from "react-native";
 import { ActivityIndicator, List, Text } from "react-native-paper";
 import AppEmpty from "../../../components/AppEmpty";
-import AppIcon, { AppIconProps } from "../../../components/AppIcon";
+import AppIcon from "../../../components/AppIcon";
 import AppView from "../../../components/AppView";
-import { accountManagementQueryKeys } from "../../../constants/queryKeys";
 import { FONTS } from "../../../constants/fonts";
 import {
   LIST_ITEM_DESCRIPTION_FONTSIZE,
   LIST_ITEM_TITLE_FONTSIZE,
 } from "../../../constants/size";
-import { getAccMgmtList } from "../../../sql/service/accMgmtService";
-import { AccMgmtRspType } from "../../../sql/types/accMgmtType";
+import useAccountsList from "../../../hook/account_management/useAccountsList";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
-import { DEBUG_TAG, debugLog } from "../../../utils/debugLog";
-import { DEFAULT_PAGE_SIZE } from "../../../constants/size";
 import { formatPrivateAmount } from "../../../utils/number";
-import { useTranslation } from "../../../i18n";
-
-type AccountTypeSection = {
-  typeId: string;
-  title: string;
-  icon: AppIconProps["name"];
-  data: AccMgmtRspType[];
-};
+import { useTranslation } from "../../../i18n/helper";
 
 export default function AccountsList() {
   const { THEME } = useThemeStore();
@@ -35,58 +22,9 @@ export default function AccountsList() {
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isRefetching,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: accountManagementQueryKeys.list({ pageSize: DEFAULT_PAGE_SIZE }),
-    queryFn: ({ pageParam }) => getAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
-  });
+  const logic = useAccountsList();
 
-  const accountSections = useMemo<AccountTypeSection[]>(() => {
-    const sections = new Map<string, AccountTypeSection>();
-
-    data?.pages.flat().forEach((account) => {
-      const section = sections.get(account.type_id);
-
-      if (section) {
-        section.data.push(account);
-        return;
-      }
-
-      sections.set(account.type_id, {
-        typeId: account.type_id,
-        title: account.type_label,
-        icon: account.type_icon as AppIconProps["name"],
-        data: [account],
-      });
-    });
-
-    return Array.from(sections.values()).sort((first, second) =>
-      first.title.localeCompare(second.title),
-    );
-  }, [data]);
-
-  useEffect(() => {
-    if (!error) return;
-
-    console.error(
-      DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Error when loading accounts page",
-      error,
-    );
-  }, [error]);
-
-  if (isLoading) {
+  if (logic.isLoading) {
     return (
       <View className="h-full items-center justify-center">
         <ActivityIndicator size="large" />
@@ -97,22 +35,16 @@ export default function AccountsList() {
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
       <SectionList
-        sections={accountSections}
+        sections={logic.accountSections}
         keyExtractor={(account) => account.id}
         stickySectionHeadersEnabled
-        refreshing={isRefetching && !isFetchingNextPage}
-        onRefresh={async () => {
-          debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT, "Refreshing accounts page");
-          await refetch();
-        }}
-        onEndReached={() => {
-          if (isFetchingNextPage || !hasNextPage) return;
-          void fetchNextPage();
-        }}
+        refreshing={logic.isRefetching && !logic.isFetchingNextPage}
+        onRefresh={logic.onRefresh}
+        onEndReached={logic.onLoadMore}
         onEndReachedThreshold={0.5}
         contentContainerStyle={[
           styles.contentContainer,
-          accountSections.length === 0 && styles.emptyContentContainer,
+          logic.accountSections.length === 0 && styles.emptyContentContainer,
         ]}
         ListEmptyComponent={<AppEmpty />}
         renderSectionHeader={({ section }) => (
@@ -167,7 +99,7 @@ export default function AccountsList() {
           />
         )}
         ListFooterComponent={
-          isFetchingNextPage ? (
+          logic.isFetchingNextPage ? (
             <ActivityIndicator style={styles.footerLoader} />
           ) : null
         }

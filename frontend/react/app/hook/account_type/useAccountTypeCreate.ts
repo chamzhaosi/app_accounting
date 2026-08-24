@@ -18,7 +18,7 @@ import type { AccountTypeFormType } from "../../forms/schemas/accout_type.schema
 import { createNewAccType } from "../../sql/service/accTypeService";
 import { toTitleCase } from "../../utils/text";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function useAccountTypeCreate() {
   const { t } = useTranslation();

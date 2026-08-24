@@ -3,9 +3,10 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { transactionManagementQueryKeys } from "../../constants/queryKeys";
 import { getTransactionDailyTotals } from "../../sql/service/transactionMgmtService";
+import { addAmounts, prorateAmount } from "../../utils/amount";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import useBudgetDailyRemaining from "./useBudgetDailyRemaining";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 import { formatLocalizedDateLabel } from "../../utils/date";
 
 export type ChartPoint = {
@@ -79,8 +80,14 @@ export default function useDailyTransactionChart(
         cumulativeExpense = 0;
       }
       const totals = totalsByDate.get(dateKey);
-      cumulativeIncome += totals?.recorded_income_total ?? 0;
-      cumulativeExpense += totals?.recorded_expense_total ?? 0;
+      cumulativeIncome = addAmounts(
+        cumulativeIncome,
+        totals?.recorded_income_total ?? 0,
+      );
+      cumulativeExpense = addAmounts(
+        cumulativeExpense,
+        totals?.recorded_expense_total ?? 0,
+      );
       cumulativeByDate.set(dateKey, {
         income: cumulativeIncome,
         expense: cumulativeExpense,
@@ -129,7 +136,7 @@ export default function useDailyTransactionChart(
       });
       budgetPace.push({
         value: budget
-          ? (budget.total_budget * date.date()) / date.daysInMonth()
+          ? prorateAmount(budget.total_budget, date.date(), date.daysInMonth())
           : 0,
         label,
         date: pointDate,

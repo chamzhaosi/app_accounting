@@ -9,7 +9,7 @@ import { TransactionManagementFormType } from "../../../forms/schemas/transactio
 import { useKeyboardVisible } from "../../../hook/useKeyboardVisible";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { TXN_TYPE_ENUM } from "../../../constants/enum";
-import { useTranslation } from "../../../i18n";
+import { useTranslation } from "../../../i18n/helper";
 
 type CategoryIdFieldProps = {
   categoryItems: AppListCardItemType[];

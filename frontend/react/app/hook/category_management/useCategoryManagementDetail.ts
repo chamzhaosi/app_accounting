@@ -19,26 +19,31 @@ import {
   updateCategoryMgmt,
 } from "../../sql/service/categoryMgmtService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 import {
   getCategoryDisplayDescription,
   getCategoryDisplayLabel,
-} from "../../utils/category";
+} from "./categoryManagementList.utils";
 
 export default function useCategoryManagementDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
+
+  const queryClient = useQueryClient();
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [rspErrorMsg, setRspErrorMsg] = useState("");
   const [showDialog, setShowDialog] = useState(false);
+
   const isSubmitting = isDeleting || isSaving;
+
   const query = useQuery({
     queryKey: categoryManagementQueryKeys.detail(id),
     queryFn: () => getCategoryMgmtById(id),
     enabled: Boolean(id),
   });
+
   const {
     control,
     formState: { dirtyFields },
@@ -86,6 +91,7 @@ export default function useCategoryManagementDetail() {
       setIsDeleting(false);
     }
   };
+
   const onSubmit = async (value: CategoryManagementFormType) => {
     const isLabelCustomized = Boolean(dirtyFields.label);
     const data = {
@@ -131,6 +137,7 @@ export default function useCategoryManagementDetail() {
       setIsSaving(false);
     }
   };
+
   useEffect(() => {
     if (query.data)
       reset({
@@ -149,6 +156,7 @@ export default function useCategoryManagementDetail() {
           ) ?? "",
       });
   }, [query.data, reset, t]);
+
   useEffect(() => {
     if (!query.isLoading && query.data === null) {
       console.warn(DEBUG_TAG.CATEGORY_MANAGEMENT, "Category id not found", {
@@ -157,6 +165,7 @@ export default function useCategoryManagementDetail() {
       AppToast.error({ message: "Category id not found" });
     }
   }, [id, query.data, query.isLoading]);
+
   useEffect(() => {
     if (query.error)
       console.error(
@@ -165,6 +174,7 @@ export default function useCategoryManagementDetail() {
         query.error,
       );
   }, [query.error]);
+
   return {
     control,
     handleSubmit,

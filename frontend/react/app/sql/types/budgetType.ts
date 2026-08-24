@@ -47,7 +47,7 @@ export type BudgetManagementType = {
 
 export type BudgetSaveReqType = {
   month: string;
-  totalBudget: number;
+  totalBudget: string;
   isActive: boolean;
-  allocations: Array<{ categoryId: string; amount: number }>;
+  allocations: Array<{ categoryId: string; amount: string }>;
 };

@@ -7,7 +7,7 @@ import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import AppIconModal from "./AppIconModal";
 import AppText, { TextTypEnum } from "./AppText";
-import { useTranslation } from "../i18n";
+import { useTranslation } from "../i18n/helper";
 
 const formatIconLabel = (icon: AppIconProps["name"]) =>
   icon.replace(/([a-z0-9])([A-Z])/g, "$1 $2");

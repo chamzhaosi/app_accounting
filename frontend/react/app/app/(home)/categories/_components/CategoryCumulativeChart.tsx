@@ -1,16 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
-import { useEffect, useMemo } from "react";
-import CumulativeLineChartCard, {
-  CumulativeChartPoint,
-} from "../../../../components/CumulativeLineChartCard";
-import { transactionManagementQueryKeys } from "../../../../constants/queryKeys";
+import CumulativeLineChartCard from "../../../../components/CumulativeLineChartCard";
 import { CATEGORY_DETAIL_CARD_HEIGHT } from "../../../../constants/size";
-import { getCategoryDailyTotals } from "../../../../sql/service/transactionMgmtService";
+import useCategoryCumulativeChart from "../../../../hook/category_management/useCategoryCumulativeChart";
 import { useThemeStore } from "../../../../stores/useThemeStore";
-import { DEBUG_TAG } from "../../../../utils/debugLog";
-import { useTranslation } from "../../../../i18n";
-import { formatLocalizedDateLabel } from "../../../../utils/date";
 
 type CategoryCumulativeChartProps = {
   categoryId: string;
@@ -26,58 +17,21 @@ export default function CategoryCumulativeChart({
   endDate,
 }: CategoryCumulativeChartProps) {
   const { THEME } = useThemeStore();
-  const { locale } = useTranslation();
-  const query = useQuery({
-    queryKey: transactionManagementQueryKeys.categoryDailyTotal({
-      categoryId,
-      startDate,
-      endDate,
-    }),
-    queryFn: () => getCategoryDailyTotals(categoryId, startDate, endDate),
-    enabled: Boolean(categoryId && startDate && endDate),
-    placeholderData: (previousData) => previousData,
+  const logic = useCategoryCumulativeChart({
+    categoryId,
+    endDate,
+    startDate,
   });
-
-  useEffect(() => {
-    if (!query.error) return;
-    console.error(
-      DEBUG_TAG.TRANSACTION_MANAGEMENT,
-      "Error when loading category cumulative totals",
-      query.error,
-    );
-  }, [query.error]);
-
-  const data = useMemo<CumulativeChartPoint[]>(() => {
-    const totalsByDate = new Map(
-      query.data?.map((item) => [item.transaction_date, item.daily_total]),
-    );
-    const days = Math.max(dayjs(endDate).diff(dayjs(startDate), "day") + 1, 1);
-    const labelInterval = Math.max(Math.ceil(days / 6), 1);
-    let total = 0;
-
-    return Array.from({ length: days }, (_, index) => {
-      const date = dayjs(startDate).add(index, "day");
-      total += totalsByDate.get(date.format("YYYY-MM-DD")) ?? 0;
-      return {
-        value: total,
-        label:
-          index % labelInterval === 0 || index === days - 1
-            ? date.format("D/M")
-            : "",
-        date: formatLocalizedDateLabel(date.toDate(), locale),
-      };
-    });
-  }, [endDate, locale, query.data, startDate]);
 
   const isIncome = typeId === 1;
   return (
     <CumulativeLineChartCard
       title={`Cumulative ${isIncome ? "income" : "expense"}`}
       seriesLabel={isIncome ? "Income" : "Expense"}
-      data={data}
+      data={logic.data}
       color={isIncome ? THEME.primary : THEME.error}
       cardHeight={CATEGORY_DETAIL_CARD_HEIGHT}
-      isLoading={query.isLoading}
+      isLoading={logic.isLoading}
     />
   );
 }

@@ -1,4 +1,10 @@
 import { DB_SYNC_STATUS, TXN_TYPE_ENUM } from "../../constants/enum";
+import {
+  absoluteAmount,
+  compareAmounts,
+  subtractAmounts,
+  toAmountNumber,
+} from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
   buildOrderBy,
@@ -14,15 +20,12 @@ import {
 import { SQLQueryOptions } from "../types/common";
 import { randomUUID } from "expo-crypto";
 
-const toDbAmount = (value?: string) => Number(value || 0);
-const roundAmount = (value: number) => Math.round(value * 100) / 100;
-
 export const getMainAccountBalanceFromDB = async (): Promise<number> => {
   try {
     const db = await getDB();
     const result = await db.getFirstAsync<{ balance: number }>(
       `
-        SELECT COALESCE(SUM(current_balance), 0) AS balance
+        SELECT ROUND(COALESCE(SUM(current_balance), 0), 2) AS balance
         FROM accounts
         WHERE is_main_account = 1
           AND is_active = 1
@@ -169,7 +172,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
   try {
     const db = await getDB();
     const id = randomUUID();
-    const currentBalance = toDbAmount(data.currentBalance);
+    const currentBalance = toAmountNumber(data.currentBalance);
     await db.runAsync(
       `
         INSERT INTO accounts (
@@ -207,7 +210,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
 export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
   try {
     const db = await getDB();
-    const currentBalance = toDbAmount(data.currentBalance);
+    const currentBalance = toAmountNumber(data.currentBalance);
     let balanceAdjustment = 0;
 
     await db.withTransactionAsync(async () => {
@@ -222,7 +225,10 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
       );
       if (!account) throw new Error(`Account not found: ${data.id}`);
 
-      balanceAdjustment = roundAmount(currentBalance - account.current_balance);
+      balanceAdjustment = subtractAmounts(
+        currentBalance,
+        account.current_balance,
+      );
       const result = await db.runAsync(
         `
           UPDATE accounts
@@ -251,7 +257,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         throw new Error(`Account not found: ${data.id}`);
       }
 
-      if (balanceAdjustment !== 0) {
+      if (compareAmounts(balanceAdjustment, 0) !== 0) {
         const balanceChangeKind = data.balanceChangeKind ?? "correction";
         const transactionType =
           balanceChangeKind === "correction"
@@ -262,7 +268,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         const transactionAmount =
           transactionType === TXN_TYPE_ENUM.ADJUSTMENT
             ? balanceAdjustment
-            : Math.abs(balanceAdjustment);
+            : absoluteAmount(balanceAdjustment);
         const categoryId =
           transactionType === TXN_TYPE_ENUM.ADJUSTMENT
             ? null

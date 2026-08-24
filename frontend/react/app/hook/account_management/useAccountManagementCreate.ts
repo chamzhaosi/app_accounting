@@ -19,7 +19,7 @@ import type { AccountManagementFormType } from "../../forms/schemas/account_mana
 import { createNewAccMgmt } from "../../sql/service/accMgmtService";
 import { getAccTypeList } from "../../sql/service/accTypeService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
-import { useTranslation } from "../../i18n";
+import { useTranslation } from "../../i18n/helper";
 
 export default function useAccountManagementCreate() {
   const { t } = useTranslation();
