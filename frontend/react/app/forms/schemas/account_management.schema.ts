@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { AMOUNT_MAX_LENGTH, AMOUNT_PATTERN } from "../../utils/amount";
+import {
+  CURRENCY_CODES,
+  DEFAULT_CURRENCY_CODE,
+} from "../../constants/currencies";
 
 export type AccountManagementFormType = z.infer<
   typeof accountManagementFormSchema
@@ -11,6 +15,9 @@ export const CURRENT_BALANCE_MAX_LEN = AMOUNT_MAX_LENGTH;
 
 export const accountManagementFormSchema = z.object({
   typeId: z.string().min(1, "Please select a type"),
+  currencyCode: z
+    .string()
+    .refine((value) => CURRENCY_CODES.has(value), "Please select a currency"),
   label: z
     .string()
     .trim()
@@ -35,6 +42,7 @@ export const accountManagementFormSchema = z.object({
 
 export const accountManagementFormDefaultValues: AccountManagementFormType = {
   typeId: "",
+  currencyCode: DEFAULT_CURRENCY_CODE,
   label: "",
   descriptions: "",
   currentBalance: "0.00",

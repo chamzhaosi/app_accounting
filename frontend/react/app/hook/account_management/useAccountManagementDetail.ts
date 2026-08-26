@@ -36,6 +36,7 @@ import { formatDateValue } from "../../utils/date";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../category_management/categoryManagementList.utils";
+import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
 
 export default function useAccountManagementDetail() {
   const { t } = useTranslation();
@@ -59,6 +60,9 @@ export default function useAccountManagementDetail() {
     queryFn: () => getAccMgmtById(id),
     enabled: Boolean(id),
   });
+  const currencyPreferences = useCurrencyPreferenceOptions(
+    accountQuery.data?.currency_code,
+  );
   const { data: accountTypes = [] } = useQuery({
     queryKey: accountTypeQueryKeys.list({ pageSize: ACCOUNT_TYPE_PAGE_SIZE }),
     queryFn: () => getAccTypeList(1, ACCOUNT_TYPE_PAGE_SIZE),
@@ -220,6 +224,7 @@ export default function useAccountManagementDetail() {
     if (!accountQuery.data) return;
     reset({
       typeId: accountQuery.data.type_id,
+      currencyCode: accountQuery.data.currency_code,
       label: accountQuery.data.label,
       descriptions: accountQuery.data.descriptions ?? "",
       currentBalance: toAmountString(accountQuery.data.current_balance),
@@ -250,6 +255,7 @@ export default function useAccountManagementDetail() {
     balanceChangeKind,
     balanceDifference,
     control,
+    currencyOptions: currencyPreferences.currencyOptions,
     handleSubmit,
     isDeleting,
     isBalanceChangeReady,
@@ -264,6 +270,7 @@ export default function useAccountManagementDetail() {
     setBalanceChangeDate,
     setBalanceChangeKind,
     setShowDialog,
+    showCurrencyField: currencyPreferences.showCurrencyField,
     showDialog,
   };
 }

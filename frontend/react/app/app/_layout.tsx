@@ -147,6 +147,10 @@ export default function StackLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
+              name="currency_management"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
               name="transaction_management"
               options={{ headerShown: false }}
             />

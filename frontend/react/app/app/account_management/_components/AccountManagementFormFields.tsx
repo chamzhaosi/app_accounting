@@ -14,16 +14,20 @@ import type { AccountManagementFormType } from "../../../forms/schemas/account_m
 
 type AccountManagementFormFieldsProps = {
   accountTypeOptions: SelectOptionType[];
+  currencyOptions: SelectOptionType[];
   control: Control<AccountManagementFormType>;
   isSubmitting: boolean;
   setFocus: UseFormSetFocus<AccountManagementFormType>;
+  showCurrencyField: boolean;
 };
 
 export default function AccountManagementFormFields({
   accountTypeOptions,
+  currencyOptions,
   control,
   isSubmitting,
   setFocus,
+  showCurrencyField,
 }: AccountManagementFormFieldsProps) {
   return (
     <>
@@ -97,6 +101,28 @@ export default function AccountManagementFormFields({
           />
         )}
       />
+      {showCurrencyField && (
+        <Controller
+          control={control}
+          name="currencyCode"
+          render={({
+            field: { value, onChange, onBlur, ref },
+            fieldState: { error },
+          }) => (
+            <AppSelect
+              ref={ref}
+              label="Currency"
+              value={value}
+              onChange={(currencyCode) => onChange(String(currencyCode ?? ""))}
+              onBlur={onBlur}
+              options={currencyOptions}
+              errorField={error}
+              disabled={isSubmitting}
+              showClear={false}
+            />
+          )}
+        />
+      )}
       <Controller
         control={control}
         name="currentBalance"

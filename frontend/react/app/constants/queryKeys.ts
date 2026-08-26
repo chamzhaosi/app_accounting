@@ -7,7 +7,14 @@ export enum QueryKeyModule {
   TRANSACTION_MANAGEMENT = "transactionManagement",
   BUDGET = "budget",
   ACCOUNT_SETTINGS = "accountSettings",
+  CURRENCY_MANAGEMENT = "currencyManagement",
 }
+
+export const currencyManagementQueryKeys = {
+  all: [QueryKeyModule.CURRENCY_MANAGEMENT] as const,
+  preferences: () =>
+    [...currencyManagementQueryKeys.all, "preferences"] as const,
+};
 
 export const accountSettingsQueryKeys = {
   all: [QueryKeyModule.ACCOUNT_SETTINGS] as const,

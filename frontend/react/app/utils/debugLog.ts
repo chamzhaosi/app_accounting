@@ -13,6 +13,8 @@ export enum DEBUG_TAG {
   BUDGET_DB = "[Budget:DB]",
   ACCOUNT_SETTINGS = "[AccountSettings]",
   ACCOUNT_SETTINGS_DB = "[AccountSettings:DB]",
+  CURRENCY_MANAGEMENT = "[CurrencyManagement]",
+  CURRENCY_MANAGEMENT_DB = "[CurrencyManagement:DB]",
 }
 
 export const debugLog = (...args: unknown[]) => {

@@ -15,6 +15,7 @@ import {
   EMAIL_MAX_LEN as ACCOUNT_SETTINGS_EMAIL_MAX_LEN,
   NICKNAME_MAX_LEN as ACCOUNT_SETTINGS_NICKNAME_MAX_LEN,
 } from "../../forms/schemas/account_settings.schema";
+import { DEFAULT_CURRENCY_CODE } from "../../constants/currencies";
 
 export const createAccountSettingsTable = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
@@ -27,6 +28,26 @@ export const createAccountSettingsTable = async (db: SQLite.SQLiteDatabase) => {
       created_at DATETIME NOT NULL DEFAULT (datetime('now')),
       updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
     );
+  `);
+};
+
+export const createCurrencyPreferencesTable = async (
+  db: SQLite.SQLiteDatabase,
+) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS currency_preferences (
+      code CHAR(3) PRIMARY KEY COLLATE NOCASE,
+      is_default BOOLEAN NOT NULL DEFAULT 0 CHECK (is_default IN (0, 1)),
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_currency_preferences_default
+      ON currency_preferences(is_default)
+      WHERE is_default = 1;
+
+    INSERT OR IGNORE INTO currency_preferences (code, is_default)
+    VALUES ('${DEFAULT_CURRENCY_CODE}', 1);
   `);
 };
 
@@ -61,6 +82,11 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         id TEXT PRIMARY KEY, -- uuid
 
         type_id TEXT NOT NULL,
+        currency_code CHAR(3) NOT NULL DEFAULT '${DEFAULT_CURRENCY_CODE}'
+          CHECK (
+            length(currency_code) = 3
+            AND currency_code = upper(currency_code)
+          ),
         label VARCHAR(${ACCOUNT_LABEL_MAX_LEN}) NOT NULL COLLATE NOCASE,
         descriptions VARCHAR(${ACCOUNT_DESCRIPTION_MAX_LEN}),
         current_balance REAL NOT NULL DEFAULT 0
@@ -84,6 +110,10 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
 
       CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_active_type_label
         ON accounts(type_id, label)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_accounts_active_currency
+        ON accounts(currency_code)
         WHERE deleted_at IS NULL;
   `);
 };

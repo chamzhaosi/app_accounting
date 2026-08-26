@@ -476,4 +476,39 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Account settings saved successfully": "Tetapan akaun berjaya disimpan",
   "Unable to load account settings.": "Tidak dapat memuatkan tetapan akaun.",
   "Unable to save account settings.": "Tidak dapat menyimpan tetapan akaun.",
+  "Currency Management": "Pengurusan Mata Wang",
+  "Default and enabled currencies": "Mata wang lalai dan yang didayakan",
+  "Default currency": "Mata wang lalai",
+  "{{count}} currencies enabled": "{{count}} mata wang didayakan",
+  "Search currencies": "Cari mata wang",
+  "Search by currency, code, or country":
+    "Cari mengikut mata wang, kod atau negara",
+  "Enable currencies with the checkbox. Use the circle to choose the default.":
+    "Dayakan mata wang dengan kotak pilihan. Gunakan bulatan untuk memilih lalai.",
+  Enable: "Dayakan",
+  "Set as default": "Tetapkan sebagai lalai",
+  Default: "Lalai",
+  "Make default": "Jadikan lalai",
+  "No currencies found": "Tiada mata wang ditemukan",
+  "Try a currency name, ISO code, or country name.":
+    "Cuba nama mata wang, kod ISO atau nama negara.",
+  "Please select a valid default currency.":
+    "Sila pilih mata wang lalai yang sah.",
+  "One or more selected currencies are invalid.":
+    "Satu atau lebih mata wang yang dipilih tidak sah.",
+  "The default currency must be enabled.": "Mata wang lalai mesti didayakan.",
+  "Currency preferences saved successfully":
+    "Keutamaan mata wang berjaya disimpan",
+  "Unable to load currency preferences.":
+    "Tidak dapat memuatkan keutamaan mata wang.",
+  "Unable to save currency preferences.":
+    "Tidak dapat menyimpan keutamaan mata wang.",
+  "Your currencies": "Mata wang anda",
+  "Choose currencies": "Pilih mata wang",
+  "Close currency picker": "Tutup pemilih mata wang",
+  Done: "Selesai",
+  Currency: "Mata Wang",
+  "Please select a currency": "Sila pilih mata wang",
+  "Selected currency is not enabled.":
+    "Mata wang yang dipilih tidak didayakan.",
 };

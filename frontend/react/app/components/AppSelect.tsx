@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   LayoutRectangle,
   StyleProp,
@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { Menu, TextInput, TextInputProps } from "react-native-paper";
 import {
-  ICON_DEFAULT_WIDTH,
   SELECT_OPTIONS_CONTAINER_HEIGHT_MAX,
   SELECT_OPTIONS_CONTAINER_HEIGHT_MIN,
   SELECT_OPTIONS_ITEM_HEIGHT,
@@ -21,7 +20,6 @@ import { useThemeStore } from "../stores/useThemeStore";
 import AppIcon, { AppIconProps } from "./AppIcon";
 import { FieldError } from "react-hook-form";
 import AppText, { TextTypEnum } from "./AppText";
-import AppDivider from "./AppDivider";
 import { useTranslation } from "../i18n/helper";
 
 export type SelectOptionType = {
@@ -73,12 +71,9 @@ export default function AppSelect({
   const ACTUAL_OPTIONS_CONTAINER_HEIGHT = isEmptyOptions
     ? SELECT_OPTIONS_CONTAINER_HEIGHT_MIN
     : Math.min(totalOptionsHeight, SELECT_OPTIONS_CONTAINER_HEIGHT_MAX);
-  const minWidth = useMemo(
-    () =>
-      textInputLayout.width +
-      ICON_DEFAULT_WIDTH +
-      16 /* = Marging surrounding icon*/,
-    [textInputLayout],
+  const menuWidth = useMemo(
+    () => textInputLayout.width,
+    [textInputLayout.width],
   );
 
   const rightIcon =
@@ -96,13 +91,26 @@ export default function AppSelect({
     <>
       <Menu
         visible={showOptions}
+        elevation={4}
+        anchorPosition="bottom"
         onDismiss={() => {
           textInputRef.current?.blur();
           setShowOptions(false);
         }}
         style={{
-          marginTop: textInputLayout.height,
+          marginTop: -8,
+          width: menuWidth,
         }}
+        contentStyle={[
+          defaultStyle.menuContent,
+          {
+            backgroundColor: THEME.surfaceContainer,
+            borderColor: THEME.outlineVariant,
+            maxWidth: menuWidth,
+            minWidth: menuWidth,
+            width: menuWidth,
+          },
+        ]}
         anchor={
           <View className="mb-4" style={containerStyle}>
             <TextInput
@@ -133,9 +141,15 @@ export default function AppSelect({
         }
       >
         <ScrollView
-          style={{
-            height: ACTUAL_OPTIONS_CONTAINER_HEIGHT,
-          }}
+          style={[
+            defaultStyle.optionsContainer,
+            {
+              backgroundColor: THEME.surfaceContainer,
+              height: ACTUAL_OPTIONS_CONTAINER_HEIGHT,
+              width: menuWidth,
+            },
+          ]}
+          contentContainerStyle={defaultStyle.optionsContent}
         >
           {isEmptyOptions ? (
             <Menu.Item
@@ -143,72 +157,57 @@ export default function AppSelect({
               leadingIcon={() => (
                 <AppIcon name="PackageOpen" color={THEME.outlineVariant} />
               )}
-              style={{ minWidth }}
-              contentStyle={{
-                minWidth,
-              }}
+              style={defaultStyle.emptyItem}
               titleStyle={{
-                color: THEME.outlineVariant,
+                color: THEME.onSurfaceVariant,
               }}
             />
           ) : (
-            options.map((i, index) => {
-              const isLastItem = options.length - 1 === index;
+            options.map((i) => {
               const isOptSelected = i.id.toString() === value;
-              const hasItemIcon = !!i.icon;
-              const itemTitleMinWidth =
-                minWidth -
-                ICON_DEFAULT_WIDTH *
-                  /* 2 = Leading and Trailing icon */
-                  (1 + (hasItemIcon ? 1 : 0)) -
-                /* 12 = Padding */
-                12;
-              const itemIcon = hasItemIcon
+              const itemIcon = i.icon
                 ? () => (
                     <AppIcon
                       name={i.icon!}
-                      color={isOptSelected ? THEME.onTertiary : undefined}
+                      color={
+                        isOptSelected ? THEME.onPrimaryContainer : undefined
+                      }
                     />
                   )
                 : undefined;
               const selectedIcon = () =>
                 isOptSelected ? (
-                  <AppIcon name="Check" color={THEME.onTertiary} />
+                  <AppIcon name="Check" color={THEME.onPrimaryContainer} />
                 ) : undefined;
 
               return (
-                <Fragment key={i.id}>
-                  <Menu.Item
-                    title={i.label}
-                    onPress={() => {
-                      onChange(i.id);
-                      setShowOptions(false);
-                    }}
-                    leadingIcon={itemIcon}
-                    trailingIcon={selectedIcon}
-                    dense={false}
-                    style={[
-                      defaultStyle.menuItemContainer,
-                      {
-                        minWidth,
-                        ...(isOptSelected
-                          ? {
-                              backgroundColor: THEME.tertiary,
-                              color: THEME.onTertiary,
-                            }
-                          : {}),
-                      },
-                    ]}
-                    titleStyle={{
-                      minWidth: itemTitleMinWidth,
-                      ...(isOptSelected ? { color: THEME.onTertiary } : {}),
-                    }}
-                    contentStyle={{
-                      minWidth: itemTitleMinWidth,
-                    }}
-                  />
-                  {!isLastItem && <AppDivider />}
-                </Fragment>
+                <Menu.Item
+                  key={i.id}
+                  title={i.label}
+                  onPress={() => {
+                    onChange(i.id);
+                    setShowOptions(false);
+                  }}
+                  leadingIcon={itemIcon}
+                  trailingIcon={selectedIcon}
+                  contentStyle={defaultStyle.menuItemContent}
+                  rippleColor={THEME.surfaceContainerHighest}
+                  dense={false}
+                  style={[
+                    defaultStyle.menuItemContainer,
+                    {
+                      backgroundColor: isOptSelected
+                        ? THEME.primaryContainer
+                        : THEME.surfaceContainer,
+                    },
+                  ]}
+                  titleStyle={{
+                    color: isOptSelected
+                      ? THEME.onPrimaryContainer
+                      : THEME.onSurface,
+                    fontWeight: isOptSelected ? "700" : "400",
+                  }}
+                />
               );
             })
           )}
@@ -232,7 +231,30 @@ const defaultStyle = StyleSheet.create({
     height: TEXTINPUT_HEIGHT,
     fontSize: TEXTINPUT_FONTSIZE,
   },
+  menuContent: {
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  optionsContainer: {
+    borderRadius: 8,
+  },
+  optionsContent: {
+    paddingStart: 6,
+  },
+  emptyItem: {
+    alignSelf: "stretch",
+    borderRadius: 10,
+    marginHorizontal: 6,
+  },
   menuItemContainer: {
+    alignSelf: "stretch",
+    borderRadius: 4,
     height: SELECT_OPTIONS_ITEM_HEIGHT,
+    marginHorizontal: 6,
+    marginVertical: 2,
+  },
+  menuItemContent: {
+    flex: 1,
   },
 });

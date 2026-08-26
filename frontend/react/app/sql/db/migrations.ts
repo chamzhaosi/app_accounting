@@ -6,6 +6,7 @@ import {
   createAccTypTable,
   createBudgetTables,
   createCategoryMgmtTable,
+  createCurrencyPreferencesTable,
   createTransactionMgmtTable,
 } from "./schemas";
 import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
@@ -149,6 +150,50 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
         SET amount = ROUND(amount, 2);
       `);
       await updateDBVersion(db, 7);
+    });
+  }
+
+  if (currentVersion < 8) {
+    await db.withTransactionAsync(async () => {
+      await createCurrencyPreferencesTable(db);
+      await updateDBVersion(db, 8);
+    });
+  }
+
+  if (currentVersion < 9) {
+    await db.withTransactionAsync(async () => {
+      const columns = await db.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(accounts);",
+      );
+
+      if (!columns.some(({ name }) => name === "currency_code")) {
+        await db.execAsync(`
+          ALTER TABLE accounts
+          ADD COLUMN currency_code CHAR(3) NOT NULL DEFAULT 'MYR'
+            CHECK (
+              length(currency_code) = 3
+              AND currency_code = upper(currency_code)
+            );
+        `);
+      }
+
+      await db.execAsync(`
+        UPDATE accounts
+        SET currency_code = COALESCE(
+          (
+            SELECT code
+            FROM currency_preferences
+            WHERE is_default = 1
+            LIMIT 1
+          ),
+          'MYR'
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_accounts_active_currency
+          ON accounts(currency_code)
+          WHERE deleted_at IS NULL;
+      `);
+      await updateDBVersion(db, 9);
     });
   }
 };

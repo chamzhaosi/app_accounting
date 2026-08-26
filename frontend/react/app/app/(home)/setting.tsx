@@ -7,6 +7,7 @@ import {
   ACCOUNT_TYPE_LIST_URL,
   CATEGORY_MANAGEMENT_LIST_URL,
   BUDGET_MANAGEMENT_URL,
+  CURRENCY_MANAGEMENT_URL,
   LOCAL_AUTHENTICATE_URL,
 } from "../../constants/urls";
 import { useTranslation } from "../../i18n/helper";
@@ -20,6 +21,13 @@ export default function Setting() {
       descriptions: t("Nickname, email, and language"),
       icon: "UserRound",
       onPress: () => router.push(ACCOUNT_SETTINGS_URL as Href),
+    },
+    {
+      id: "currency-management",
+      label: t("Currency Management"),
+      descriptions: t("Default and enabled currencies"),
+      icon: "Coins",
+      onPress: () => router.push(CURRENCY_MANAGEMENT_URL as Href),
     },
     {
       id: 1,

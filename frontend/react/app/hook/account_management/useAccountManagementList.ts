@@ -28,10 +28,10 @@ export default function useAccountManagementList() {
         icon: item.type_icon as AppIconProps["name"],
         label: item.label,
         descriptions: item.descriptions ?? undefined,
-        rightLabel: formatPrivateAmount(
+        rightLabel: `${item.currency_code} ${formatPrivateAmount(
           item.current_balance,
           areAmountsVisible,
-        ),
+        )}`,
       })) ?? [],
     [areAmountsVisible, query.data],
   );

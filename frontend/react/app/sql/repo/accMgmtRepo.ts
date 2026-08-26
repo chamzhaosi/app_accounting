@@ -29,6 +29,15 @@ export const getMainAccountBalanceFromDB = async (): Promise<number> => {
         FROM accounts
         WHERE is_main_account = 1
           AND is_active = 1
+          AND currency_code = COALESCE(
+            (
+              SELECT code
+              FROM currency_preferences
+              WHERE is_default = 1
+              LIMIT 1
+            ),
+            'MYR'
+          )
           AND deleted_at IS NULL;
       `,
     );
@@ -178,15 +187,17 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
         INSERT INTO accounts (
           id,
           type_id,
+          currency_code,
           label,
           descriptions,
           current_balance,
           is_main_account
-        ) VALUES (?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?);
       `,
       [
         id,
         data.typeId,
+        data.currencyCode,
         data.label,
         data.descriptions || null,
         currentBalance,
@@ -234,6 +245,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           UPDATE accounts
           SET
             type_id = ?,
+            currency_code = ?,
             label = ?,
             descriptions = ?,
             current_balance = ROUND(?, 2),
@@ -245,6 +257,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         `,
         [
           data.typeId,
+          data.currencyCode,
           data.label,
           data.descriptions || null,
           currentBalance,

@@ -63,9 +63,11 @@ export default function AccountManagementDetail() {
         >
           <AccountManagementFormFields
             accountTypeOptions={logic.accountTypeOptions}
+            currencyOptions={logic.currencyOptions}
             control={logic.control}
             isSubmitting={logic.isSubmitting}
             setFocus={logic.setFocus}
+            showCurrencyField={logic.showCurrencyField}
           />
           <BalanceChangeClassification
             difference={logic.balanceDifference}

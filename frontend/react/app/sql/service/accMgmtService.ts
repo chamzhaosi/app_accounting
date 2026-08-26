@@ -1,4 +1,5 @@
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { CURRENCY_CODES } from "../../constants/currencies";
 import {
   compareAmounts,
   isValidAmount,
@@ -19,6 +20,13 @@ import {
   AccMgmtRspType,
   AccMgmtUpdateReqType,
 } from "../types/accMgmtType";
+import { getCurrencyPreferences } from "./currencyManagementService";
+
+const isEnabledCurrency = async (currencyCode: string) => {
+  if (!CURRENCY_CODES.has(currencyCode)) return false;
+  const preferences = await getCurrencyPreferences();
+  return preferences?.enabledCurrencyCodes.includes(currencyCode) ?? false;
+};
 
 export const getMainAccountBalance = async (): Promise<number> =>
   getMainAccountBalanceFromDB();
@@ -40,6 +48,9 @@ export const getAccMgmtList = async (
 export const createNewAccMgmt = async (
   data: AccMgmtCreateReqType,
 ): Promise<string | void> => {
+  if (!(await isEnabledCurrency(data.currencyCode)))
+    return "Selected currency is not enabled.";
+
   if (!isValidAmount(data.currentBalance || "0"))
     return "Enter a balance with up to 13 integer digits and 2 decimal places.";
 
@@ -70,6 +81,8 @@ export const getAccMgmtById = async (
 };
 
 export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
+  if (!CURRENCY_CODES.has(data.currencyCode)) return "Please select a currency";
+
   if (!isValidAmount(data.currentBalance || "0"))
     return "Enter a balance with up to 13 integer digits and 2 decimal places.";
 
@@ -93,6 +106,12 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
 
   const currentAccount = await getAccMgmtByIdFromDB(data.id);
   if (!currentAccount) return "Account not found.";
+
+  if (
+    data.currencyCode !== currentAccount.currency_code &&
+    !(await isEnabledCurrency(data.currencyCode))
+  )
+    return "Selected currency is not enabled.";
 
   const balanceDifference = subtractAmounts(
     data.currentBalance,

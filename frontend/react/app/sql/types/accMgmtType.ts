@@ -3,6 +3,7 @@ export type AccMgmtRspType = {
   type_id: string;
   type_label: string;
   type_icon: string;
+  currency_code: string;
   label: string;
   descriptions?: string | null;
   current_balance: number;
@@ -12,6 +13,7 @@ export type AccMgmtRspType = {
 
 export type AccMgmtCreateReqType = {
   typeId: string;
+  currencyCode: string;
   label: string;
   descriptions?: string;
   currentBalance?: string;
