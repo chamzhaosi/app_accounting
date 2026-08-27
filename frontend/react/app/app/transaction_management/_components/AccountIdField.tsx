@@ -34,6 +34,7 @@ type AccountIdFieldProps = {
   onManageAccounts: () => void;
   onOpenPicker: () => void;
   onRefresh: () => Promise<unknown>;
+  onSelectedAccountChange?: (account?: AccountPickerItemType) => void;
   fieldName?: AccountFieldName;
   label?: string;
   showQueryError?: boolean;
@@ -52,6 +53,7 @@ export default function AccountIdField({
   onManageAccounts,
   onOpenPicker,
   onRefresh,
+  onSelectedAccountChange,
   fieldName = "accountId",
   label = "Account",
   showQueryError = true,
@@ -86,6 +88,7 @@ export default function AccountIdField({
                 onRefresh={onRefresh}
                 onSelect={(account) => {
                   onChange(account.id.toString());
+                  onSelectedAccountChange?.(account);
                   onBlur();
                   onDismissPicker();
                 }}
@@ -103,6 +106,8 @@ export default function AccountIdField({
                   placeholder={t("Please select")}
                   showSoftInputOnFocus={false}
                   caretHidden
+                  selection={{ start: 0, end: 0 }}
+                  textAlign="left"
                   error={!!error?.message}
                   onPress={() => {
                     Keyboard.dismiss();
@@ -120,6 +125,7 @@ export default function AccountIdField({
                         forceTextInputFocus={false}
                         onPress={() => {
                           onChange("");
+                          onSelectedAccountChange?.(undefined);
                           onBlur();
                         }}
                       />

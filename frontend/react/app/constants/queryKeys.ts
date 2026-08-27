@@ -61,6 +61,7 @@ export const accountManagementQueryKeys = {
 export const categoryManagementQueryKeys = {
   all: [QueryKeyModule.CATEGORY_MANAGEMENT] as const,
   lists: () => [...categoryManagementQueryKeys.all, "list"] as const,
+  feeList: () => [...categoryManagementQueryKeys.lists(), "fees"] as const,
   list: (params: { typeId: number; pageSize: number }) =>
     [...categoryManagementQueryKeys.lists(), params] as const,
   periodList: (params: {

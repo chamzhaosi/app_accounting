@@ -7,7 +7,7 @@ import {
 import dayjs from "dayjs";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { Keyboard } from "react-native";
 import type {
   AccountFieldName,
@@ -15,6 +15,7 @@ import type {
 } from "../../app/transaction_management/_components/AccountIdField";
 import type { AppIconProps } from "../../components/AppIcon";
 import type { AppListCardItemType } from "../../components/AppListCardView";
+import type { SelectOptionType } from "../../components/AppSelect";
 import { AppToast } from "../../components/AppToast";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
 import { TRANSACTION_CATEGORY_TYPE_IDS } from "../../constants/options";
@@ -40,13 +41,25 @@ import {
   getCategoryMgmtById,
   getCategoryMgmtList,
 } from "../../sql/service/categoryMgmtService";
-import { createNewTransactionMgmt } from "../../sql/service/transactionMgmtService";
+import {
+  createNewTransactionMgmt,
+  getExchangeRateSuggestion,
+} from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
+import {
+  calculateConvertedAmount,
+  calculateExchangeRate,
+  EXCHANGE_RATE_ZERO,
+  formatExchangeRate,
+} from "../../utils/exchangeRate";
 import { useTranslation } from "../../i18n/helper";
 import {
   getCategoryDisplayDescription,
   getCategoryDisplayLabel,
 } from "../category_management/categoryManagementList.utils";
+import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
+
+const TRANSACTION_CATEGORY_PAGE_SIZE = 1000;
 
 export default function useTransactionManagementCreate() {
   const { t } = useTranslation();
@@ -65,15 +78,19 @@ export default function useTransactionManagementCreate() {
     useState<AccountFieldName>("accountId");
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingAndNew, setIsSavingAndNew] = useState(false);
+  const [isLoadingRateSuggestion, setIsLoadingRateSuggestion] = useState(false);
+  const [rateSuggestionLabel, setRateSuggestionLabel] = useState("");
   const [responseError, setResponseError] = useState("");
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
   const isSubmitting = isSaving || isSavingAndNew;
   const today = dayjs().format("YYYY-MM-DD");
+  const currencyPreferences = useCurrencyPreferenceOptions();
 
   const {
     clearErrors,
     control,
+    formState: { isSubmitted },
     handleSubmit,
     reset,
     setFocus,
@@ -91,8 +108,22 @@ export default function useTransactionManagementCreate() {
     },
   });
 
+  const {
+    fields: feeFields,
+    append: appendFeeField,
+    remove: removeFee,
+  } = useFieldArray({ control, name: "fees" });
+
   const transactionType = watch("transactionType");
   const categoryId = watch("categoryId");
+  const accountId = watch("accountId");
+  const fromAccountId = watch("fromAccountId");
+  const toAccountId = watch("toAccountId");
+  const amount = watch("amount");
+  const currencyCode = watch("currencyCode");
+  const accountCurrencyCode = watch("accountCurrencyCode");
+  const exchangeRate = watch("exchangeRate");
+  const transactionDate = watch("transactionDate");
   const categoryTypeId = TRANSACTION_CATEGORY_TYPE_IDS[transactionType];
 
   const {
@@ -106,13 +137,19 @@ export default function useTransactionManagementCreate() {
   } = useInfiniteQuery({
     queryKey: categoryManagementQueryKeys.list({
       typeId: categoryTypeId ?? 0,
-      pageSize: DEFAULT_PAGE_SIZE,
+      pageSize: TRANSACTION_CATEGORY_PAGE_SIZE,
     }),
     queryFn: ({ pageParam }) =>
-      getCategoryMgmtList(categoryTypeId!, pageParam, DEFAULT_PAGE_SIZE),
+      getCategoryMgmtList(
+        categoryTypeId!,
+        pageParam,
+        TRANSACTION_CATEGORY_PAGE_SIZE,
+      ),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
+      lastPage.length === TRANSACTION_CATEGORY_PAGE_SIZE
+        ? allPages.length + 1
+        : undefined,
     enabled: categoryTypeId !== null,
   });
 
@@ -143,22 +180,32 @@ export default function useTransactionManagementCreate() {
       lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
 
+  const { data: feeCategories = [] } = useQuery({
+    queryKey: categoryManagementQueryKeys.feeList(),
+    queryFn: () => getCategoryMgmtList(2, 1, 1000),
+  });
+
   const categoryItems = useMemo<AppListCardItemType[]>(() => {
     const items =
-      categories?.pages.flat().map((category) => ({
-        id: category.id.toString(),
-        icon: category.icon as AppIconProps["name"],
-        label: getCategoryDisplayLabel(
-          category.label,
-          category.translation_key,
-          t,
-        ),
-        description: getCategoryDisplayDescription(
-          category.descriptions,
-          category.translation_key,
-          t,
-        ),
-      })) ?? [];
+      categories?.pages.reduce<AppListCardItemType[]>((result, page) => {
+        page.forEach((category) =>
+          result.push({
+            id: category.id.toString(),
+            icon: category.icon as AppIconProps["name"],
+            label: getCategoryDisplayLabel(
+              category.label,
+              category.translation_key,
+              t,
+            ),
+            description: getCategoryDisplayDescription(
+              category.descriptions,
+              category.translation_key,
+              t,
+            ),
+          }),
+        );
+        return result;
+      }, []) ?? [];
 
     if (
       !initialCategory ||
@@ -189,20 +236,212 @@ export default function useTransactionManagementCreate() {
 
   const accountItems = useMemo<AccountPickerItemType[]>(
     () =>
-      accounts?.pages.flat().map((account) => ({
-        id: account.id,
-        icon: account.type_icon as AppIconProps["name"],
-        label: account.label,
-        balance: account.current_balance,
-        currencyCode: account.currency_code,
-        inputLabel: `${account.currency_code} - ${account.label}`,
-        descriptions: account.descriptions ?? undefined,
-        typeId: account.type_id,
-        typeLabel: account.type_label,
-        typeIcon: account.type_icon as AppIconProps["name"],
-      })) ?? [],
+      accounts?.pages.reduce<AccountPickerItemType[]>((result, page) => {
+        page.forEach((account) =>
+          result.push({
+            id: account.id,
+            icon: account.type_icon as AppIconProps["name"],
+            label: account.label,
+            balance: account.current_balance,
+            currencyCode: account.currency_code,
+            inputLabel: `${account.currency_code} - ${account.label}`,
+            descriptions: account.descriptions ?? undefined,
+            typeId: account.type_id,
+            typeLabel: account.type_label,
+            typeIcon: account.type_icon as AppIconProps["name"],
+          }),
+        );
+        return result;
+      }, []) ?? [],
     [accounts],
   );
+
+  const feeCategoryOptions = useMemo<SelectOptionType[]>(
+    () =>
+      feeCategories.map((category) => ({
+        id: category.id,
+        icon: category.icon as AppIconProps["name"],
+        label: getCategoryDisplayLabel(
+          category.label,
+          category.translation_key,
+          t,
+        ),
+        value: category.id,
+      })),
+    [feeCategories, t],
+  );
+  const defaultFeeCategoryId =
+    feeCategories.find((category) => category.label === "Fees & Charges")?.id ??
+    "";
+
+  const selectedAccount = accountItems.find((item) => item.id === accountId);
+  const selectedFromAccount = accountItems.find(
+    (item) => item.id === fromAccountId,
+  );
+  const selectedToAccount = accountItems.find(
+    (item) => item.id === toAccountId,
+  );
+  const usesExchangeRate =
+    Boolean(currencyCode && accountCurrencyCode) &&
+    currencyCode !== accountCurrencyCode;
+
+  const clearExchangeRate = () => {
+    setValue("exchangeRate", EXCHANGE_RATE_ZERO, { shouldValidate: false });
+    setValue("exchangeRateSource", undefined);
+    setValue("exchangeRateSourceTransactionId", "");
+    setRateSuggestionLabel("");
+    clearErrors(["exchangeRate", "convertedAmount"]);
+  };
+
+  const resetConversionForCurrencies = (
+    sourceCurrencyCode: string,
+    destinationCurrencyCode: string,
+  ) => {
+    setValue("currencyCode", sourceCurrencyCode, { shouldValidate: true });
+    setValue("accountCurrencyCode", destinationCurrencyCode, {
+      shouldValidate: true,
+    });
+    clearExchangeRate();
+    setValue(
+      "convertedAmount",
+      sourceCurrencyCode === destinationCurrencyCode ? amount : "0.00",
+      { shouldValidate: false },
+    );
+  };
+
+  const onAccountChange = (
+    fieldName: AccountFieldName,
+    account?: AccountPickerItemType,
+  ) => {
+    if (!account?.currencyCode) {
+      resetConversionForCurrencies(
+        fieldName === "toAccountId"
+          ? (selectedFromAccount?.currencyCode ?? "")
+          : "",
+        fieldName === "fromAccountId"
+          ? (selectedToAccount?.currencyCode ?? "")
+          : "",
+      );
+      return;
+    }
+
+    if (fieldName === "accountId") {
+      resetConversionForCurrencies(account.currencyCode, account.currencyCode);
+      return;
+    }
+
+    const fromCurrency =
+      fieldName === "fromAccountId"
+        ? account.currencyCode
+        : (selectedFromAccount?.currencyCode ?? "");
+    const toCurrency =
+      fieldName === "toAccountId"
+        ? account.currencyCode
+        : (selectedToAccount?.currencyCode ?? "");
+    resetConversionForCurrencies(fromCurrency, toCurrency);
+  };
+
+  const onCurrencyChange = (nextCurrencyCode: string) => {
+    setValue("currencyCode", nextCurrencyCode, { shouldValidate: true });
+    clearExchangeRate();
+    setValue(
+      "convertedAmount",
+      nextCurrencyCode === accountCurrencyCode ? amount : "0.00",
+      { shouldValidate: false },
+    );
+  };
+
+  const onAmountChange = (nextAmount: string) => {
+    setValue("amount", nextAmount, { shouldValidate: true });
+    if (currencyCode === accountCurrencyCode) {
+      setValue("convertedAmount", nextAmount, { shouldValidate: true });
+      return;
+    }
+    if (Number(exchangeRate) > 0) {
+      setValue(
+        "convertedAmount",
+        calculateConvertedAmount(nextAmount, exchangeRate),
+        { shouldValidate: true },
+      );
+    }
+  };
+
+  const onExchangeRateChange = (nextRate: string) => {
+    setValue("exchangeRate", nextRate, { shouldValidate: true });
+    const hasRate = Number(nextRate) > 0;
+    setValue("exchangeRateSource", hasRate ? "manual" : undefined);
+    setValue("exchangeRateSourceTransactionId", "");
+    setRateSuggestionLabel(hasRate ? t("Manual rate") : "");
+    if (hasRate) {
+      setValue("convertedAmount", calculateConvertedAmount(amount, nextRate), {
+        shouldValidate: true,
+      });
+    }
+  };
+
+  const onExchangeRateBlur = () => {
+    if (!exchangeRate) return;
+    onExchangeRateChange(formatExchangeRate(exchangeRate));
+  };
+
+  const onConvertedAmountChange = (nextAmount: string) => {
+    setValue("convertedAmount", nextAmount, { shouldValidate: true });
+    const nextRate = calculateExchangeRate(amount, nextAmount);
+    setValue("exchangeRate", nextRate || EXCHANGE_RATE_ZERO, {
+      shouldValidate: true,
+    });
+    setValue("exchangeRateSource", nextRate ? "manual" : undefined);
+    setValue("exchangeRateSourceTransactionId", "");
+    setRateSuggestionLabel(nextRate ? t("Manual rate") : "");
+  };
+
+  const onUsePreviousRate = async () => {
+    if (!currencyCode || !accountCurrencyCode || !transactionDate) return;
+    try {
+      setIsLoadingRateSuggestion(true);
+      const suggestion = await getExchangeRateSuggestion(
+        currencyCode,
+        accountCurrencyCode,
+        transactionDate,
+      );
+      if (!suggestion) {
+        AppToast.info({ message: "No previous exchange rate found." });
+        return;
+      }
+
+      const nextRate = formatExchangeRate(suggestion.rate);
+      setValue("exchangeRate", nextRate, { shouldValidate: true });
+      setValue("exchangeRateSource", suggestion.source);
+      setValue(
+        "exchangeRateSourceTransactionId",
+        suggestion.sourceTransactionId,
+      );
+      setValue("convertedAmount", calculateConvertedAmount(amount, nextRate), {
+        shouldValidate: true,
+      });
+      setRateSuggestionLabel(
+        `${t(suggestion.source === "inverse" ? "Suggested from reverse rate" : "Previous rate")} · ${suggestion.transactionDate}`,
+      );
+    } catch (error) {
+      console.error(
+        DEBUG_TAG.TRANSACTION_MANAGEMENT,
+        "Unable to load previous exchange rate",
+        error,
+      );
+      AppToast.error({ message: "Unable to load previous exchange rate." });
+    } finally {
+      setIsLoadingRateSuggestion(false);
+    }
+  };
+
+  const addFee = () => {
+    appendFeeField({
+      accountId:
+        transactionType === TXN_TYPE_ENUM.TRANSFER ? fromAccountId : accountId,
+      amount: "0.00",
+      categoryId: defaultFeeCategoryId,
+    });
+  };
 
   const onLoadMoreCategories = () => {
     if (isFetchingNextCategoryPage || !hasNextCategoryPage) return;
@@ -263,6 +502,19 @@ export default function useTransactionManagementCreate() {
     }, [refetchAccounts, refetchCategories]),
   );
 
+  useEffect(() => {
+    if (
+      transactionType !== TXN_TYPE_ENUM.TRANSFER &&
+      selectedAccount?.currencyCode &&
+      !accountCurrencyCode
+    ) {
+      resetConversionForCurrencies(
+        selectedAccount.currencyCode,
+        selectedAccount.currencyCode,
+      );
+    }
+  }, [accountCurrencyCode, selectedAccount?.currencyCode, transactionType]);
+
   const onSubmit = async (
     value: TransactionManagementFormType,
     saveAnotherTransaction: boolean,
@@ -276,6 +528,13 @@ export default function useTransactionManagementCreate() {
       const errorMessage = await createNewTransactionMgmt({
         ...value,
         description: value.description?.trim(),
+        fees: value.fees.map((fee) => ({
+          ...fee,
+          accountId:
+            value.transactionType === TXN_TYPE_ENUM.TRANSFER
+              ? value.fromAccountId
+              : value.accountId,
+        })),
       });
 
       if (errorMessage) {
@@ -342,26 +601,50 @@ export default function useTransactionManagementCreate() {
   ]);
 
   return {
+    accountCurrencyCode,
     accountFieldProps,
+    addFee,
     activeAccountField,
+    amount,
     categoryError,
     categoryItems,
     clearErrors,
     control,
+    currencyCode,
+    currencyOptions: currencyPreferences.currencyOptions.map((currency) => ({
+      ...currency,
+      label: currency.id.toString(),
+    })),
+    exchangeRate,
+    feeCategoryOptions,
+    feeFields,
     handleSubmit,
     isAccountPickerVisible,
     isFetchingNextCategoryPage,
     isLoadingCategories,
+    isLoadingRateSuggestion,
     isSaving,
     isSavingAndNew,
+    isSubmitted,
     isSubmitting,
     onLoadMoreCategories,
     onManageCategories,
+    onAccountChange,
+    onAmountChange,
+    onConvertedAmountChange,
+    onCurrencyChange,
+    onExchangeRateChange,
+    onExchangeRateBlur,
     onSubmit,
+    onUsePreviousRate,
     openAccountPicker,
     responseError,
+    rateSuggestionLabel,
+    removeFee,
     setFocus,
     setValue,
+    showCurrencyField: currencyPreferences.showCurrencyField,
     transactionType,
+    usesExchangeRate,
   };
 }

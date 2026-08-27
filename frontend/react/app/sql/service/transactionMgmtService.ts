@@ -1,6 +1,8 @@
 import { TXN_TYPE_ENUM } from "../../constants/enum";
 import { compareAmounts, isValidAmount } from "../../utils/amount";
+import { CURRENCY_CODES } from "../../constants/currencies";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { getCurrencyPreferences } from "./currencyManagementService";
 import { getAccMgmtByIdFromDB } from "../repo/accMgmtRepo";
 import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
 import {
@@ -14,7 +16,9 @@ import {
   getTransactionDailyTotalsFromDB,
   getTransactionDateRangeTotalsFromDB,
   getTransactionMgmtByIdFromDB,
+  getTransactionOperationByIdFromDB,
   getTransactionMgmtListFromDB,
+  getExchangeRateSuggestionFromDB,
   updateTransactionMgmtToDB,
 } from "../repo/transactionMgmtRepo";
 import {
@@ -26,8 +30,23 @@ import {
   TransactionDateRangeTotalsType,
   TransactionMgmtCreateReqType,
   TransactionMgmtRspType,
+  TransactionOperationRspType,
   TransactionMgmtUpdateReqType,
+  ExchangeRateSuggestionType,
 } from "../types/transactionMgmtType";
+
+export const getExchangeRateSuggestion = async (
+  fromCurrencyCode: string,
+  toCurrencyCode: string,
+  transactionDate: string,
+  excludeTransactionId?: string,
+): Promise<ExchangeRateSuggestionType | null> =>
+  getExchangeRateSuggestionFromDB(
+    fromCurrencyCode,
+    toCurrencyCode,
+    transactionDate,
+    excludeTransactionId,
+  );
 
 export const getAccountDailyBalanceChanges = async (
   accountId: string,
@@ -109,11 +128,61 @@ export const getTransactionMgmtById = async (
   id: string,
 ): Promise<TransactionMgmtRspType | null> => getTransactionMgmtByIdFromDB(id);
 
+export const getTransactionOperationById = async (
+  id: string,
+): Promise<TransactionOperationRspType | null> =>
+  getTransactionOperationByIdFromDB(id);
+
 const validateTransactionMgmt = async (
   data: TransactionMgmtCreateReqType,
 ): Promise<string | void> => {
   if (!isValidAmount(data.amount) || compareAmounts(data.amount, 0) <= 0)
     return "Enter an amount with up to 13 integer digits and 2 decimal places.";
+  if (
+    !isValidAmount(data.convertedAmount) ||
+    compareAmounts(data.convertedAmount, 0) <= 0
+  )
+    return "Enter a valid account amount.";
+  if (
+    !CURRENCY_CODES.has(data.currencyCode) ||
+    !CURRENCY_CODES.has(data.accountCurrencyCode)
+  )
+    return "Select valid transaction currencies.";
+  const currencyPreferences = await getCurrencyPreferences();
+  if (
+    !currencyPreferences?.enabledCurrencyCodes.includes(data.currencyCode) ||
+    !currencyPreferences.enabledCurrencyCodes.includes(data.accountCurrencyCode)
+  )
+    return "Transaction currencies must be enabled.";
+  if (
+    data.currencyCode === data.accountCurrencyCode &&
+    compareAmounts(data.amount, data.convertedAmount) !== 0
+  )
+    return "Account amount must match the transaction amount when currencies are the same.";
+  if (
+    data.currencyCode !== data.accountCurrencyCode &&
+    (!data.exchangeRate || Number(data.exchangeRate) <= 0)
+  )
+    return "Enter a valid exchange rate.";
+
+  const feeAccountId =
+    data.transactionType === TXN_TYPE_ENUM.TRANSFER
+      ? data.fromAccountId
+      : data.accountId;
+  for (const fee of data.fees) {
+    if (!isValidAmount(fee.amount) || compareAmounts(fee.amount, 0) <= 0)
+      return "Enter a valid fee amount.";
+    if (fee.accountId !== feeAccountId)
+      return "Fee account must match the transaction account.";
+    const [feeAccount, feeCategory] = await Promise.all([
+      getAccMgmtByIdFromDB(fee.accountId),
+      getCategoryMgmtByIdFromDB(fee.categoryId),
+    ]);
+    if (!feeAccount?.is_active || !feeAccount.is_currency_enabled)
+      return "A fee account is unavailable.";
+    if (!feeCategory?.is_active || feeCategory.type_id !== 2)
+      return "Select a valid expense category for every fee.";
+  }
 
   if (data.transactionType === TXN_TYPE_ENUM.TRANSFER) {
     if (data.fromAccountId === data.toAccountId)
@@ -128,6 +197,11 @@ const validateTransactionMgmt = async (
       return "From Account is unavailable because its currency is disabled.";
     if (!toAccount?.is_active || !toAccount.is_currency_enabled)
       return "To Account is unavailable because its currency is disabled.";
+    if (
+      data.currencyCode !== fromAccount.currency_code ||
+      data.accountCurrencyCode !== toAccount.currency_code
+    )
+      return "Transfer currencies must match the selected accounts.";
     return;
   }
 
@@ -138,6 +212,8 @@ const validateTransactionMgmt = async (
 
   if (!account?.is_active || !account.is_currency_enabled)
     return "Selected account is unavailable because its currency is disabled.";
+  if (data.accountCurrencyCode !== account.currency_code)
+    return "Account currency does not match the selected account.";
   if (!category?.is_active) return "Selected category is unavailable.";
 
   const expectedCategoryTypeId = CATEGORY_TYPE_IDS[data.transactionType];

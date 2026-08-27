@@ -166,11 +166,37 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         from_account_id TEXT,
         to_account_id TEXT,
 
+        operation_id TEXT NOT NULL,
+        transaction_role VARCHAR(10) NOT NULL DEFAULT 'main'
+          CHECK (transaction_role IN ('main', 'fee')),
+
         amount REAL NOT NULL
           CHECK (
             ABS(amount) <= ${AMOUNT_MAX_VALUE}
             AND amount = ROUND(amount, 2)
           ),
+        currency_code CHAR(3) NOT NULL
+          CHECK (
+            length(currency_code) = 3
+            AND currency_code = upper(currency_code)
+          ),
+        account_currency_code CHAR(3) NOT NULL
+          CHECK (
+            length(account_currency_code) = 3
+            AND account_currency_code = upper(account_currency_code)
+          ),
+        converted_amount REAL NOT NULL
+          CHECK (
+            ABS(converted_amount) <= ${AMOUNT_MAX_VALUE}
+            AND converted_amount = ROUND(converted_amount, 2)
+          ),
+        exchange_rate REAL,
+        exchange_rate_source VARCHAR(20)
+          CHECK (
+            exchange_rate_source IS NULL
+            OR exchange_rate_source IN ('manual', 'previous', 'inverse')
+          ),
+        exchange_rate_source_transaction_id TEXT,
         descriptions VARCHAR(${TRANSACTION_DESCRIPTION_MAX_LEN}),
         transaction_date DATE NOT NULL
           CHECK (
@@ -191,6 +217,7 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         FOREIGN KEY (account_id) REFERENCES accounts(id),
         FOREIGN KEY (from_account_id) REFERENCES accounts(id),
         FOREIGN KEY (to_account_id) REFERENCES accounts(id),
+        FOREIGN KEY (exchange_rate_source_transaction_id) REFERENCES transactions(id),
 
         CHECK (
           (
@@ -247,6 +274,14 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
       CREATE INDEX IF NOT EXISTS idx_transactions_active_to_account
         ON transactions(to_account_id)
         WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_operation
+        ON transactions(operation_id, transaction_role)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_exchange_pair_date
+        ON transactions(currency_code, account_currency_code, transaction_date DESC)
+        WHERE deleted_at IS NULL AND exchange_rate IS NOT NULL;
     `);
 };
 

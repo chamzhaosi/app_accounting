@@ -308,6 +308,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           transactionType === TXN_TYPE_ENUM.ADJUSTMENT
             ? "Balance correction"
             : `Missing ${transactionType} from balance reconciliation`;
+        const adjustmentTransactionId = randomUUID();
         await db.runAsync(
           `
             INSERT INTO transactions (
@@ -317,16 +318,25 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
               account_id,
               from_account_id,
               to_account_id,
+              operation_id,
+              transaction_role,
               amount,
+              currency_code,
+              account_currency_code,
+              converted_amount,
               descriptions,
               transaction_date
-            ) VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, COALESCE(?, date('now', 'localtime')));
+            ) VALUES (?, ?, ?, ?, NULL, NULL, ?, 'main', ?, ?, ?, ?, ?, COALESCE(?, date('now', 'localtime')));
           `,
           [
-            randomUUID(),
+            adjustmentTransactionId,
             transactionType,
             categoryId,
             data.id,
+            adjustmentTransactionId,
+            transactionAmount,
+            data.currencyCode,
+            data.currencyCode,
             transactionAmount,
             description,
             data.balanceChangeDate ?? null,

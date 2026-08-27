@@ -48,6 +48,7 @@ const addSeededCategoryTranslationKeys = async (db: SQLite.SQLiteDatabase) => {
         OR (type_id = 2 AND label = 'Entertainment' AND icon = 'Gamepad2')
         OR (type_id = 2 AND label = 'Insurance' AND icon = 'Shield')
         OR (type_id = 2 AND label = 'Travel' AND icon = 'Plane')
+        OR (type_id = 2 AND label = 'Fees & Charges' AND icon = 'BadgeDollarSign')
         OR (type_id = 2 AND label = 'Other Expense' AND icon = 'CircleEllipsis')
       );
   `);
@@ -279,6 +280,144 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
           WHERE deleted_at IS NULL;
       `);
       await updateDBVersion(db, 11);
+    });
+  }
+
+  if (currentVersion < 12) {
+    await db.withTransactionAsync(async () => {
+      const columns = await db.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(transactions);",
+      );
+      const columnNames = new Set(columns.map(({ name }) => name));
+
+      if (!columnNames.has("operation_id")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN operation_id TEXT;",
+        );
+      }
+      if (!columnNames.has("transaction_role")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN transaction_role VARCHAR(10) NOT NULL DEFAULT 'main' CHECK (transaction_role IN ('main', 'fee'));",
+        );
+      }
+      if (!columnNames.has("currency_code")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN currency_code CHAR(3);",
+        );
+      }
+      if (!columnNames.has("account_currency_code")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN account_currency_code CHAR(3);",
+        );
+      }
+      if (!columnNames.has("converted_amount")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN converted_amount REAL;",
+        );
+      }
+      if (!columnNames.has("exchange_rate")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN exchange_rate REAL;",
+        );
+      }
+      if (!columnNames.has("exchange_rate_source")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN exchange_rate_source VARCHAR(20);",
+        );
+      }
+      if (!columnNames.has("exchange_rate_source_transaction_id")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN exchange_rate_source_transaction_id TEXT;",
+        );
+      }
+
+      await db.execAsync(`
+        UPDATE transactions
+        SET
+          operation_id = COALESCE(operation_id, id),
+          transaction_role = COALESCE(transaction_role, 'main'),
+          currency_code = COALESCE(
+            currency_code,
+            CASE
+              WHEN transaction_type = 'transfer' THEN (
+                SELECT currency_code FROM accounts WHERE id = from_account_id
+              )
+              ELSE (
+                SELECT currency_code FROM accounts WHERE id = account_id
+              )
+            END,
+            'MYR'
+          ),
+          account_currency_code = COALESCE(
+            account_currency_code,
+            CASE
+              WHEN transaction_type = 'transfer' THEN (
+                SELECT currency_code FROM accounts WHERE id = to_account_id
+              )
+              ELSE (
+                SELECT currency_code FROM accounts WHERE id = account_id
+              )
+            END,
+            'MYR'
+          ),
+          converted_amount = COALESCE(converted_amount, amount),
+          exchange_rate = CASE
+            WHEN transaction_type = 'transfer'
+              AND COALESCE(
+                (SELECT currency_code FROM accounts WHERE id = from_account_id),
+                'MYR'
+              ) <> COALESCE(
+                (SELECT currency_code FROM accounts WHERE id = to_account_id),
+                'MYR'
+              )
+            THEN COALESCE(exchange_rate, 1)
+            ELSE exchange_rate
+          END,
+          exchange_rate_source = CASE
+            WHEN transaction_type = 'transfer'
+              AND COALESCE(
+                (SELECT currency_code FROM accounts WHERE id = from_account_id),
+                'MYR'
+              ) <> COALESCE(
+                (SELECT currency_code FROM accounts WHERE id = to_account_id),
+                'MYR'
+              )
+            THEN COALESCE(exchange_rate_source, 'manual')
+            ELSE exchange_rate_source
+          END;
+
+        INSERT OR IGNORE INTO categories (
+          id, type_id, label, icon, descriptions, translation_key, is_system
+        ) VALUES (
+          lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' ||
+          substr(lower(hex(randomblob(2))), 2) || '-' ||
+          substr('89ab', abs(random()) % 4 + 1, 1) ||
+          substr(lower(hex(randomblob(2))), 2) || '-' || lower(hex(randomblob(6))),
+          2,
+          'Fees & Charges',
+          'BadgeDollarSign',
+          'Bank, card, platform, and service fees',
+          'Fees & Charges',
+          1
+        );
+
+        UPDATE categories
+        SET
+          translation_key = 'Fees & Charges',
+          is_system = 1
+        WHERE type_id = 2
+          AND label = 'Fees & Charges' COLLATE NOCASE
+          AND deleted_at IS NULL;
+
+        CREATE INDEX IF NOT EXISTS idx_transactions_active_operation
+          ON transactions(operation_id, transaction_role)
+          WHERE deleted_at IS NULL;
+
+        CREATE INDEX IF NOT EXISTS idx_transactions_active_exchange_pair_date
+          ON transactions(currency_code, account_currency_code, transaction_date DESC)
+          WHERE deleted_at IS NULL AND exchange_rate IS NOT NULL;
+      `);
+      await updateDBVersion(db, 12);
     });
   }
 };

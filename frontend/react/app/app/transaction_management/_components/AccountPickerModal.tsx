@@ -32,6 +32,7 @@ import { useTranslation } from "../../../i18n/helper";
 type AccountPickerModalItem = AppListItemType & {
   balance: number;
   currencyCode?: string;
+  inputLabel: string;
   typeId: string;
   typeLabel: string;
   typeIcon: AppListItemType["icon"];
