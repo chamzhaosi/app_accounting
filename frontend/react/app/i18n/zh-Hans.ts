@@ -407,6 +407,8 @@ export const zhHans: Record<string, string> = {
   "Please select an account": "请选择账户",
   "Please select a category": "请选择分类",
   "Same label of account found.": "已存在同名账户。",
+  "An account with the same type, currency, and label already exists.":
+    "已存在相同类型、货币和名称的账户。",
   "Account not found.": "找不到账户。",
   "Choose how to record the balance difference.": "请选择余额差额的记录方式。",
   "Same label of account type found.": "已存在同名账户类型。",
@@ -461,4 +463,44 @@ export const zhHans: Record<string, string> = {
   Currency: "货币",
   "Please select a currency": "请选择货币",
   "Selected currency is not enabled.": "所选货币尚未启用。",
+  "Edit Budget": "编辑预算",
+  "Disable currencies?": "停用货币？",
+  "Disable selected currencies?": "停用所选货币？",
+  "Existing data stays unchanged. Active budgets will become inactive, and {{currencies}} cannot be used for new accounts, transactions, or budgets.":
+    "现有数据保持不变。有效预算将停用，{{currencies}} 不能用于新的账户、交易或预算。",
+  Keep: "保留",
+  Disable: "停用",
+  "Disable & Save": "停用并保存",
+  "Are you sure you want to disable {{currencies}}? Existing accounts, transactions, and budget history will not be deleted. Active budgets for these currencies will be made inactive. These currencies will no longer be available for new accounts, transactions, or budgets.":
+    "确定要停用 {{currencies}} 吗？现有账户、交易和预算历史不会被删除。这些货币的有效预算将自动停用，并且不能再用于新的账户、交易或预算。",
+  "Currency disabled": "货币已停用",
+  "Enable {{currency}} in Currency Management before editing or reactivating this budget.":
+    "请先在货币管理中启用 {{currency}}，才能编辑或重新启用此预算。",
+  "Go to Currency Management": "前往货币管理",
+  "Manage currencies": "管理货币",
+  "All enabled currencies already have a budget.": "所有已启用货币都已有预算。",
+  "No budgets yet": "尚无预算",
+  "Create a recurring monthly budget for one of your currencies.":
+    "为其中一种货币创建每月自动延续的预算。",
+  "{{count}} categories · {{currency}} {{amount}} allocated":
+    "{{count}} 个分类 · 已分配 {{currency}} {{amount}}",
+  "This currency is disabled. Enable it in Currency Management before editing or reactivating this budget.":
+    "此货币已停用。请先在货币管理中启用，才能编辑或重新启用此预算。",
+  "Pause tracking while keeping budget history.": "暂停追踪，但保留预算历史。",
+  "Previous currency": "上一种货币",
+  "Next currency": "下一种货币",
+  "Category allocations cannot exceed the total budget.":
+    "分类分配金额不能超过总预算。",
+  "Budget currency cannot be changed.": "预算货币创建后不能更改。",
+  "A budget already exists for this currency.": "此货币已有预算。",
+  "Enable this currency before managing its budget.":
+    "请先启用此货币，才能管理其预算。",
+  "Budgets can only be changed for the current month.":
+    "预算只能从当前月份开始更改。",
+  "Selected account is unavailable because its currency is disabled.":
+    "所选账户不可用，因为其货币已停用。",
+  "From Account is unavailable because its currency is disabled.":
+    "转出账户不可用，因为其货币已停用。",
+  "To Account is unavailable because its currency is disabled.":
+    "转入账户不可用，因为其货币已停用。",
 };

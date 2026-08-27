@@ -33,9 +33,17 @@ export const saveCurrencyPreferences = async (data: CurrencyPreferences) => {
     return "The default currency must be enabled.";
   }
 
-  await saveCurrencyPreferencesToDB({
-    defaultCurrencyCode: data.defaultCurrencyCode,
-    enabledCurrencyCodes,
-  });
+  const existingRows = await getCurrencyPreferencesFromDB();
+  const disabledCurrencyCodes = existingRows
+    .map(({ code }) => code)
+    .filter((code) => !enabledCurrencyCodes.includes(code));
+
+  await saveCurrencyPreferencesToDB(
+    {
+      defaultCurrencyCode: data.defaultCurrencyCode,
+      enabledCurrencyCodes,
+    },
+    disabledCurrencyCodes,
+  );
   return null;
 };

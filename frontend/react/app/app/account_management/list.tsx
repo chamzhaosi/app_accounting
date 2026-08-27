@@ -1,35 +1,144 @@
 import { router } from "expo-router";
-import { View } from "react-native";
-import { ActivityIndicator } from "react-native-paper";
+import { ChevronRight } from "lucide-react-native";
+import { SectionList, StyleSheet, View } from "react-native";
+import { ActivityIndicator, List, Text } from "react-native-paper";
+import AppEmpty from "../../components/AppEmpty";
 import AppFloatingButton from "../../components/AppFloatingButton";
-import AppListView from "../../components/AppListView";
+import AppIcon from "../../components/AppIcon";
 import AppView from "../../components/AppView";
+import { FONTS } from "../../constants/fonts";
+import {
+  LIST_ITEM_DESCRIPTION_FONTSIZE,
+  LIST_ITEM_TITLE_FONTSIZE,
+} from "../../constants/size";
 import {
   ACCOUNT_MANAGEMENT_BASE_URL,
   ACCOUNT_MANAGEMENT_CREATE_URL,
 } from "../../constants/urls";
 import useAccountManagementList from "../../hook/account_management/useAccountManagementList";
+import { useTranslation } from "../../i18n/helper";
+import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
+import { useThemeStore } from "../../stores/useThemeStore";
+import { formatPrivateAmount } from "../../utils/number";
 
 export default function AccountManagementList() {
   const logic = useAccountManagementList();
+  const { THEME } = useThemeStore();
+  const { t } = useTranslation();
+  const areAmountsVisible = useAmountPrivacyStore(
+    (state) => state.areAmountsVisible,
+  );
+
   if (logic.isLoading) {
     return (
-      <View className="h-full justify-center items-center">
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
+
   return (
-    <AppView className="relative">
-      <AppListView
-        data={logic.accountItems}
-        onPress={(item) =>
-          router.push(`${ACCOUNT_MANAGEMENT_BASE_URL}/${item.id}`)
-        }
+    <AppView className="relative bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <SectionList
+        sections={logic.accountSections}
+        keyExtractor={(account) => account.id}
+        stickySectionHeadersEnabled
         refreshing={logic.isRefetching && !logic.isFetchingNextPage}
         onRefresh={logic.onRefresh}
         onEndReached={logic.onLoadMore}
         onEndReachedThreshold={0.5}
+        contentContainerStyle={[
+          styles.contentContainer,
+          logic.accountSections.length === 0 && styles.emptyContentContainer,
+        ]}
+        ListEmptyComponent={<AppEmpty />}
+        ListFooterComponent={
+          logic.isFetchingNextPage ? (
+            <ActivityIndicator style={styles.footerLoader} />
+          ) : null
+        }
+        renderSectionHeader={({ section }) => (
+          <View
+            style={[
+              styles.sectionHeader,
+              {
+                backgroundColor: THEME.surfaceContainerHigh,
+                borderBottomColor: THEME.outlineVariant,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.sectionIcon,
+                { backgroundColor: THEME.primaryContainer },
+              ]}
+            >
+              <AppIcon
+                name={section.icon}
+                color={THEME.onPrimaryContainer}
+                size={20}
+              />
+            </View>
+            <Text style={styles.sectionTitle}>{t(section.title)}</Text>
+            <View
+              style={[
+                styles.countBadge,
+                { backgroundColor: THEME.surfaceContainerHighest },
+              ]}
+            >
+              <Text
+                variant="labelMedium"
+                style={{ color: THEME.onSurfaceVariant }}
+              >
+                {section.data.length}
+              </Text>
+            </View>
+          </View>
+        )}
+        renderItem={({ item: account }) => (
+          <List.Item
+            centered
+            title={account.label}
+            titleStyle={styles.accountLabel}
+            description={account.descriptions ?? undefined}
+            descriptionStyle={styles.accountDescription}
+            style={[
+              styles.accountItem,
+              {
+                backgroundColor: THEME.surfaceContainer,
+                borderBottomColor: THEME.outlineVariant,
+              },
+            ]}
+            rippleColor={THEME.surfaceContainerHighest}
+            onPress={() =>
+              router.push(`${ACCOUNT_MANAGEMENT_BASE_URL}/${account.id}`)
+            }
+            right={() => (
+              <View style={styles.accountValueContainer}>
+                <View style={styles.accountValue}>
+                  <Text
+                    variant="labelSmall"
+                    style={{
+                      color:
+                        account.is_currency_enabled === false
+                          ? THEME.error
+                          : THEME.onSurfaceVariant,
+                    }}
+                  >
+                    {account.currency_code}
+                  </Text>
+                  <Text style={styles.accountBalance}>
+                    {formatPrivateAmount(
+                      account.current_balance,
+                      areAmountsVisible,
+                    )}
+                  </Text>
+                </View>
+                <ChevronRight color={THEME.onSurfaceVariant} size={22} />
+              </View>
+            )}
+          />
+        )}
       />
       <AppFloatingButton
         icon="plus"
@@ -38,3 +147,60 @@ export default function AccountManagementList() {
     </AppView>
   );
 }
+
+const styles = StyleSheet.create({
+  accountBalance: {
+    fontFamily: FONTS.ROBOTO,
+    fontSize: LIST_ITEM_TITLE_FONTSIZE,
+    fontWeight: "700",
+  },
+  accountDescription: { fontSize: LIST_ITEM_DESCRIPTION_FONTSIZE },
+  accountItem: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 4,
+  },
+  accountLabel: {
+    fontFamily: FONTS.ROBOTO,
+    fontSize: LIST_ITEM_TITLE_FONTSIZE,
+  },
+  accountValue: { alignItems: "flex-end", marginRight: 8 },
+  accountValueContainer: { alignItems: "center", flexDirection: "row" },
+  contentContainer: { paddingBottom: 96 },
+  countBadge: {
+    alignItems: "center",
+    borderRadius: 12,
+    justifyContent: "center",
+    minWidth: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  emptyContentContainer: { flexGrow: 1, justifyContent: "center" },
+  footerLoader: { marginVertical: 16 },
+  loadingContainer: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+  },
+  sectionHeader: {
+    alignItems: "center",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    minHeight: 52,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  sectionIcon: {
+    alignItems: "center",
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  sectionTitle: {
+    flex: 1,
+    fontFamily: FONTS.ROBOTO,
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 10,
+  },
+});

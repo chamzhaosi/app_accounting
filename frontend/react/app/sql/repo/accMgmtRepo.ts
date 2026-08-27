@@ -62,7 +62,8 @@ export const getAccMgmtListFromDB = async ({
   orderBy,
   pageSize = DEFAULT_PAGE_SIZE,
   curPage = DEFAULT_CURRENT_PAGE,
-}: SQLQueryOptions) => {
+  enabledCurrenciesOnly = false,
+}: SQLQueryOptions & { enabledCurrenciesOnly?: boolean }) => {
   try {
     const offset = (curPage - 1) * pageSize;
     const db = await getDB();
@@ -70,11 +71,19 @@ export const getAccMgmtListFromDB = async ({
     const sql = `
       SELECT
         accounts.*,
+        CASE WHEN currency_preferences.code IS NULL THEN 0 ELSE 1 END AS is_currency_enabled,
         account_types.label AS type_label,
         account_types.icon AS type_icon
       FROM accounts
       INNER JOIN account_types ON account_types.id = accounts.type_id
+      LEFT JOIN currency_preferences
+        ON currency_preferences.code = accounts.currency_code
       WHERE accounts.deleted_at IS NULL
+      ${
+        enabledCurrenciesOnly
+          ? "AND currency_preferences.code IS NOT NULL AND accounts.is_active = 1"
+          : ""
+      }
       ${buildOrderBy(orderBy)}
       LIMIT ? OFFSET ?;
     `;
@@ -100,8 +109,9 @@ export const getAccMgmtListFromDB = async ({
   }
 };
 
-export const getAccMgmtByTypeAndLabelFromDB = async (
+export const getAccMgmtByTypeCurrencyAndLabelFromDB = async (
   typeId: string,
+  currencyCode: string,
   label: string,
 ): Promise<AccMgmtRspType | null> => {
   try {
@@ -111,21 +121,26 @@ export const getAccMgmtByTypeAndLabelFromDB = async (
       `
         SELECT
           accounts.*,
+          CASE WHEN currency_preferences.code IS NULL THEN 0 ELSE 1 END AS is_currency_enabled,
           account_types.label AS type_label,
           account_types.icon AS type_icon
         FROM accounts
         INNER JOIN account_types ON account_types.id = accounts.type_id
+        LEFT JOIN currency_preferences
+          ON currency_preferences.code = accounts.currency_code
         WHERE accounts.type_id = ?
+          AND accounts.currency_code = ? COLLATE NOCASE
           AND accounts.label = ? COLLATE NOCASE
           AND accounts.deleted_at IS NULL;
       `,
-      [typeId, label],
+      [typeId, currencyCode, label],
     );
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
-      "Checked account type and label",
+      "Checked account type, currency, and label",
       {
         typeId,
+        currencyCode,
         label,
         found: Boolean(result),
       },
@@ -152,10 +167,13 @@ export const getAccMgmtByIdFromDB = async (
       `
         SELECT
           accounts.*,
+          CASE WHEN currency_preferences.code IS NULL THEN 0 ELSE 1 END AS is_currency_enabled,
           account_types.label AS type_label,
           account_types.icon AS type_icon
         FROM accounts
         INNER JOIN account_types ON account_types.id = accounts.type_id
+        LEFT JOIN currency_preferences
+          ON currency_preferences.code = accounts.currency_code
         WHERE accounts.id = ?
           AND accounts.deleted_at IS NULL;
       `,

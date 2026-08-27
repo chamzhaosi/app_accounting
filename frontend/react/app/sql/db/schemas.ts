@@ -108,8 +108,8 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         FOREIGN KEY (type_id) REFERENCES account_types(id)
       );
 
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_active_type_label
-        ON accounts(type_id, label)
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_active_type_currency_label
+        ON accounts(type_id, currency_code, label)
         WHERE deleted_at IS NULL;
 
       CREATE INDEX IF NOT EXISTS idx_accounts_active_currency
@@ -252,9 +252,29 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
 
 export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS budget_plans (
+        id TEXT PRIMARY KEY,
+        currency_code CHAR(3) NOT NULL COLLATE NOCASE
+          CHECK (
+            length(currency_code) = 3
+            AND currency_code = upper(currency_code)
+          ),
+
+        sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
+        synced_at DATETIME DEFAULT NULL,
+        deleted_at DATETIME DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_plans_active_currency
+        ON budget_plans(currency_code)
+        WHERE deleted_at IS NULL;
+
       CREATE TABLE IF NOT EXISTS budgets (
         id TEXT PRIMARY KEY,
-        month DATE NOT NULL UNIQUE
+        plan_id TEXT NOT NULL,
+        month DATE NOT NULL
           CHECK (
             date(month) IS NOT NULL
             AND month = date(month, 'start of month')
@@ -271,8 +291,18 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
         synced_at DATETIME DEFAULT NULL,
         deleted_at DATETIME DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-        updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+        updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+
+        FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
       );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_active_plan_month
+        ON budgets(plan_id, month)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_budgets_active_month
+        ON budgets(month)
+        WHERE deleted_at IS NULL;
 
       CREATE TABLE IF NOT EXISTS budget_categories (
         id TEXT PRIMARY KEY,

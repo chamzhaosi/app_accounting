@@ -23,12 +23,16 @@ export const accountSettingsQueryKeys = {
 
 export const budgetQueryKeys = {
   all: [QueryKeyModule.BUDGET] as const,
+  plans: () => [...budgetQueryKeys.all, "plan"] as const,
+  planList: () => [...budgetQueryKeys.plans(), "list"] as const,
+  plan: (id: string) => [...budgetQueryKeys.plans(), "detail", id] as const,
   months: () => [...budgetQueryKeys.all, "month"] as const,
-  month: (month: string) => [...budgetQueryKeys.months(), month] as const,
+  month: (params: { month: string; currencyCode: string }) =>
+    [...budgetQueryKeys.months(), params] as const,
   dailyRemaining: (params: { startDate: string; endDate: string }) =>
     [...budgetQueryKeys.months(), "dailyRemaining", params] as const,
-  management: (month: string) =>
-    [...budgetQueryKeys.all, "management", month] as const,
+  management: (planId?: string) =>
+    [...budgetQueryKeys.all, "management", planId ?? "create"] as const,
 };
 
 export const accountTypeQueryKeys = {
@@ -47,6 +51,8 @@ export const accountManagementQueryKeys = {
     [...accountManagementQueryKeys.lists(), "mainBalance"] as const,
   list: (params: { pageSize: number }) =>
     [...accountManagementQueryKeys.lists(), params] as const,
+  selectableList: (params: { pageSize: number }) =>
+    [...accountManagementQueryKeys.lists(), "selectable", params] as const,
   details: () => [...accountManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
     [...accountManagementQueryKeys.details(), id] as const,

@@ -24,7 +24,8 @@ import AppView from "../../components/AppView";
 import { BUDGET_SWIPE_CARD_HEIGHT } from "../../constants/size";
 import {
   BUDGET_CATEGORY_DETAIL_URL,
-  BUDGET_MANAGEMENT_URL,
+  BUDGET_MANAGEMENT_CREATE_URL,
+  BUDGET_MANAGEMENT_DETAIL_URL,
 } from "../../constants/urls";
 import type { BudgetOverviewType } from "../../sql/types/budgetType";
 import { BUDGET_PIE_COLORS } from "../../hook/budget_management/budgetOverview.utils";
@@ -33,7 +34,7 @@ import useBudgetOverview from "../../hook/budget_management/useBudgetOverview";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { absoluteAmount, compareAmounts } from "../../utils/amount";
-import { getMonthEndKey } from "../../utils/date";
+import { getMonthEndKey, getMonthKey } from "../../utils/date";
 import { formatPrivateAmount, MASKED_AMOUNT } from "../../utils/number";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
@@ -47,7 +48,53 @@ export default function Budget() {
   );
   const logic = useBudgetOverview(THEME);
 
-  const openManagement = () => router.push(BUDGET_MANAGEMENT_URL as Href);
+  const openManagement = () =>
+    router.push(
+      (logic.selectedPlanId
+        ? BUDGET_MANAGEMENT_DETAIL_URL.replace("[id]", logic.selectedPlanId)
+        : BUDGET_MANAGEMENT_CREATE_URL) as Href,
+    );
+
+  const currencyNavigator = logic.selectedCurrencyCode ? (
+    <Surface
+      elevation={1}
+      style={[styles.currencyCard, { backgroundColor: THEME.surfaceContainer }]}
+    >
+      <View style={styles.currencyNavigator}>
+        <AppIconButton
+          iconName="ChevronLeft"
+          accessibilityLabel={t("Previous currency")}
+          disabled={!logic.canSelectPreviousCurrency}
+          onPress={logic.previousCurrency}
+          style={{
+            ...styles.currencyButton,
+            backgroundColor: THEME.surfaceContainer,
+          }}
+        />
+        <View style={styles.currencyLabel}>
+          <Text variant="labelSmall" style={{ color: THEME.onSurfaceVariant }}>
+            {t("Currency")}
+          </Text>
+          <Text variant="titleLarge">{logic.selectedCurrencyCode}</Text>
+          {!logic.selectedCurrencyEnabled ? (
+            <Text variant="labelSmall" style={{ color: THEME.error }}>
+              {t("Currency disabled")}
+            </Text>
+          ) : null}
+        </View>
+        <AppIconButton
+          iconName="ChevronRight"
+          accessibilityLabel={t("Next currency")}
+          disabled={!logic.canSelectNextCurrency}
+          onPress={logic.nextCurrency}
+          style={{
+            ...styles.currencyButton,
+            backgroundColor: THEME.surfaceContainer,
+          }}
+        />
+      </View>
+    </Surface>
+  ) : null;
 
   if (logic.isLoading) {
     return (
@@ -64,6 +111,7 @@ export default function Budget() {
         edges={["top"]}
         className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow"
       >
+        {currencyNavigator}
         <Surface
           elevation={1}
           style={[
@@ -71,7 +119,11 @@ export default function Budget() {
             { backgroundColor: THEME.surfaceContainer },
           ]}
         >
-          <AppMonthNavigator month={logic.month} onChange={logic.setMonth} />
+          <AppMonthNavigator
+            month={logic.month}
+            maximumMonth={getMonthKey()}
+            onChange={logic.setMonth}
+          />
           <AppIcon name="CircleAlert" size={64} color={THEME.error} />
           <Text variant="headlineSmall" style={styles.emptyTitle}>
             {t("Unable to load budget")}
@@ -96,6 +148,7 @@ export default function Budget() {
       edges={["top"]}
       className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow"
     >
+      {currencyNavigator}
       {!overview ? (
         <ScrollView
           contentContainerStyle={styles.content}
@@ -113,7 +166,11 @@ export default function Budget() {
               { backgroundColor: THEME.surfaceContainer },
             ]}
           >
-            <AppMonthNavigator month={logic.month} onChange={logic.setMonth} />
+            <AppMonthNavigator
+              month={logic.month}
+              maximumMonth={getMonthKey()}
+              onChange={logic.setMonth}
+            />
             <AppIcon
               name="HandCoins"
               size={72}
@@ -155,6 +212,7 @@ export default function Budget() {
             >
               <AppMonthNavigator
                 month={logic.month}
+                maximumMonth={getMonthKey()}
                 onChange={logic.setMonth}
               />
               <View style={styles.titleRow}>
@@ -240,7 +298,7 @@ export default function Budget() {
 
             <View style={styles.sectionHeader}>
               <Text variant="titleLarge">{t("Category progress")}</Text>
-              {logic.isCurrentMonth && (
+              {logic.isCurrentMonth && logic.selectedCurrencyEnabled && (
                 <AppIconButton
                   iconName="Settings2"
                   accessibilityLabel={t("Manage budget")}
@@ -497,12 +555,27 @@ const styles = StyleSheet.create({
   categoryProgress: { borderRadius: 4, height: 7, marginTop: 12 },
   categoryTitleRow: { alignItems: "center", flexDirection: "row", gap: 12 },
   content: { paddingBottom: 32 },
+  currencyButton: { padding: 8 },
+  currencyCard: {
+    borderRadius: 14,
+    marginHorizontal: 12,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  currencyLabel: { alignItems: "center", flex: 1 },
+  currencyNavigator: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flexDirection: "row",
+    justifyContent: "center",
+  },
   emptyButton: { borderRadius: 8, marginTop: 20, width: "100%" },
   emptyCard: {
     alignItems: "center",
     borderRadius: 16,
     margin: 12,
-    marginTop: 24,
+    marginTop: 12,
     padding: 28,
   },
   emptyText: { marginTop: 8, textAlign: "center" },

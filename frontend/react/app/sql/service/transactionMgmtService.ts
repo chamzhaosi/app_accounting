@@ -124,8 +124,10 @@ const validateTransactionMgmt = async (
       getAccMgmtByIdFromDB(data.toAccountId),
     ]);
 
-    if (!fromAccount?.is_active) return "From Account is unavailable.";
-    if (!toAccount?.is_active) return "To Account is unavailable.";
+    if (!fromAccount?.is_active || !fromAccount.is_currency_enabled)
+      return "From Account is unavailable because its currency is disabled.";
+    if (!toAccount?.is_active || !toAccount.is_currency_enabled)
+      return "To Account is unavailable because its currency is disabled.";
     return;
   }
 
@@ -134,7 +136,8 @@ const validateTransactionMgmt = async (
     getCategoryMgmtByIdFromDB(data.categoryId),
   ]);
 
-  if (!account?.is_active) return "Selected account is unavailable.";
+  if (!account?.is_active || !account.is_currency_enabled)
+    return "Selected account is unavailable because its currency is disabled.";
   if (!category?.is_active) return "Selected category is unavailable.";
 
   const expectedCategoryTypeId = CATEGORY_TYPE_IDS[data.transactionType];

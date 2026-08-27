@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { AMOUNT_PATTERN, compareAmounts } from "../../utils/amount";
+import {
+  CURRENCY_CODES,
+  DEFAULT_CURRENCY_CODE,
+} from "../../constants/currencies";
 
 export const budgetManagementFormSchema = z.object({
+  currencyCode: z
+    .string()
+    .refine((value) => CURRENCY_CODES.has(value), "Please select a currency"),
   totalBudget: z
     .string()
     .trim()
@@ -19,6 +26,7 @@ export type BudgetManagementFormType = z.infer<
 >;
 
 export const budgetManagementFormDefaultValues: BudgetManagementFormType = {
+  currencyCode: DEFAULT_CURRENCY_CODE,
   totalBudget: "0.00",
   isActive: true,
 };

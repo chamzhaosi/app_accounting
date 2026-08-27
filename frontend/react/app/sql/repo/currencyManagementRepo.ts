@@ -1,5 +1,7 @@
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { getMonthKey } from "../../utils/date";
 import { getDB } from "../db/database";
+import { deactivateBudgetsForCurrenciesWithDB } from "./budgetRepo";
 import type {
   CurrencyPreferenceRow,
   CurrencyPreferences,
@@ -30,10 +32,16 @@ export const getCurrencyPreferencesFromDB = async () => {
 
 export const saveCurrencyPreferencesToDB = async (
   data: CurrencyPreferences,
+  disabledCurrencyCodes: string[] = [],
 ) => {
   try {
     const db = await getDB();
     await db.withTransactionAsync(async () => {
+      await deactivateBudgetsForCurrenciesWithDB(
+        db,
+        disabledCurrencyCodes,
+        getMonthKey(),
+      );
       await db.runAsync("DELETE FROM currency_preferences;");
 
       for (const code of data.enabledCurrencyCodes) {

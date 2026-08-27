@@ -35,7 +35,7 @@ import {
   transactionManagementFormSchema,
 } from "../../forms/schemas/transaction_management.schema";
 import type { TransactionManagementFormType } from "../../forms/schemas/transaction_management.schema";
-import { getAccMgmtList } from "../../sql/service/accMgmtService";
+import { getSelectableAccMgmtList } from "../../sql/service/accMgmtService";
 import { getCategoryMgmtList } from "../../sql/service/categoryMgmtService";
 import {
   deleteTransactionMgmt,
@@ -126,10 +126,11 @@ export default function useTransactionManagementDetail() {
     isRefetching: isRefetchingAccounts,
     refetch: refetchAccounts,
   } = useInfiniteQuery({
-    queryKey: accountManagementQueryKeys.list({
+    queryKey: accountManagementQueryKeys.selectableList({
       pageSize: DEFAULT_PAGE_SIZE,
     }),
-    queryFn: ({ pageParam }) => getAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
+    queryFn: ({ pageParam }) =>
+      getSelectableAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
@@ -175,18 +176,45 @@ export default function useTransactionManagementDetail() {
     ];
   }, [categories, t, transaction, transactionType]);
 
-  const accountItems = useMemo<AccountPickerItemType[]>(
-    () =>
+  const accountItems = useMemo<AccountPickerItemType[]>(() => {
+    const items: AccountPickerItemType[] =
       accounts?.pages.flat().map((account) => ({
         id: account.id,
         icon: account.type_icon as AppIconProps["name"],
         label: account.label,
         balance: account.current_balance,
-        inputLabel: account.label,
+        currencyCode: account.currency_code,
+        inputLabel: `${account.currency_code} - ${account.label}`,
         descriptions: account.descriptions ?? undefined,
-      })) ?? [],
-    [accounts],
-  );
+        typeId: account.type_id,
+        typeLabel: account.type_label,
+        typeIcon: account.type_icon as AppIconProps["name"],
+      })) ?? [];
+    const savedAccounts = [
+      { id: transaction?.account_id, label: transaction?.account_label },
+      {
+        id: transaction?.from_account_id,
+        label: transaction?.from_account_label,
+      },
+      { id: transaction?.to_account_id, label: transaction?.to_account_label },
+    ];
+    for (const saved of savedAccounts) {
+      if (!saved.id || items.some((item) => item.id === saved.id)) continue;
+      items.push({
+        id: saved.id,
+        icon: "WalletCards",
+        label: saved.label ?? t("Selected Account"),
+        inputLabel: saved.label ?? t("Selected Account"),
+        descriptions: t("Currency disabled"),
+        balance: 0,
+        typeId: "unavailable",
+        typeLabel: t("Unavailable"),
+        typeIcon: "WalletCards",
+        disabled: true,
+      });
+    }
+    return items;
+  }, [accounts, t, transaction]);
 
   const onLoadMoreCategories = () => {
     if (isFetchingNextCategoryPage || !hasNextCategoryPage) return;

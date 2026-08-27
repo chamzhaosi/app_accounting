@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AppToast } from "../../components/AppToast";
 import { CURRENCIES, DEFAULT_CURRENCY_CODE } from "../../constants/currencies";
 import {
+  accountManagementQueryKeys,
+  budgetQueryKeys,
   currencyManagementQueryKeys,
   invalidateQuery,
 } from "../../constants/queryKeys";
@@ -33,6 +35,7 @@ export default function useCurrencyManagement() {
     DEFAULT_CURRENCY_CODE,
   ]);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
 
   const { data, error, isFetched, isLoading } = useQuery({
     queryKey: currencyManagementQueryKeys.preferences(),
@@ -105,6 +108,14 @@ export default function useCurrencyManagement() {
     [defaultCurrencyCode, enabledCurrencyCodes],
   );
 
+  const disabledCurrencyCodes = useMemo(
+    () =>
+      (data?.enabledCurrencyCodes ?? []).filter(
+        (code) => !enabledCurrencyCodes.includes(code),
+      ),
+    [data?.enabledCurrencyCodes, enabledCurrencyCodes],
+  );
+
   const openPicker = () => {
     setSearch("");
     setIsPickerVisible(true);
@@ -128,7 +139,7 @@ export default function useCurrencyManagement() {
     );
   };
 
-  const onSave = async () => {
+  const persistPreferences = async () => {
     try {
       setIsSaving(true);
       const validationMessage = await saveCurrencyPreferences({
@@ -141,10 +152,11 @@ export default function useCurrencyManagement() {
         return false;
       }
 
-      await invalidateQuery(
-        queryClient,
-        currencyManagementQueryKeys.preferences(),
-      );
+      await Promise.all([
+        invalidateQuery(queryClient, currencyManagementQueryKeys.preferences()),
+        invalidateQuery(queryClient, budgetQueryKeys.all),
+        invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
+      ]);
       debugLog(DEBUG_TAG.CURRENCY_MANAGEMENT, "Currency preferences saved", {
         count: enabledCurrencyCodes.length,
         defaultCurrencyCode,
@@ -164,8 +176,23 @@ export default function useCurrencyManagement() {
     }
   };
 
+  const onSave = async () => {
+    if (disabledCurrencyCodes.length > 0) {
+      setShowDisableDialog(true);
+      return false;
+    }
+    return persistPreferences();
+  };
+
+  const onConfirmDisable = async () => {
+    setShowDisableDialog(false);
+    return persistPreferences();
+  };
+
   return {
     defaultCurrencyCode,
+    disabledCurrencyCodes,
+    dismissDisableDialog: () => setShowDisableDialog(false),
     dismissPicker,
     enabledCurrencies,
     enabledCurrencyCodes,
@@ -174,8 +201,10 @@ export default function useCurrencyManagement() {
     isPickerVisible,
     isSaving,
     onSave,
+    onConfirmDisable,
     openPicker,
     search,
+    showDisableDialog,
     selectDefaultCurrency,
     setSearch,
     toggleCurrency,

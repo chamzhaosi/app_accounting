@@ -10,6 +10,7 @@ import {
   createTransactionMgmtTable,
 } from "./schemas";
 import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
+import { randomUUID } from "expo-crypto";
 
 const addSeededCategoryTranslationKeys = async (db: SQLite.SQLiteDatabase) => {
   const columns = await db.getAllAsync<{ name: string }>(
@@ -194,6 +195,90 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
           WHERE deleted_at IS NULL;
       `);
       await updateDBVersion(db, 9);
+    });
+  }
+
+  if (currentVersion < 10) {
+    await db.withTransactionAsync(async () => {
+      const budgetColumns = await db.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(budgets);",
+      );
+
+      if (!budgetColumns.some(({ name }) => name === "plan_id")) {
+        const existingBudgetCount = await db.getFirstAsync<{ count: number }>(
+          "SELECT COUNT(*) AS count FROM budgets;",
+        );
+        const legacyPlanId = randomUUID();
+
+        await db.execAsync(`
+          ALTER TABLE budget_categories RENAME TO budget_categories_legacy;
+          ALTER TABLE budgets RENAME TO budgets_legacy;
+
+          DROP INDEX IF EXISTS idx_budget_categories_active_budget_category;
+          DROP INDEX IF EXISTS idx_budget_categories_active_budget;
+          DROP INDEX IF EXISTS idx_budgets_active_month;
+        `);
+
+        await createBudgetTables(db);
+
+        if ((existingBudgetCount?.count ?? 0) > 0) {
+          const defaultCurrency = await db.getFirstAsync<{ code: string }>(
+            `SELECT code
+             FROM currency_preferences
+             WHERE is_default = 1
+             LIMIT 1;`,
+          );
+
+          await db.runAsync(
+            `INSERT INTO budget_plans (id, currency_code)
+             VALUES (?, ?);`,
+            [legacyPlanId, defaultCurrency?.code ?? "MYR"],
+          );
+          await db.runAsync(
+            `INSERT INTO budgets (
+               id, plan_id, month, total_budget, is_active,
+               sync_status, synced_at, deleted_at, created_at, updated_at
+             )
+             SELECT
+               id, ?, month, total_budget, is_active,
+               sync_status, synced_at, deleted_at, created_at, updated_at
+             FROM budgets_legacy;`,
+            [legacyPlanId],
+          );
+          await db.execAsync(`
+            INSERT INTO budget_categories (
+              id, budget_id, category_id, amount,
+              sync_status, synced_at, deleted_at, created_at, updated_at
+            )
+            SELECT
+              id, budget_id, category_id, amount,
+              sync_status, synced_at, deleted_at, created_at, updated_at
+            FROM budget_categories_legacy;
+          `);
+        }
+
+        await db.execAsync(`
+          DROP TABLE budget_categories_legacy;
+          DROP TABLE budgets_legacy;
+        `);
+      } else {
+        await createBudgetTables(db);
+      }
+
+      await updateDBVersion(db, 10);
+    });
+  }
+
+  if (currentVersion < 11) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+        DROP INDEX IF EXISTS idx_accounts_active_type_label;
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_active_type_currency_label
+          ON accounts(type_id, currency_code, label)
+          WHERE deleted_at IS NULL;
+      `);
+      await updateDBVersion(db, 11);
     });
   }
 };

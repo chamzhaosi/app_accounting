@@ -6,6 +6,7 @@ import AppButton, {
   SUBMIT_BTN_CONTENT_STYLE,
 } from "../../components/AppButton";
 import AppIcon from "../../components/AppIcon";
+import AppDialog from "../../components/AppDialog";
 import AppView from "../../components/AppView";
 import useCurrencyManagement from "../../hook/currency_management/useCurrencyManagement";
 import { useTranslation } from "../../i18n/helper";
@@ -38,6 +39,45 @@ export default function CurrencyManagementList() {
         onToggle={logic.toggleCurrency}
         search={logic.search}
         visible={logic.isPickerVisible}
+      />
+      <AppDialog
+        title="Disable selected currencies?"
+        iconName="CircleAlert"
+        description="Existing data stays unchanged. Active budgets will become inactive, and {{currencies}} cannot be used for new accounts, transactions, or budgets."
+        descriptionValues={{
+          currencies: logic.disabledCurrencyCodes.join(", "),
+        }}
+        highlightedDescriptionValue={logic.disabledCurrencyCodes.join(", ")}
+        showDialog={logic.showDisableDialog}
+        onDismiss={logic.dismissDisableDialog}
+        actionRender={
+          <>
+            <AppButton
+              variant={ButtonType.SECONDARY}
+              disabled={logic.isSaving}
+              onPress={logic.dismissDisableDialog}
+              style={styles.dialogButton}
+              contentStyle={styles.dialogButtonContent}
+              labelStyle={styles.dialogButtonLabel}
+            >
+              Keep
+            </AppButton>
+            <AppButton
+              variant={ButtonType.ERROR}
+              loading={logic.isSaving}
+              disabled={logic.isSaving}
+              style={styles.dialogButton}
+              contentStyle={styles.dialogButtonContent}
+              labelStyle={styles.dialogButtonLabel}
+              onPress={async () => {
+                const isSaved = await logic.onConfirmDisable();
+                if (isSaved) router.back();
+              }}
+            >
+              Disable
+            </AppButton>
+          </>
+        }
       />
 
       <View style={styles.header}>
@@ -124,6 +164,9 @@ export default function CurrencyManagementList() {
 }
 
 const styles = StyleSheet.create({
+  dialogButton: { borderRadius: 10, minWidth: 88 },
+  dialogButtonContent: { height: 40, marginVertical: 0 },
+  dialogButtonLabel: { fontSize: 15, marginHorizontal: 12 },
   header: {
     gap: 10,
     paddingHorizontal: 12,

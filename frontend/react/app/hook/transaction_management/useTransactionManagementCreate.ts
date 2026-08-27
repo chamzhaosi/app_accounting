@@ -35,7 +35,7 @@ import {
   transactionManagementFormSchema,
 } from "../../forms/schemas/transaction_management.schema";
 import type { TransactionManagementFormType } from "../../forms/schemas/transaction_management.schema";
-import { getAccMgmtList } from "../../sql/service/accMgmtService";
+import { getSelectableAccMgmtList } from "../../sql/service/accMgmtService";
 import {
   getCategoryMgmtById,
   getCategoryMgmtList,
@@ -133,10 +133,11 @@ export default function useTransactionManagementCreate() {
     isRefetching: isRefetchingAccounts,
     refetch: refetchAccounts,
   } = useInfiniteQuery({
-    queryKey: accountManagementQueryKeys.list({
+    queryKey: accountManagementQueryKeys.selectableList({
       pageSize: DEFAULT_PAGE_SIZE,
     }),
-    queryFn: ({ pageParam }) => getAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
+    queryFn: ({ pageParam }) =>
+      getSelectableAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
@@ -193,8 +194,12 @@ export default function useTransactionManagementCreate() {
         icon: account.type_icon as AppIconProps["name"],
         label: account.label,
         balance: account.current_balance,
-        inputLabel: account.label,
+        currencyCode: account.currency_code,
+        inputLabel: `${account.currency_code} - ${account.label}`,
         descriptions: account.descriptions ?? undefined,
+        typeId: account.type_id,
+        typeLabel: account.type_label,
+        typeIcon: account.type_icon as AppIconProps["name"],
       })) ?? [],
     [accounts],
   );

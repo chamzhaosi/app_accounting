@@ -443,6 +443,8 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Please select a category": "Sila pilih kategori",
   "Same label of account found.":
     "Akaun dengan nama yang sama telah ditemukan.",
+  "An account with the same type, currency, and label already exists.":
+    "Akaun dengan jenis, mata wang dan nama yang sama sudah wujud.",
   "Account not found.": "Akaun tidak ditemukan.",
   "Choose how to record the balance difference.":
     "Pilih cara untuk merekodkan perbezaan baki.",
@@ -511,4 +513,48 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Please select a currency": "Sila pilih mata wang",
   "Selected currency is not enabled.":
     "Mata wang yang dipilih tidak didayakan.",
+  "Edit Budget": "Edit Bajet",
+  "Disable currencies?": "Nyahdayakan mata wang?",
+  "Disable selected currencies?": "Nyahdayakan mata wang yang dipilih?",
+  "Existing data stays unchanged. Active budgets will become inactive, and {{currencies}} cannot be used for new accounts, transactions, or budgets.":
+    "Data sedia ada kekal. Bajet aktif akan dinyahaktifkan dan {{currencies}} tidak boleh digunakan untuk akaun, transaksi atau bajet baharu.",
+  Keep: "Kekalkan",
+  Disable: "Nyahdayakan",
+  "Disable & Save": "Nyahdayakan & Simpan",
+  "Are you sure you want to disable {{currencies}}? Existing accounts, transactions, and budget history will not be deleted. Active budgets for these currencies will be made inactive. These currencies will no longer be available for new accounts, transactions, or budgets.":
+    "Adakah anda pasti mahu menyahdayakan {{currencies}}? Akaun, transaksi dan sejarah bajet sedia ada tidak akan dipadam. Bajet aktif bagi mata wang ini akan dinyahaktifkan. Mata wang ini tidak lagi tersedia untuk akaun, transaksi atau bajet baharu.",
+  "Currency disabled": "Mata wang dinyahdayakan",
+  "Enable {{currency}} in Currency Management before editing or reactivating this budget.":
+    "Dayakan {{currency}} dalam Pengurusan Mata Wang sebelum mengedit atau mengaktifkan semula bajet ini.",
+  "Go to Currency Management": "Pergi ke Pengurusan Mata Wang",
+  "Manage currencies": "Urus mata wang",
+  "All enabled currencies already have a budget.":
+    "Semua mata wang yang didayakan sudah mempunyai bajet.",
+  "No budgets yet": "Belum ada bajet",
+  "Create a recurring monthly budget for one of your currencies.":
+    "Cipta bajet bulanan berulang untuk salah satu mata wang anda.",
+  "{{count}} categories · {{currency}} {{amount}} allocated":
+    "{{count}} kategori · {{currency}} {{amount}} diperuntukkan",
+  "This currency is disabled. Enable it in Currency Management before editing or reactivating this budget.":
+    "Mata wang ini dinyahdayakan. Dayakannya dalam Pengurusan Mata Wang sebelum mengedit atau mengaktifkan semula bajet ini.",
+  "Pause tracking while keeping budget history.":
+    "Jeda penjejakan sambil mengekalkan sejarah bajet.",
+  "Previous currency": "Mata wang sebelumnya",
+  "Next currency": "Mata wang seterusnya",
+  "Category allocations cannot exceed the total budget.":
+    "Peruntukan kategori tidak boleh melebihi jumlah bajet.",
+  "Budget currency cannot be changed.":
+    "Mata wang bajet tidak boleh diubah selepas dicipta.",
+  "A budget already exists for this currency.":
+    "Bajet sudah wujud untuk mata wang ini.",
+  "Enable this currency before managing its budget.":
+    "Dayakan mata wang ini sebelum mengurus bajetnya.",
+  "Budgets can only be changed for the current month.":
+    "Bajet hanya boleh diubah mulai bulan semasa.",
+  "Selected account is unavailable because its currency is disabled.":
+    "Akaun yang dipilih tidak tersedia kerana mata wangnya dinyahdayakan.",
+  "From Account is unavailable because its currency is disabled.":
+    "Akaun Asal tidak tersedia kerana mata wangnya dinyahdayakan.",
+  "To Account is unavailable because its currency is disabled.":
+    "Akaun Destinasi tidak tersedia kerana mata wangnya dinyahdayakan.",
 };

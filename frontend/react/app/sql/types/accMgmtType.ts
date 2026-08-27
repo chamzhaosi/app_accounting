@@ -9,6 +9,7 @@ export type AccMgmtRspType = {
   current_balance: number;
   is_main_account: boolean;
   is_active: boolean;
+  is_currency_enabled?: boolean;
 };
 
 export type AccMgmtCreateReqType = {

@@ -9,7 +9,7 @@ import {
   createNewAccMgmtToDB,
   deleteAccMgmtFromDB,
   getAccMgmtByIdFromDB,
-  getAccMgmtByTypeAndLabelFromDB,
+  getAccMgmtByTypeCurrencyAndLabelFromDB,
   getAccMgmtListFromDB,
   getMainAccountBalanceFromDB,
   updateAccMgmtToDB,
@@ -45,6 +45,17 @@ export const getAccMgmtList = async (
   });
 };
 
+export const getSelectableAccMgmtList = async (
+  curPage: number,
+  pageSize: number,
+): Promise<AccMgmtRspType[]> =>
+  getAccMgmtListFromDB({
+    orderBy: { column: "accounts.created_at", direction: "DESC" },
+    curPage,
+    pageSize,
+    enabledCurrenciesOnly: true,
+  });
+
 export const createNewAccMgmt = async (
   data: AccMgmtCreateReqType,
 ): Promise<string | void> => {
@@ -54,21 +65,23 @@ export const createNewAccMgmt = async (
   if (!isValidAmount(data.currentBalance || "0"))
     return "Enter a balance with up to 13 integer digits and 2 decimal places.";
 
-  const existData = await getAccMgmtByTypeAndLabelFromDB(
+  const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
     data.typeId,
+    data.currencyCode,
     data.label,
   );
   if (existData) {
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Duplicate label found when creating",
+      "Duplicate account key found when creating",
       {
         label: data.label,
         typeId: data.typeId,
+        currencyCode: data.currencyCode,
         existingId: existData.id,
       },
     );
-    return "Same label of account found.";
+    return "An account with the same type, currency, and label already exists.";
   }
 
   await createNewAccMgmtToDB(data);
@@ -86,22 +99,24 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
   if (!isValidAmount(data.currentBalance || "0"))
     return "Enter a balance with up to 13 integer digits and 2 decimal places.";
 
-  const existData = await getAccMgmtByTypeAndLabelFromDB(
+  const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
     data.typeId,
+    data.currencyCode,
     data.label,
   );
   if (existData && existData.id !== data.id) {
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Duplicate label found when updating",
+      "Duplicate account key found when updating",
       {
         id: data.id,
         label: data.label,
         typeId: data.typeId,
+        currencyCode: data.currencyCode,
         existingId: existData.id,
       },
     );
-    return "Same label of account found.";
+    return "An account with the same type, currency, and label already exists.";
   }
 
   const currentAccount = await getAccMgmtByIdFromDB(data.id);

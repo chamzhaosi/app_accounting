@@ -1,5 +1,11 @@
 import { Check } from "lucide-react-native";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { useMemo } from "react";
+import {
+  SectionList,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import {
   ActivityIndicator,
   List,
@@ -8,9 +14,10 @@ import {
   Text,
 } from "react-native-paper";
 import AppFloatingButton from "../../../components/AppFloatingButton";
+import AppEmpty from "../../../components/AppEmpty";
 import AppIcon from "../../../components/AppIcon";
 import AppIconButton from "../../../components/AppIconButton";
-import AppListView, { AppListItemType } from "../../../components/AppListView";
+import { AppListItemType } from "../../../components/AppListView";
 import AppText, { TextTypEnum } from "../../../components/AppText";
 import { FONTS } from "../../../constants/fonts";
 import {
@@ -24,6 +31,18 @@ import { useTranslation } from "../../../i18n/helper";
 
 type AccountPickerModalItem = AppListItemType & {
   balance: number;
+  currencyCode?: string;
+  typeId: string;
+  typeLabel: string;
+  typeIcon: AppListItemType["icon"];
+  disabled?: boolean;
+};
+
+type AccountPickerSection = {
+  typeId: string;
+  title: string;
+  icon: AppListItemType["icon"];
+  data: AccountPickerModalItem[];
 };
 
 type AccountPickerModalProps = {
@@ -63,6 +82,28 @@ export default function AccountPickerModal({
     (state) => state.areAmountsVisible,
   );
   const { height, width } = useWindowDimensions();
+  const accountSections = useMemo<AccountPickerSection[]>(() => {
+    const sections = new Map<string, AccountPickerSection>();
+
+    accounts.forEach((account) => {
+      const existingSection = sections.get(account.typeId);
+      if (existingSection) {
+        existingSection.data.push(account);
+        return;
+      }
+
+      sections.set(account.typeId, {
+        typeId: account.typeId,
+        title: account.typeLabel,
+        icon: account.typeIcon,
+        data: [account],
+      });
+    });
+
+    return Array.from(sections.values()).sort((left, right) =>
+      left.title.localeCompare(right.title),
+    );
+  }, [accounts]);
 
   return (
     <Portal>
@@ -95,9 +136,10 @@ export default function AccountPickerModal({
             <ActivityIndicator size="large" />
           </View>
         ) : (
-          <AppListView
-            data={accounts}
-            onPress={onSelect}
+          <SectionList
+            sections={accountSections}
+            keyExtractor={(item) => item.id.toString()}
+            stickySectionHeadersEnabled
             refreshing={isRefreshing && !isFetchingNextPage}
             onRefresh={onRefresh}
             onEndReached={onLoadMore}
@@ -107,9 +149,50 @@ export default function AccountPickerModal({
                 <ActivityIndicator style={styles.footerLoader} />
               ) : null
             }
-            selectedItem={selectedItem}
-            contentContainerStyle={styles.listContent}
-            genCstmFlatListRenderItem={({ item }) => {
+            ListEmptyComponent={<AppEmpty />}
+            contentContainerStyle={[
+              styles.listContent,
+              accountSections.length === 0 && styles.emptyListContent,
+            ]}
+            renderSectionHeader={({ section }) => (
+              <View
+                style={[
+                  styles.sectionHeader,
+                  {
+                    backgroundColor: THEME.surfaceContainerHigh,
+                    borderBottomColor: THEME.outlineVariant,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: THEME.primaryContainer },
+                  ]}
+                >
+                  <AppIcon
+                    name={section.icon}
+                    color={THEME.onPrimaryContainer}
+                    size={20}
+                  />
+                </View>
+                <Text style={styles.sectionTitle}>{t(section.title)}</Text>
+                <View
+                  style={[
+                    styles.countBadge,
+                    { backgroundColor: THEME.surfaceContainerHighest },
+                  ]}
+                >
+                  <Text
+                    variant="labelMedium"
+                    style={{ color: THEME.onSurfaceVariant }}
+                  >
+                    {section.data.length}
+                  </Text>
+                </View>
+              </View>
+            )}
+            renderItem={({ item }) => {
               const isSelected = selectedItem?.id === item.id;
               const textColor = isSelected ? THEME.onTertiary : THEME.onSurface;
 
@@ -137,22 +220,31 @@ export default function AccountPickerModal({
                     },
                   ]}
                   rippleColor={THEME.surfaceContainerHighest}
-                  onPress={() => onSelect(item)}
-                  left={({ style }) => (
-                    <View style={[style, styles.accountIconContainer]}>
-                      <AppIcon
-                        name={item.icon}
-                        color={isSelected ? THEME.onTertiary : undefined}
-                      />
-                    </View>
-                  )}
+                  disabled={item.disabled}
+                  onPress={() => {
+                    if (!item.disabled) onSelect(item);
+                  }}
                   right={() => (
                     <View style={styles.accountBalanceContainer}>
-                      <Text
-                        style={[styles.accountBalance, { color: textColor }]}
-                      >
-                        {formatPrivateAmount(item.balance, areAmountsVisible)}
-                      </Text>
+                      <View style={styles.accountValue}>
+                        {item.currencyCode && (
+                          <Text
+                            variant="labelSmall"
+                            style={{
+                              color: isSelected
+                                ? THEME.onTertiary
+                                : THEME.onSurfaceVariant,
+                            }}
+                          >
+                            {item.currencyCode}
+                          </Text>
+                        )}
+                        <Text
+                          style={[styles.accountBalance, { color: textColor }]}
+                        >
+                          {formatPrivateAmount(item.balance, areAmountsVisible)}
+                        </Text>
+                      </View>
                       <View style={styles.selectionIndicator}>
                         {isSelected && (
                           <Check color={THEME.onTertiary} size={20} />
@@ -206,14 +298,14 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 80,
   },
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   accountItem: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingLeft: 8,
     paddingRight: 4,
-  },
-  accountIconContainer: {
-    alignItems: "center",
-    justifyContent: "center",
   },
   accountLabel: {
     fontFamily: FONTS.ROBOTO,
@@ -230,12 +322,42 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.ROBOTO,
     fontSize: LIST_ITEM_TITLE_FONTSIZE,
     fontWeight: "700",
-    marginRight: 8,
   },
+  accountValue: { alignItems: "flex-end", marginRight: 8 },
   selectionIndicator: {
     width: 20,
   },
   manageButton: {
     bottom: 0,
+  },
+  countBadge: {
+    alignItems: "center",
+    borderRadius: 12,
+    justifyContent: "center",
+    minWidth: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  sectionHeader: {
+    alignItems: "center",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    minHeight: 52,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  sectionIcon: {
+    alignItems: "center",
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  sectionTitle: {
+    flex: 1,
+    fontFamily: FONTS.ROBOTO,
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 10,
   },
 });

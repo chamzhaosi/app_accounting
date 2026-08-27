@@ -13,7 +13,12 @@ export type AccountFieldName = "accountId" | "fromAccountId" | "toAccountId";
 
 export type AccountPickerItemType = AppListItemType & {
   balance: number;
+  currencyCode?: string;
   inputLabel: string;
+  typeId: string;
+  typeLabel: string;
+  typeIcon: AppListItemType["icon"];
+  disabled?: boolean;
 };
 
 type AccountIdFieldProps = {

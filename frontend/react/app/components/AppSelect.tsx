@@ -88,7 +88,7 @@ export default function AppSelect({
     );
 
   return (
-    <>
+    <View style={containerStyle}>
       <Menu
         visible={showOptions}
         elevation={4}
@@ -112,7 +112,12 @@ export default function AppSelect({
           },
         ]}
         anchor={
-          <View className="mb-4" style={containerStyle}>
+          <View
+            className="mb-4"
+            onLayout={({ nativeEvent }) =>
+              setTextInputLayout(nativeEvent.layout)
+            }
+          >
             <TextInput
               ref={textInputRef}
               label={shouldTranslateText ? t(label) : label}
@@ -126,9 +131,6 @@ export default function AppSelect({
               caretHidden
               right={rightIcon}
               mode={mode ?? "outlined"}
-              onLayout={({ nativeEvent }) =>
-                setTextInputLayout(nativeEvent.layout)
-              }
               style={[
                 defaultStyle.textInput,
                 {
@@ -140,78 +142,83 @@ export default function AppSelect({
           </View>
         }
       >
-        <ScrollView
-          style={[
-            defaultStyle.optionsContainer,
-            {
-              backgroundColor: THEME.surfaceContainer,
-              height: ACTUAL_OPTIONS_CONTAINER_HEIGHT,
-              width: menuWidth,
-            },
-          ]}
-          contentContainerStyle={defaultStyle.optionsContent}
-        >
-          {isEmptyOptions ? (
-            <Menu.Item
-              title={shouldTranslateText ? t("No data") : "No data"}
-              leadingIcon={() => (
-                <AppIcon name="PackageOpen" color={THEME.outlineVariant} />
-              )}
-              style={defaultStyle.emptyItem}
-              titleStyle={{
-                color: THEME.onSurfaceVariant,
-              }}
-            />
-          ) : (
-            options.map((i) => {
-              const isOptSelected = i.id.toString() === value;
-              const itemIcon = i.icon
-                ? () => (
-                    <AppIcon
-                      name={i.icon!}
-                      color={
-                        isOptSelected ? THEME.onPrimaryContainer : undefined
-                      }
-                    />
-                  )
-                : undefined;
-              const selectedIcon = () =>
-                isOptSelected ? (
-                  <AppIcon name="Check" color={THEME.onPrimaryContainer} />
-                ) : undefined;
+        <View style={{ width: menuWidth }}>
+          <ScrollView
+            style={[
+              defaultStyle.optionsContainer,
+              {
+                backgroundColor: THEME.surfaceContainer,
+                height: ACTUAL_OPTIONS_CONTAINER_HEIGHT,
+                width: menuWidth,
+              },
+            ]}
+            contentContainerStyle={defaultStyle.optionsContent}
+          >
+            {isEmptyOptions ? (
+              <Menu.Item
+                title={shouldTranslateText ? t("No data") : "No data"}
+                leadingIcon={() => (
+                  <AppIcon name="PackageOpen" color={THEME.outlineVariant} />
+                )}
+                style={[
+                  defaultStyle.emptyItem,
+                  { width: Math.max(menuWidth - 12, 0) },
+                ]}
+                titleStyle={{
+                  color: THEME.onSurfaceVariant,
+                }}
+              />
+            ) : (
+              options.map((i) => {
+                const isOptSelected = i.id.toString() === value;
+                const itemIcon = i.icon
+                  ? () => (
+                      <AppIcon
+                        name={i.icon!}
+                        color={
+                          isOptSelected ? THEME.onPrimaryContainer : undefined
+                        }
+                      />
+                    )
+                  : undefined;
+                const selectedIcon = () =>
+                  isOptSelected ? (
+                    <AppIcon name="Check" color={THEME.onPrimaryContainer} />
+                  ) : undefined;
 
-              return (
-                <Menu.Item
-                  key={i.id}
-                  title={i.label}
-                  onPress={() => {
-                    onChange(i.id);
-                    setShowOptions(false);
-                  }}
-                  leadingIcon={itemIcon}
-                  trailingIcon={selectedIcon}
-                  contentStyle={defaultStyle.menuItemContent}
-                  rippleColor={THEME.surfaceContainerHighest}
-                  dense={false}
-                  style={[
-                    defaultStyle.menuItemContainer,
-                    {
-                      backgroundColor: isOptSelected
-                        ? THEME.primaryContainer
-                        : THEME.surfaceContainer,
-                    },
-                  ]}
-                  titleStyle={{
-                    color: isOptSelected
-                      ? THEME.onPrimaryContainer
-                      : THEME.onSurface,
-                    fontWeight: isOptSelected ? "700" : "400",
-                  }}
-                />
-              );
-            })
-          )}
-        </ScrollView>
+                return (
+                  <Menu.Item
+                    key={i.id}
+                    title={i.label}
+                    onPress={() => {
+                      onChange(i.id);
+                      setShowOptions(false);
+                    }}
+                    leadingIcon={itemIcon}
+                    trailingIcon={selectedIcon}
+                    contentStyle={defaultStyle.menuItemContent}
+                    rippleColor={THEME.surfaceContainerHighest}
+                    dense={false}
+                    style={[
+                      defaultStyle.menuItemContainer,
+                      {
+                        backgroundColor: isOptSelected
+                          ? THEME.primaryContainer
+                          : THEME.surfaceContainer,
+                      },
+                    ]}
+                    titleStyle={{
+                      color: isOptSelected
+                        ? THEME.onPrimaryContainer
+                        : THEME.onSurface,
+                      fontWeight: isOptSelected ? "700" : "400",
+                    }}
+                  />
+                );
+              })
+            )}
+          </ScrollView>
+        </View>
       </Menu>
       {errorField?.message && (
         <AppText
@@ -222,7 +229,7 @@ export default function AppSelect({
           {t(errorField.message)}
         </AppText>
       )}
-    </>
+    </View>
   );
 }
 
@@ -240,7 +247,7 @@ const defaultStyle = StyleSheet.create({
     borderRadius: 8,
   },
   optionsContent: {
-    paddingStart: 6,
+    paddingInline: 6,
   },
   emptyItem: {
     alignSelf: "stretch",
