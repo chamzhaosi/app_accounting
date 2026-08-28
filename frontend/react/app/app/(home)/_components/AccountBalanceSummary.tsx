@@ -8,14 +8,16 @@ import {
 import AppDateRangePicker, {
   AppDateRangeValue,
 } from "../../../components/AppDateRangePicker";
+import AppIconButton from "../../../components/AppIconButton";
 import AppPinVerificationDialog from "../../../components/AppPinVerificationDialog";
 import { BUDGET_REMAINING_COLOR } from "../../../constants/colors";
 import { DASHBOARD_SUMMARY_CARD_HEIGHT } from "../../../constants/size";
 import useAccountBalanceSummary from "../../../hook/dashboard/useAccountBalanceSummary";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import useAmountPrivacyToggle from "../../../hook/security/useAmountPrivacyToggle";
-import { useThemeStore } from "../../../stores/useThemeStore";
-import { formatPrivateAmount } from "../../../utils/number";
 import { useTranslation } from "../../../i18n/helper";
+import { useThemeStore } from "../../../stores/useThemeStore";
+import { formatPrivateLocalizedAmount } from "../../../utils/number";
 
 type AccountBalanceSummaryProps = {
   dateRange: AppDateRangeValue;
@@ -31,7 +33,7 @@ export default function AccountBalanceSummary({
   onDateRangeChange,
 }: AccountBalanceSummaryProps) {
   const { isDark, THEME } = useThemeStore();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const {
     areAmountsVisible,
     dismissPinDialog,
@@ -43,20 +45,32 @@ export default function AccountBalanceSummary({
   } = useAmountPrivacyToggle();
   const {
     balance,
+    canSelectNextCurrency,
+    canSelectPreviousCurrency,
+    currencyCode,
     expense,
+    hasBudget,
     income,
     isBalanceLoading,
     isBudgetLoading,
     isBudgetOver,
+    nextCurrency,
+    previousCurrency,
     remainingBudget,
   } = useAccountBalanceSummary(startDate, endDate);
+  const isSingleCurrency = useSingleCurrencyMode();
   const remainingBudgetColor = isBudgetOver
     ? THEME.error
     : isDark
       ? BUDGET_REMAINING_COLOR.dark
       : BUDGET_REMAINING_COLOR.light;
   const displayAmount = (amount: number) =>
-    formatPrivateAmount(amount, areAmountsVisible);
+    formatPrivateLocalizedAmount(
+      amount,
+      currencyCode,
+      locale,
+      areAmountsVisible,
+    );
 
   return (
     <>
@@ -73,47 +87,118 @@ export default function AccountBalanceSummary({
             { borderBottomColor: THEME.outlineVariant },
           ]}
         >
-          <AppDateRangePicker
-            label="Date Range"
-            maxRangeDays={90}
-            value={dateRange}
-            onChange={onDateRangeChange}
-          />
+          <View style={styles.dateRangeRow}>
+            <View style={styles.dateRangePicker}>
+              <AppDateRangePicker
+                label="Date Range"
+                maxRangeDays={90}
+                value={dateRange}
+                onChange={onDateRangeChange}
+              />
+            </View>
+          </View>
         </View>
 
         <View style={styles.balanceContainer}>
-          <Text variant="labelLarge" style={{ color: THEME.onSurfaceVariant }}>
-            {t("Balance")}
-          </Text>
-          {isBalanceLoading ? (
-            <ActivityIndicator style={styles.loader} />
-          ) : (
-            <View style={styles.balanceAmountRow}>
+          <View
+            style={[
+              styles.balanceHeaderRow,
+              isSingleCurrency && styles.singleCurrencyBalanceHeader,
+            ]}
+          >
+            <View
+              style={[
+                styles.balanceValueContainer,
+                isSingleCurrency && styles.singleCurrencyBalanceValue,
+              ]}
+            >
               <Text
-                variant="headlineLarge"
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-                numberOfLines={1}
-                style={styles.balanceAmount}
+                variant="labelLarge"
+                style={{ color: THEME.onSurfaceVariant }}
               >
-                {displayAmount(balance)}
+                {t("Balance")}
               </Text>
-              <IconButton
-                icon={areAmountsVisible ? "eye" : "eye-off"}
-                size={20}
-                accessibilityLabel={
-                  areAmountsVisible
-                    ? t("Hide overview amounts")
-                    : t("Show overview amounts")
-                }
-                accessibilityState={{ expanded: areAmountsVisible }}
-                disabled={!isHydrated || isAuthenticating || isPinDialogVisible}
-                iconColor={THEME.onSurfaceVariant}
-                style={styles.visibilityButton}
-                onPress={() => void toggleAmountsVisibility()}
-              />
+              {isBalanceLoading ? (
+                <ActivityIndicator style={styles.loader} />
+              ) : (
+                <View
+                  style={[
+                    styles.balanceAmountRow,
+                    isSingleCurrency && styles.singleCurrencyBalanceAmount,
+                  ]}
+                >
+                  <Text
+                    variant="headlineLarge"
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.65}
+                    numberOfLines={2}
+                    style={styles.balanceAmount}
+                  >
+                    {displayAmount(balance)}
+                  </Text>
+                  <IconButton
+                    icon={areAmountsVisible ? "eye" : "eye-off"}
+                    size={20}
+                    accessibilityLabel={
+                      areAmountsVisible
+                        ? t("Hide overview amounts")
+                        : t("Show overview amounts")
+                    }
+                    accessibilityState={{ expanded: areAmountsVisible }}
+                    disabled={
+                      !isHydrated || isAuthenticating || isPinDialogVisible
+                    }
+                    iconColor={THEME.onSurfaceVariant}
+                    style={styles.visibilityButton}
+                    onPress={() => void toggleAmountsVisibility()}
+                  />
+                </View>
+              )}
             </View>
-          )}
+
+            {!isSingleCurrency && (
+              <View
+                style={[
+                  styles.currencyNavigator,
+                  { backgroundColor: THEME.surfaceContainerHighest },
+                ]}
+              >
+                <AppIconButton
+                  iconName="ChevronLeft"
+                  iconSize={20}
+                  accessibilityLabel={t("Previous currency")}
+                  disabled={!canSelectPreviousCurrency}
+                  onPress={previousCurrency}
+                  style={{
+                    ...styles.currencyButton,
+                    backgroundColor: THEME.surfaceContainerHighest,
+                  }}
+                />
+                <View style={styles.currencyLabel}>
+                  <Text
+                    variant="labelSmall"
+                    style={{ color: THEME.onSurfaceVariant }}
+                  >
+                    {t("Currency")}
+                  </Text>
+                  <Text variant="titleMedium" style={styles.currencyCode}>
+                    {currencyCode}
+                  </Text>
+                </View>
+                <AppIconButton
+                  iconName="ChevronRight"
+                  iconSize={20}
+                  accessibilityLabel={t("Next currency")}
+                  disabled={!canSelectNextCurrency}
+                  onPress={nextCurrency}
+                  style={{
+                    ...styles.currencyButton,
+                    backgroundColor: THEME.surfaceContainerHighest,
+                  }}
+                />
+              </View>
+            )}
+          </View>
 
           <View style={styles.cashFlowRow}>
             <View style={styles.cashFlowItem}>
@@ -126,8 +211,8 @@ export default function AccountBalanceSummary({
               <Text
                 variant="titleMedium"
                 adjustsFontSizeToFit
-                minimumFontScale={0.75}
-                numberOfLines={1}
+                minimumFontScale={0.8}
+                numberOfLines={2}
                 style={[styles.cashFlowAmount, { color: THEME.error }]}
               >
                 {displayAmount(expense)}
@@ -151,8 +236,8 @@ export default function AccountBalanceSummary({
               <Text
                 variant="titleMedium"
                 adjustsFontSizeToFit
-                minimumFontScale={0.75}
-                numberOfLines={1}
+                minimumFontScale={0.8}
+                numberOfLines={2}
                 style={[styles.cashFlowAmount, { color: THEME.primary }]}
               >
                 {displayAmount(income)}
@@ -168,16 +253,32 @@ export default function AccountBalanceSummary({
           ]}
         >
           <Text variant="labelMedium" style={{ color: THEME.onSurfaceVariant }}>
-            {t(isBudgetOver ? "Budget Over" : "Budget Left")}
+            {t(
+              !hasBudget
+                ? "Budget"
+                : isBudgetOver
+                  ? "Budget Over"
+                  : "Budget Left",
+            )}
           </Text>
           {isBudgetLoading ? (
             <ActivityIndicator size="small" style={styles.budgetLoader} />
+          ) : !hasBudget ? (
+            <Text
+              variant="labelMedium"
+              numberOfLines={2}
+              style={{ ...styles.budgetAmount, fontSize: 16 }}
+            >
+              {t("No {{currency}} budget configured", {
+                currency: currencyCode,
+              })}
+            </Text>
           ) : (
             <Text
               variant="titleMedium"
               adjustsFontSizeToFit
-              minimumFontScale={0.75}
-              numberOfLines={1}
+              minimumFontScale={0.8}
+              numberOfLines={2}
               style={[styles.budgetAmount, { color: remainingBudgetColor }]}
             >
               {displayAmount(remainingBudget)}
@@ -198,40 +299,75 @@ export default function AccountBalanceSummary({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
-    height: DASHBOARD_SUMMARY_CARD_HEIGHT,
     marginHorizontal: 12,
     marginVertical: 8,
+    minHeight: DASHBOARD_SUMMARY_CARD_HEIGHT,
     overflow: "hidden",
   },
   dateRangeContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 12,
   },
-  balanceContainer: {
+  dateRangeRow: { flexDirection: "column" },
+  dateRangePicker: { width: "100%" },
+  currencyNavigator: {
     alignItems: "center",
+    borderRadius: 16,
+    flexDirection: "row",
+    flexShrink: 0,
+    overflow: "hidden",
+    paddingHorizontal: 2,
+    paddingVertical: 3,
+  },
+  currencyButton: {
+    alignItems: "center",
+    height: 40,
+    justifyContent: "center",
+    margin: 0,
+    padding: 4,
+    width: 40,
+  },
+  currencyLabel: { alignItems: "center", minWidth: 44 },
+  currencyCode: { fontWeight: "700", lineHeight: 20, textAlign: "center" },
+  balanceContainer: {
     flex: 1,
     justifyContent: "center",
-    minHeight: 90,
-    paddingHorizontal: 12,
+    minHeight: 80,
+    paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  balanceAmountRow: {
+  balanceHeaderRow: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "center",
+    gap: 12,
+    width: "100%",
+  },
+  balanceValueContainer: {
+    alignItems: "flex-start",
+    flex: 1,
+    minWidth: 0,
+  },
+  singleCurrencyBalanceHeader: { justifyContent: "center" },
+  singleCurrencyBalanceValue: { alignItems: "center", flex: 0 },
+  singleCurrencyBalanceAmount: { alignSelf: "center" },
+  balanceAmountRow: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
     maxWidth: "100%",
   },
   balanceAmount: {
     flexShrink: 1,
     fontWeight: "700",
     marginTop: 4,
+    minWidth: 0,
   },
   cashFlowRow: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 12,
     maxWidth: 340,
     width: "100%",
   },
@@ -243,15 +379,19 @@ const styles = StyleSheet.create({
   cashFlowAmount: {
     fontSize: 18,
     fontWeight: "700",
+    lineHeight: 21,
     marginTop: 2,
     maxWidth: "100%",
+    minWidth: 0,
+    textAlign: "center",
+    width: "100%",
   },
   cashFlowDivider: {
     height: 28,
     width: StyleSheet.hairlineWidth,
   },
   loader: {
-    marginTop: 16,
+    marginTop: 12,
   },
   visibilityButton: {
     height: 32,
@@ -261,6 +401,7 @@ const styles = StyleSheet.create({
     width: 32,
   },
   budgetContainer: {
+    display: "flex",
     alignItems: "center",
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
@@ -271,7 +412,10 @@ const styles = StyleSheet.create({
   budgetAmount: {
     fontSize: 20,
     fontWeight: "700",
+    lineHeight: 24,
     marginLeft: 8,
+    maxWidth: "62%",
+    minWidth: 0,
   },
   budgetLoader: {
     marginLeft: 8,

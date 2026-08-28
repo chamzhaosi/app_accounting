@@ -6,6 +6,7 @@ export const SETTINGS_URL = "/(home)/settings";
 export const APP_PIN_SETUP_URL = "/security/app_pin";
 export const LOCAL_AUTHENTICATE_URL = "/security/local_authenticate";
 export const ACCOUNT_SETTINGS_URL = "/account_settings";
+export const CURRENCY_MANAGEMENT_URL = "/currency_management/list";
 
 export const APP_PIN_LOGIN_URL = "/(auth)/app_pin_login";
 export const OTP_URL = "/(auth)/otp";
@@ -31,6 +32,9 @@ export const TRANSACTION_MANAGEMENT_DETAIL_URL = `${TRANSACTION_MANAGEMENT_BASE_
 export const TRANSACTION_MANAGEMENT_CREATE_URL = `${TRANSACTION_MANAGEMENT_BASE_URL}/create`;
 
 export const BUDGET_MANAGEMENT_BASE_URL = "/budget_management";
-export const BUDGET_MANAGEMENT_URL = `${BUDGET_MANAGEMENT_BASE_URL}/manage`;
+export const BUDGET_MANAGEMENT_LIST_URL = `${BUDGET_MANAGEMENT_BASE_URL}/list`;
+export const BUDGET_MANAGEMENT_CREATE_URL = `${BUDGET_MANAGEMENT_BASE_URL}/create`;
+export const BUDGET_MANAGEMENT_DETAIL_URL = `${BUDGET_MANAGEMENT_BASE_URL}/[id]`;
+export const BUDGET_MANAGEMENT_URL = BUDGET_MANAGEMENT_LIST_URL;
 export const CATEGORY_DETAIL_URL = "/(home)/categories/[id]";
 export const BUDGET_CATEGORY_DETAIL_URL = "/category_detail/[id]";

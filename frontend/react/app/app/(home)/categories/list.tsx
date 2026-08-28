@@ -17,18 +17,21 @@ import useCategoriesList, {
   CategoryHomeTabRoute,
   useCategoryPeriodList,
 } from "../../../hook/category_management/useCategoriesList";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import type { CategoryPeriodSummaryRspType } from "../../../sql/types/categoryMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
-import { formatPrivateAmount } from "../../../utils/number";
+import { formatPrivateLocalizedAmount } from "../../../utils/number";
 import { useTranslation } from "../../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
+import CategoryCurrencyNavigator from "./_components/CategoryCurrencyNavigator";
 
 export default function CategoriesList() {
   const { THEME } = useThemeStore();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const layout = useWindowDimensions();
   const logic = useCategoriesList();
+  const isSingleCurrency = useSingleCurrencyMode();
 
   const renderTabBar = (props: TabBarProps<CategoryHomeTabRoute>) => (
     <TabBar
@@ -55,6 +58,16 @@ export default function CategoriesList() {
           value={logic.dateRange}
           onChange={logic.setDateRange}
         />
+        {!isSingleCurrency ? (
+          <CategoryCurrencyNavigator
+            value={logic.selectedCurrencyCode}
+            options={logic.currencyOptions}
+            onChange={logic.setSelectedCurrencyCode}
+            style={styles.currencyNavigator}
+          />
+        ) : (
+          <View style={styles.singleCurrencySpacing} />
+        )}
       </Surface>
 
       <TabView
@@ -72,6 +85,10 @@ export default function CategoriesList() {
             typeId={route.typeId}
             startDate={logic.startDate}
             endDate={logic.endDate}
+            currencyCode={logic.currencyCode}
+            currencyCodes={logic.currencyCodes}
+            selectedCurrencyCode={logic.selectedCurrencyCode}
+            locale={locale}
           />
         )}
         onIndexChange={logic.setIndex}
@@ -85,19 +102,28 @@ type CategoryPeriodTabProps = {
   typeId: number;
   startDate: string;
   endDate: string;
+  currencyCode?: string;
+  currencyCodes: string[];
+  selectedCurrencyCode: string;
+  locale: string;
 };
 
 function CategoryPeriodTab({
   typeId,
   startDate,
   endDate,
+  currencyCode,
+  currencyCodes,
+  selectedCurrencyCode,
+  locale,
 }: CategoryPeriodTabProps) {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const logic = useCategoryPeriodList(typeId, startDate, endDate);
+  const isSingleCurrency = useSingleCurrencyMode();
+  const logic = useCategoryPeriodList(typeId, startDate, endDate, currencyCode);
   const amountColor = typeId === 1 ? THEME.primary : THEME.error;
 
   if (logic.isLoading) {
@@ -126,62 +152,92 @@ function CategoryPeriodTab({
           <ActivityIndicator style={styles.footerLoader} />
         ) : null
       }
-      renderItem={({ item: category }) => (
-        <List.Item
-          centered
-          title={getCategoryDisplayLabel(
-            category.label,
-            category.translation_key,
-            t,
-          )}
-          titleStyle={styles.categoryLabel}
-          description={`${category.transaction_count} ${t(
-            category.transaction_count === 1 ? "transaction" : "transactions",
-          )}`}
-          descriptionStyle={styles.categoryDescription}
-          style={[
-            styles.categoryItem,
-            {
-              backgroundColor: THEME.surfaceContainer,
-              borderBottomColor: THEME.outlineVariant,
-            },
-          ]}
-          rippleColor={THEME.surfaceContainerHighest}
-          onPress={() =>
-            router.push({
-              pathname: CATEGORY_DETAIL_URL,
-              params: {
-                id: category.id,
-                startDate,
-                endDate,
+      renderItem={({ item: category }) => {
+        const currencyOrder = new Map(
+          currencyCodes.map((code, index) => [code, index]),
+        );
+        const sortedTotals = [...category.currency_totals].sort(
+          (left, right) =>
+            (currencyOrder.get(left.currency_code) ?? Number.MAX_SAFE_INTEGER) -
+              (currencyOrder.get(right.currency_code) ??
+                Number.MAX_SAFE_INTEGER) ||
+            left.currency_code.localeCompare(right.currency_code),
+        );
+        const primaryTotal = sortedTotals[0];
+        const hiddenCurrencyCount = Math.max(sortedTotals.length - 1, 0);
+        const amountLabel = primaryTotal
+          ? `${isSingleCurrency ? "" : `${primaryTotal.currency_code} `}${formatPrivateLocalizedAmount(
+              primaryTotal.total_amount,
+              primaryTotal.currency_code,
+              locale,
+              areAmountsVisible,
+            )}`
+          : "";
+
+        return (
+          <List.Item
+            centered
+            title={getCategoryDisplayLabel(
+              category.label,
+              category.translation_key,
+              t,
+            )}
+            titleStyle={styles.categoryLabel}
+            description={`${category.transaction_count} ${t(
+              category.transaction_count === 1 ? "transaction" : "transactions",
+            )}`}
+            descriptionStyle={styles.categoryDescription}
+            style={[
+              styles.categoryItem,
+              {
+                backgroundColor: THEME.surfaceContainer,
+                borderBottomColor: THEME.outlineVariant,
               },
-            } as Href)
-          }
-          left={({ style }) => (
-            <View
-              style={[
-                style,
-                styles.categoryIconContainer,
-                { backgroundColor: THEME.surfaceContainerHighest },
-              ]}
-            >
-              <AppIcon
-                name={category.icon as AppIconProps["name"]}
-                color={amountColor}
-                size={22}
-              />
-            </View>
-          )}
-          right={() => (
-            <View style={styles.categoryTotalContainer}>
-              <Text style={[styles.categoryTotal, { color: amountColor }]}>
-                {formatPrivateAmount(category.period_total, areAmountsVisible)}
-              </Text>
-              <ChevronRight color={THEME.onSurfaceVariant} size={22} />
-            </View>
-          )}
-        />
-      )}
+            ]}
+            rippleColor={THEME.surfaceContainerHighest}
+            onPress={() =>
+              router.push({
+                pathname: CATEGORY_DETAIL_URL,
+                params: {
+                  id: category.id,
+                  startDate,
+                  endDate,
+                  currencyCode: selectedCurrencyCode,
+                },
+              } as Href)
+            }
+            left={({ style }) => (
+              <View
+                style={[
+                  style,
+                  styles.categoryIconContainer,
+                  { backgroundColor: THEME.surfaceContainerHighest },
+                ]}
+              >
+                <AppIcon
+                  name={category.icon as AppIconProps["name"]}
+                  color={amountColor}
+                  size={22}
+                />
+              </View>
+            )}
+            right={() => (
+              <View style={styles.categoryTotalContainer}>
+                <View style={styles.categoryAmountContainer}>
+                  <Text
+                    numberOfLines={2}
+                    style={[styles.categoryTotal, { color: amountColor }]}
+                  >
+                    {amountLabel}
+                    {hiddenCurrencyCount > 0 ? ` +${hiddenCurrencyCount}` : ""}
+                  </Text>
+                </View>
+                <ChevronRight color={THEME.onSurfaceVariant} size={22} />
+              </View>
+            )}
+          />
+        );
+      }}
     />
   );
 }
@@ -195,6 +251,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
+  currencyNavigator: {
+    alignSelf: "flex-end",
+    marginBottom: 16,
+  },
+  singleCurrencySpacing: { height: 16 },
   tabView: {
     flex: 1,
   },
@@ -233,12 +294,20 @@ const styles = StyleSheet.create({
   categoryTotalContainer: {
     alignItems: "center",
     flexDirection: "row",
+    justifyContent: "flex-end",
+    maxWidth: "55%",
+  },
+  categoryAmountContainer: {
+    alignItems: "flex-end",
+    flexShrink: 1,
+    minWidth: 0,
   },
   categoryTotal: {
     fontFamily: FONTS.ROBOTO,
     fontSize: LIST_ITEM_TITLE_FONTSIZE,
     fontWeight: "700",
     marginRight: 8,
+    textAlign: "right",
   },
   footerLoader: {
     marginVertical: 16,

@@ -9,12 +9,13 @@ import {
 import { BUDGET_REMAINING_COLOR } from "../../../constants/colors";
 import { DASHBOARD_SUMMARY_CARD_HEIGHT } from "../../../constants/size";
 import useDailyTransactionChart from "../../../hook/dashboard/useDailyTransactionChart";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import type { ChartPoint } from "../../../hook/dashboard/useDailyTransactionChart";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import {
-  formatPrivateAmount,
   formatPrivateCompactAmount,
+  formatPrivateCurrencyAmount,
 } from "../../../utils/number";
 import { useTranslation } from "../../../i18n/helper";
 
@@ -29,12 +30,13 @@ export default function DailyTransactionChart({
 }: DailyTransactionChartProps) {
   const { width } = useWindowDimensions();
   const { isDark, THEME } = useThemeStore();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
   const {
     budgetPaceData,
+    currencyCode,
     dateRangeLabel,
     expenseData,
     incomeData,
@@ -69,7 +71,7 @@ export default function DailyTransactionChart({
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text variant="titleMedium" style={styles.title}>
-            {t("Cash flow")}
+            {t("Cash flow")} · {currencyCode}
           </Text>
           <Text variant="labelSmall" style={{ color: THEME.onSurfaceVariant }}>
             {dateRangeLabel}
@@ -219,6 +221,8 @@ export default function DailyTransactionChart({
                     value={items[0]?.value ?? 0}
                     textColor={THEME.inverseOnSurface}
                     areAmountsVisible={areAmountsVisible}
+                    currencyCode={currencyCode}
+                    locale={locale}
                   />
                   <TooltipValue
                     color={incomeColor}
@@ -226,6 +230,8 @@ export default function DailyTransactionChart({
                     value={items[1]?.value ?? 0}
                     textColor={THEME.inverseOnSurface}
                     areAmountsVisible={areAmountsVisible}
+                    currencyCode={currencyCode}
+                    locale={locale}
                   />
                   {showBudgetPace ? (
                     <TooltipValue
@@ -234,6 +240,8 @@ export default function DailyTransactionChart({
                       value={items[2]?.value ?? 0}
                       textColor={THEME.inverseOnSurface}
                       areAmountsVisible={areAmountsVisible}
+                      currencyCode={currencyCode}
+                      locale={locale}
                     />
                   ) : null}
                 </View>
@@ -252,14 +260,19 @@ function TooltipValue({
   value,
   textColor,
   areAmountsVisible,
+  currencyCode,
+  locale,
 }: {
   color: string;
   label: string;
   value: number;
   textColor: string;
   areAmountsVisible: boolean;
+  currencyCode: string;
+  locale: string;
 }) {
   const { t } = useTranslation();
+  const isSingleCurrency = useSingleCurrencyMode();
   return (
     <View style={styles.tooltipRow}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -270,7 +283,13 @@ function TooltipValue({
         variant="labelSmall"
         style={[styles.tooltipAmount, { color: textColor }]}
       >
-        {formatPrivateAmount(value, areAmountsVisible)}
+        {formatPrivateCurrencyAmount(
+          value,
+          currencyCode,
+          locale,
+          areAmountsVisible,
+          !isSingleCurrency,
+        )}
       </Text>
     </View>
   );

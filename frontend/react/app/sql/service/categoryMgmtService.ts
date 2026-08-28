@@ -49,19 +49,26 @@ export const getCategoryPeriodSummaryList = async (
   endDate: string,
   curPage: number,
   pageSize: number,
+  currencyCode?: string,
 ): Promise<CategoryPeriodSummaryRspType[]> =>
   getCategoryPeriodSummaryListFromDB(
     {
       typeId,
-      orderBy: [
-        { column: "period_total", direction: "DESC" },
-        { column: "categories.label", direction: "ASC" },
-      ],
+      orderBy: currencyCode
+        ? [
+            { column: "period_total", direction: "DESC" },
+            { column: "categories.label", direction: "ASC" },
+          ]
+        : [
+            { column: "sort_order", direction: "ASC" },
+            { column: "categories.label", direction: "ASC" },
+          ],
       curPage,
       pageSize,
     },
     startDate,
     endDate,
+    currencyCode,
   );
 
 export const createNewCategoryMgmt = async (

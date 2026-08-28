@@ -3,7 +3,7 @@ import {
   absoluteAmount,
   compareAmounts,
   subtractAmounts,
-  toAmountNumber,
+  toCurrencyAmountNumber,
 } from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
@@ -20,22 +20,27 @@ import {
 import { SQLQueryOptions } from "../types/common";
 import { randomUUID } from "expo-crypto";
 
-export const getMainAccountBalanceFromDB = async (): Promise<number> => {
+export const getMainAccountBalanceFromDB = async (
+  currencyCode: string,
+): Promise<number> => {
   try {
     const db = await getDB();
     const result = await db.getFirstAsync<{ balance: number }>(
       `
-        SELECT ROUND(COALESCE(SUM(current_balance), 0), 2) AS balance
+        SELECT ROUND(COALESCE(SUM(current_balance), 0), 3) AS balance
         FROM accounts
         WHERE is_main_account = 1
           AND is_active = 1
+          AND currency_code = ?
           AND deleted_at IS NULL;
       `,
+      [currencyCode],
     );
 
     const balance = result?.balance ?? 0;
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Loaded main account balance", {
       balance,
+      currencyCode,
     });
 
     return balance;
@@ -53,7 +58,8 @@ export const getAccMgmtListFromDB = async ({
   orderBy,
   pageSize = DEFAULT_PAGE_SIZE,
   curPage = DEFAULT_CURRENT_PAGE,
-}: SQLQueryOptions) => {
+  enabledCurrenciesOnly = false,
+}: SQLQueryOptions & { enabledCurrenciesOnly?: boolean }) => {
   try {
     const offset = (curPage - 1) * pageSize;
     const db = await getDB();
@@ -61,11 +67,19 @@ export const getAccMgmtListFromDB = async ({
     const sql = `
       SELECT
         accounts.*,
+        CASE WHEN currency_preferences.code IS NULL THEN 0 ELSE 1 END AS is_currency_enabled,
         account_types.label AS type_label,
         account_types.icon AS type_icon
       FROM accounts
       INNER JOIN account_types ON account_types.id = accounts.type_id
+      LEFT JOIN currency_preferences
+        ON currency_preferences.code = accounts.currency_code
       WHERE accounts.deleted_at IS NULL
+      ${
+        enabledCurrenciesOnly
+          ? "AND currency_preferences.code IS NOT NULL AND accounts.is_active = 1"
+          : ""
+      }
       ${buildOrderBy(orderBy)}
       LIMIT ? OFFSET ?;
     `;
@@ -91,8 +105,9 @@ export const getAccMgmtListFromDB = async ({
   }
 };
 
-export const getAccMgmtByTypeAndLabelFromDB = async (
+export const getAccMgmtByTypeCurrencyAndLabelFromDB = async (
   typeId: string,
+  currencyCode: string,
   label: string,
 ): Promise<AccMgmtRspType | null> => {
   try {
@@ -102,21 +117,26 @@ export const getAccMgmtByTypeAndLabelFromDB = async (
       `
         SELECT
           accounts.*,
+          CASE WHEN currency_preferences.code IS NULL THEN 0 ELSE 1 END AS is_currency_enabled,
           account_types.label AS type_label,
           account_types.icon AS type_icon
         FROM accounts
         INNER JOIN account_types ON account_types.id = accounts.type_id
+        LEFT JOIN currency_preferences
+          ON currency_preferences.code = accounts.currency_code
         WHERE accounts.type_id = ?
+          AND accounts.currency_code = ? COLLATE NOCASE
           AND accounts.label = ? COLLATE NOCASE
           AND accounts.deleted_at IS NULL;
       `,
-      [typeId, label],
+      [typeId, currencyCode, label],
     );
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
-      "Checked account type and label",
+      "Checked account type, currency, and label",
       {
         typeId,
+        currencyCode,
         label,
         found: Boolean(result),
       },
@@ -143,10 +163,13 @@ export const getAccMgmtByIdFromDB = async (
       `
         SELECT
           accounts.*,
+          CASE WHEN currency_preferences.code IS NULL THEN 0 ELSE 1 END AS is_currency_enabled,
           account_types.label AS type_label,
           account_types.icon AS type_icon
         FROM accounts
         INNER JOIN account_types ON account_types.id = accounts.type_id
+        LEFT JOIN currency_preferences
+          ON currency_preferences.code = accounts.currency_code
         WHERE accounts.id = ?
           AND accounts.deleted_at IS NULL;
       `,
@@ -172,21 +195,26 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
   try {
     const db = await getDB();
     const id = randomUUID();
-    const currentBalance = toAmountNumber(data.currentBalance);
+    const currentBalance = toCurrencyAmountNumber(
+      data.currentBalance,
+      data.currencyCode,
+    );
     await db.runAsync(
       `
         INSERT INTO accounts (
           id,
           type_id,
+          currency_code,
           label,
           descriptions,
           current_balance,
           is_main_account
-        ) VALUES (?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?);
       `,
       [
         id,
         data.typeId,
+        data.currencyCode,
         data.label,
         data.descriptions || null,
         currentBalance,
@@ -210,7 +238,10 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
 export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
   try {
     const db = await getDB();
-    const currentBalance = toAmountNumber(data.currentBalance);
+    const currentBalance = toCurrencyAmountNumber(
+      data.currentBalance,
+      data.currencyCode,
+    );
     let balanceAdjustment = 0;
 
     await db.withTransactionAsync(async () => {
@@ -234,9 +265,10 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           UPDATE accounts
           SET
             type_id = ?,
+            currency_code = ?,
             label = ?,
             descriptions = ?,
-            current_balance = ROUND(?, 2),
+            current_balance = ROUND(?, 3),
             is_main_account = ?,
             sync_status = ?,
             updated_at = datetime('now')
@@ -245,6 +277,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         `,
         [
           data.typeId,
+          data.currencyCode,
           data.label,
           data.descriptions || null,
           currentBalance,
@@ -276,7 +309,9 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         const description =
           transactionType === TXN_TYPE_ENUM.ADJUSTMENT
             ? "Balance correction"
-            : `Missing ${transactionType} from balance reconciliation`;
+            : data.balanceChangeDescription?.trim() ||
+              `Missing ${transactionType} from balance reconciliation`;
+        const adjustmentTransactionId = randomUUID();
         await db.runAsync(
           `
             INSERT INTO transactions (
@@ -286,16 +321,25 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
               account_id,
               from_account_id,
               to_account_id,
+              operation_id,
+              transaction_role,
               amount,
+              currency_code,
+              account_currency_code,
+              converted_amount,
               descriptions,
               transaction_date
-            ) VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, COALESCE(?, date('now', 'localtime')));
+            ) VALUES (?, ?, ?, ?, NULL, NULL, ?, 'main', ?, ?, ?, ?, ?, COALESCE(?, date('now', 'localtime')));
           `,
           [
-            randomUUID(),
+            adjustmentTransactionId,
             transactionType,
             categoryId,
             data.id,
+            adjustmentTransactionId,
+            transactionAmount,
+            data.currencyCode,
+            data.currencyCode,
             transactionAmount,
             description,
             data.balanceChangeDate ?? null,

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { AppIconProps } from "../../components/AppIcon";
 import { AppToast } from "../../components/AppToast";
@@ -20,6 +20,7 @@ import { createNewAccMgmt } from "../../sql/service/accMgmtService";
 import { getAccTypeList } from "../../sql/service/accTypeService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
+import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
 
 export default function useAccountManagementCreate() {
   const { t } = useTranslation();
@@ -28,12 +29,15 @@ export default function useAccountManagementCreate() {
   const [isSaving, setIsSaving] = useState(false);
   const [rspErrorMsg, setRspErrorMsg] = useState("");
   const isSubmitting = isSavingAndNewAcc || isSaving;
+  const currencyPreferences = useCurrencyPreferenceOptions();
+  const hasInitializedCurrency = useRef(false);
 
   const {
     control,
     handleSubmit,
     reset,
     setFocus,
+    setValue,
     formState: { errors },
   } = useForm<AccountManagementFormType>({
     resolver: zodResolver(accountManagementFormSchema),
@@ -41,6 +45,15 @@ export default function useAccountManagementCreate() {
     reValidateMode: "onChange",
     defaultValues: accountManagementFormDefaultValues,
   });
+
+  useEffect(() => {
+    if (!currencyPreferences.isFetched || hasInitializedCurrency.current)
+      return;
+    setValue("currencyCode", currencyPreferences.defaultCurrencyCode, {
+      shouldValidate: true,
+    });
+    hasInitializedCurrency.current = true;
+  }, [currencyPreferences, setValue]);
 
   const { data: accountTypes = [] } = useQuery({
     queryKey: accountTypeQueryKeys.list({ pageSize: ACCOUNT_TYPE_PAGE_SIZE }),
@@ -91,7 +104,10 @@ export default function useAccountManagementCreate() {
           name: value.label,
         }),
       });
-      reset();
+      reset({
+        ...accountManagementFormDefaultValues,
+        currencyCode: currencyPreferences.defaultCurrencyCode,
+      });
       if (!saveAnotherAcc) router.back();
     } catch (e) {
       console.error(
@@ -107,6 +123,7 @@ export default function useAccountManagementCreate() {
   return {
     accountTypeOptions,
     control,
+    currencyOptions: currencyPreferences.currencyOptions,
     errors,
     handleSubmit,
     isSaving,
@@ -115,5 +132,7 @@ export default function useAccountManagementCreate() {
     onSubmit,
     rspErrorMsg,
     setFocus,
+    setValue,
+    showCurrencyField: currencyPreferences.showCurrencyField,
   };
 }

@@ -15,6 +15,7 @@ import {
   EMAIL_MAX_LEN as ACCOUNT_SETTINGS_EMAIL_MAX_LEN,
   NICKNAME_MAX_LEN as ACCOUNT_SETTINGS_NICKNAME_MAX_LEN,
 } from "../../forms/schemas/account_settings.schema";
+import { DEFAULT_CURRENCY_CODE } from "../../constants/currencies";
 
 export const createAccountSettingsTable = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
@@ -27,6 +28,26 @@ export const createAccountSettingsTable = async (db: SQLite.SQLiteDatabase) => {
       created_at DATETIME NOT NULL DEFAULT (datetime('now')),
       updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
     );
+  `);
+};
+
+export const createCurrencyPreferencesTable = async (
+  db: SQLite.SQLiteDatabase,
+) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS currency_preferences (
+      code CHAR(3) PRIMARY KEY COLLATE NOCASE,
+      is_default BOOLEAN NOT NULL DEFAULT 0 CHECK (is_default IN (0, 1)),
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_currency_preferences_default
+      ON currency_preferences(is_default)
+      WHERE is_default = 1;
+
+    INSERT OR IGNORE INTO currency_preferences (code, is_default)
+    VALUES ('${DEFAULT_CURRENCY_CODE}', 1);
   `);
 };
 
@@ -61,12 +82,17 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         id TEXT PRIMARY KEY, -- uuid
 
         type_id TEXT NOT NULL,
+        currency_code CHAR(3) NOT NULL DEFAULT '${DEFAULT_CURRENCY_CODE}'
+          CHECK (
+            length(currency_code) = 3
+            AND currency_code = upper(currency_code)
+          ),
         label VARCHAR(${ACCOUNT_LABEL_MAX_LEN}) NOT NULL COLLATE NOCASE,
         descriptions VARCHAR(${ACCOUNT_DESCRIPTION_MAX_LEN}),
         current_balance REAL NOT NULL DEFAULT 0
           CHECK (
             ABS(current_balance) <= ${AMOUNT_MAX_VALUE}
-            AND current_balance = ROUND(current_balance, 2)
+            AND current_balance = ROUND(current_balance, 3)
           ),
         is_main_account BOOLEAN NOT NULL DEFAULT 0,
 
@@ -82,8 +108,12 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         FOREIGN KEY (type_id) REFERENCES account_types(id)
       );
 
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_active_type_label
-        ON accounts(type_id, label)
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_active_type_currency_label
+        ON accounts(type_id, currency_code, label)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_accounts_active_currency
+        ON accounts(currency_code)
         WHERE deleted_at IS NULL;
   `);
 };
@@ -136,11 +166,37 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         from_account_id TEXT,
         to_account_id TEXT,
 
+        operation_id TEXT NOT NULL,
+        transaction_role VARCHAR(10) NOT NULL DEFAULT 'main'
+          CHECK (transaction_role IN ('main', 'fee')),
+
         amount REAL NOT NULL
           CHECK (
             ABS(amount) <= ${AMOUNT_MAX_VALUE}
-            AND amount = ROUND(amount, 2)
+            AND amount = ROUND(amount, 3)
           ),
+        currency_code CHAR(3) NOT NULL
+          CHECK (
+            length(currency_code) = 3
+            AND currency_code = upper(currency_code)
+          ),
+        account_currency_code CHAR(3) NOT NULL
+          CHECK (
+            length(account_currency_code) = 3
+            AND account_currency_code = upper(account_currency_code)
+          ),
+        converted_amount REAL NOT NULL
+          CHECK (
+            ABS(converted_amount) <= ${AMOUNT_MAX_VALUE}
+            AND converted_amount = ROUND(converted_amount, 3)
+          ),
+        exchange_rate REAL,
+        exchange_rate_source VARCHAR(20)
+          CHECK (
+            exchange_rate_source IS NULL
+            OR exchange_rate_source IN ('manual', 'previous', 'inverse')
+          ),
+        exchange_rate_source_transaction_id TEXT,
         descriptions VARCHAR(${TRANSACTION_DESCRIPTION_MAX_LEN}),
         transaction_date DATE NOT NULL
           CHECK (
@@ -161,6 +217,7 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         FOREIGN KEY (account_id) REFERENCES accounts(id),
         FOREIGN KEY (from_account_id) REFERENCES accounts(id),
         FOREIGN KEY (to_account_id) REFERENCES accounts(id),
+        FOREIGN KEY (exchange_rate_source_transaction_id) REFERENCES transactions(id),
 
         CHECK (
           (
@@ -217,14 +274,42 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
       CREATE INDEX IF NOT EXISTS idx_transactions_active_to_account
         ON transactions(to_account_id)
         WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_operation
+        ON transactions(operation_id, transaction_role)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_active_exchange_pair_date
+        ON transactions(currency_code, account_currency_code, transaction_date DESC)
+        WHERE deleted_at IS NULL AND exchange_rate IS NOT NULL;
     `);
 };
 
 export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS budget_plans (
+        id TEXT PRIMARY KEY,
+        currency_code CHAR(3) NOT NULL COLLATE NOCASE
+          CHECK (
+            length(currency_code) = 3
+            AND currency_code = upper(currency_code)
+          ),
+
+        sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
+        synced_at DATETIME DEFAULT NULL,
+        deleted_at DATETIME DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+        updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_plans_active_currency
+        ON budget_plans(currency_code)
+        WHERE deleted_at IS NULL;
+
       CREATE TABLE IF NOT EXISTS budgets (
         id TEXT PRIMARY KEY,
-        month DATE NOT NULL UNIQUE
+        plan_id TEXT NOT NULL,
+        month DATE NOT NULL
           CHECK (
             date(month) IS NOT NULL
             AND month = date(month, 'start of month')
@@ -233,7 +318,7 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
           CHECK (
             total_budget > 0
             AND total_budget <= ${AMOUNT_MAX_VALUE}
-            AND total_budget = ROUND(total_budget, 2)
+            AND total_budget = ROUND(total_budget, 3)
           ),
         is_active BOOLEAN NOT NULL DEFAULT 1,
 
@@ -241,8 +326,18 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
         synced_at DATETIME DEFAULT NULL,
         deleted_at DATETIME DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-        updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+        updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+
+        FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
       );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_active_plan_month
+        ON budgets(plan_id, month)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_budgets_active_month
+        ON budgets(month)
+        WHERE deleted_at IS NULL;
 
       CREATE TABLE IF NOT EXISTS budget_categories (
         id TEXT PRIMARY KEY,
@@ -252,7 +347,7 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
           CHECK (
             amount > 0
             AND amount <= ${AMOUNT_MAX_VALUE}
-            AND amount = ROUND(amount, 2)
+            AND amount = ROUND(amount, 3)
           ),
 
         sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',

@@ -20,9 +20,12 @@ export default function AccountManagementCreate() {
       >
         <AccountManagementFormFields
           accountTypeOptions={logic.accountTypeOptions}
+          currencyOptions={logic.currencyOptions}
           control={logic.control}
           isSubmitting={logic.isSubmitting}
           setFocus={logic.setFocus}
+          setValue={logic.setValue}
+          showCurrencyField={logic.showCurrencyField}
         />
         <AppDivider />
         {logic.rspErrorMsg && (

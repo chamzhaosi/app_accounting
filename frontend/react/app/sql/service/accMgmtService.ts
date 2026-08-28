@@ -1,4 +1,5 @@
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { CURRENCY_CODES } from "../../constants/currencies";
 import {
   compareAmounts,
   isValidAmount,
@@ -8,7 +9,7 @@ import {
   createNewAccMgmtToDB,
   deleteAccMgmtFromDB,
   getAccMgmtByIdFromDB,
-  getAccMgmtByTypeAndLabelFromDB,
+  getAccMgmtByTypeCurrencyAndLabelFromDB,
   getAccMgmtListFromDB,
   getMainAccountBalanceFromDB,
   updateAccMgmtToDB,
@@ -19,9 +20,17 @@ import {
   AccMgmtRspType,
   AccMgmtUpdateReqType,
 } from "../types/accMgmtType";
+import { getCurrencyPreferences } from "./currencyManagementService";
 
-export const getMainAccountBalance = async (): Promise<number> =>
-  getMainAccountBalanceFromDB();
+const isEnabledCurrency = async (currencyCode: string) => {
+  if (!CURRENCY_CODES.has(currencyCode)) return false;
+  const preferences = await getCurrencyPreferences();
+  return preferences?.enabledCurrencyCodes.includes(currencyCode) ?? false;
+};
+
+export const getMainAccountBalance = async (
+  currencyCode: string,
+): Promise<number> => getMainAccountBalanceFromDB(currencyCode);
 
 export const getAccMgmtList = async (
   curPage: number,
@@ -37,27 +46,43 @@ export const getAccMgmtList = async (
   });
 };
 
+export const getSelectableAccMgmtList = async (
+  curPage: number,
+  pageSize: number,
+): Promise<AccMgmtRspType[]> =>
+  getAccMgmtListFromDB({
+    orderBy: { column: "accounts.created_at", direction: "DESC" },
+    curPage,
+    pageSize,
+    enabledCurrenciesOnly: true,
+  });
+
 export const createNewAccMgmt = async (
   data: AccMgmtCreateReqType,
 ): Promise<string | void> => {
-  if (!isValidAmount(data.currentBalance || "0"))
-    return "Enter a balance with up to 13 integer digits and 2 decimal places.";
+  if (!(await isEnabledCurrency(data.currencyCode)))
+    return "Selected currency is not enabled.";
 
-  const existData = await getAccMgmtByTypeAndLabelFromDB(
+  if (!isValidAmount(data.currentBalance || "0", data.currencyCode))
+    return "Enter a balance using the currency's decimal precision.";
+
+  const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
     data.typeId,
+    data.currencyCode,
     data.label,
   );
   if (existData) {
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Duplicate label found when creating",
+      "Duplicate account key found when creating",
       {
         label: data.label,
         typeId: data.typeId,
+        currencyCode: data.currencyCode,
         existingId: existData.id,
       },
     );
-    return "Same label of account found.";
+    return "An account with the same type, currency, and label already exists.";
   }
 
   await createNewAccMgmtToDB(data);
@@ -70,29 +95,39 @@ export const getAccMgmtById = async (
 };
 
 export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
-  if (!isValidAmount(data.currentBalance || "0"))
-    return "Enter a balance with up to 13 integer digits and 2 decimal places.";
+  if (!CURRENCY_CODES.has(data.currencyCode)) return "Please select a currency";
 
-  const existData = await getAccMgmtByTypeAndLabelFromDB(
+  if (!isValidAmount(data.currentBalance || "0", data.currencyCode))
+    return "Enter a balance using the currency's decimal precision.";
+
+  const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
     data.typeId,
+    data.currencyCode,
     data.label,
   );
   if (existData && existData.id !== data.id) {
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Duplicate label found when updating",
+      "Duplicate account key found when updating",
       {
         id: data.id,
         label: data.label,
         typeId: data.typeId,
+        currencyCode: data.currencyCode,
         existingId: existData.id,
       },
     );
-    return "Same label of account found.";
+    return "An account with the same type, currency, and label already exists.";
   }
 
   const currentAccount = await getAccMgmtByIdFromDB(data.id);
   if (!currentAccount) return "Account not found.";
+
+  if (
+    data.currencyCode !== currentAccount.currency_code &&
+    !(await isEnabledCurrency(data.currencyCode))
+  )
+    return "Selected currency is not enabled.";
 
   const balanceDifference = subtractAmounts(
     data.currentBalance,
@@ -123,6 +158,8 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
       const expectedTypeId = expectedKind === "expense" ? 2 : 1;
       if (!category?.is_active || category.type_id !== expectedTypeId)
         return `Selected category is unavailable for this ${expectedKind}.`;
+      if ((data.balanceChangeDescription?.trim().length ?? 0) > 100)
+        return "Description must not exceed 100 characters.";
     }
   }
 

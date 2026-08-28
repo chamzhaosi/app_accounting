@@ -45,7 +45,8 @@
         {
           "useSQLCipher": true
         }
-      ]
+      ],
+      "expo-localization"
     ]
   }
 }

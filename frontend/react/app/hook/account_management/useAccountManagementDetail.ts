@@ -36,6 +36,7 @@ import { formatDateValue } from "../../utils/date";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../category_management/categoryManagementList.utils";
+import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
 
 export default function useAccountManagementDetail() {
   const { t } = useTranslation();
@@ -49,6 +50,7 @@ export default function useAccountManagementDetail() {
     BalanceChangeKind | undefined
   >();
   const [balanceChangeCategoryId, setBalanceChangeCategoryId] = useState("");
+  const [balanceChangeDescription, setBalanceChangeDescription] = useState("");
   const [balanceChangeDate, setBalanceChangeDate] = useState(() =>
     formatDateValue(new Date()),
   );
@@ -59,6 +61,9 @@ export default function useAccountManagementDetail() {
     queryFn: () => getAccMgmtById(id),
     enabled: Boolean(id),
   });
+  const currencyPreferences = useCurrencyPreferenceOptions(
+    accountQuery.data?.currency_code,
+  );
   const { data: accountTypes = [] } = useQuery({
     queryKey: accountTypeQueryKeys.list({ pageSize: ACCOUNT_TYPE_PAGE_SIZE }),
     queryFn: () => getAccTypeList(1, ACCOUNT_TYPE_PAGE_SIZE),
@@ -74,7 +79,7 @@ export default function useAccountManagementDetail() {
     [accountTypes, t],
   );
 
-  const { control, handleSubmit, reset, setFocus, watch } =
+  const { control, handleSubmit, reset, setFocus, setValue, watch } =
     useForm<AccountManagementFormType>({
       resolver: zodResolver(accountManagementFormSchema),
       mode: "onChange",
@@ -123,6 +128,7 @@ export default function useAccountManagementDetail() {
   const setBalanceChangeKind = (kind: BalanceChangeKind) => {
     setBalanceChangeKindState(kind);
     setBalanceChangeCategoryId("");
+    setBalanceChangeDescription("");
   };
 
   const onSubmit = async (value: AccountManagementFormType) => {
@@ -142,6 +148,10 @@ export default function useAccountManagementDetail() {
         compareAmounts(balanceDifference, 0) === 0
           ? undefined
           : balanceChangeDate,
+      balanceChangeDescription:
+        compareAmounts(balanceDifference, 0) === 0
+          ? undefined
+          : balanceChangeDescription.trim() || undefined,
     };
     try {
       setRspErrorMsg("");
@@ -214,15 +224,20 @@ export default function useAccountManagementDetail() {
   useEffect(() => {
     setBalanceChangeKindState(undefined);
     setBalanceChangeCategoryId("");
+    setBalanceChangeDescription("");
   }, [balanceDirection]);
 
   useEffect(() => {
     if (!accountQuery.data) return;
     reset({
       typeId: accountQuery.data.type_id,
+      currencyCode: accountQuery.data.currency_code,
       label: accountQuery.data.label,
       descriptions: accountQuery.data.descriptions ?? "",
-      currentBalance: toAmountString(accountQuery.data.current_balance),
+      currentBalance: toAmountString(
+        accountQuery.data.current_balance,
+        accountQuery.data.currency_code,
+      ),
       isMainAccount: Boolean(accountQuery.data.is_main_account),
     });
   }, [accountQuery.data, reset]);
@@ -247,9 +262,11 @@ export default function useAccountManagementDetail() {
     balanceChangeCategoryId,
     balanceChangeCategoryOptions,
     balanceChangeDate,
+    balanceChangeDescription,
     balanceChangeKind,
     balanceDifference,
     control,
+    currencyOptions: currencyPreferences.currencyOptions,
     handleSubmit,
     isDeleting,
     isBalanceChangeReady,
@@ -260,10 +277,13 @@ export default function useAccountManagementDetail() {
     onSubmit,
     rspErrorMsg,
     setFocus,
+    setValue,
     setBalanceChangeCategoryId,
     setBalanceChangeDate,
+    setBalanceChangeDescription,
     setBalanceChangeKind,
     setShowDialog,
+    showCurrencyField: currencyPreferences.showCurrencyField,
     showDialog,
   };
 }

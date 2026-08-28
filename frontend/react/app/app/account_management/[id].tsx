@@ -58,25 +58,34 @@ export default function AccountManagementDetail() {
           }
         />
         <AppScrollView
-          className="border-0 p-4 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer"
-          contentContainerStyle={{ justifyContent: "flex-start" }}
+          className="border-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer"
+          contentContainerStyle={{
+            justifyContent: "flex-start",
+            padding: 16,
+            paddingBottom: 32,
+          }}
         >
           <AccountManagementFormFields
             accountTypeOptions={logic.accountTypeOptions}
+            currencyOptions={logic.currencyOptions}
             control={logic.control}
             isSubmitting={logic.isSubmitting}
             setFocus={logic.setFocus}
+            setValue={logic.setValue}
+            showCurrencyField={logic.showCurrencyField}
           />
           <BalanceChangeClassification
             difference={logic.balanceDifference}
             kind={logic.balanceChangeKind}
             categoryId={logic.balanceChangeCategoryId}
             categoryOptions={logic.balanceChangeCategoryOptions}
+            description={logic.balanceChangeDescription}
             transactionDate={logic.balanceChangeDate}
             disabled={logic.isSubmitting}
             onKindChange={logic.setBalanceChangeKind}
             onCategoryChange={logic.setBalanceChangeCategoryId}
             onDateChange={logic.setBalanceChangeDate}
+            onDescriptionChange={logic.setBalanceChangeDescription}
           />
           <AppDivider />
           {logic.rspErrorMsg && (

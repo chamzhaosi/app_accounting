@@ -8,16 +8,21 @@ import AppView from "../../../components/AppView";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
 import { ACCOUNT_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import useAccountDetail from "../../../hook/account_management/useAccountDetail";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import TransactionManagementList from "../../transaction_management/list";
-import { formatPrivateAmount } from "../../../utils/number";
+import {
+  formatPrivateCurrencyAmount,
+  formatPrivateLocalizedAmount,
+} from "../../../utils/number";
+import { DEFAULT_CURRENCY_CODE } from "../../../constants/currencies";
 import AccountBalanceHistoryChart from "./_components/AccountBalanceHistoryChart";
 import { useTranslation } from "../../../i18n/helper";
 
 export default function AccountDetail() {
   const { THEME } = useThemeStore();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -35,6 +40,23 @@ export default function AccountDetail() {
     setDateRange,
     startDate,
   } = useAccountDetail();
+  const currencyCode = account?.currency_code ?? DEFAULT_CURRENCY_CODE;
+  const isSingleCurrency = useSingleCurrencyMode();
+  const displayAmount = (value: number, showCurrencyCode?: boolean) =>
+    showCurrencyCode
+      ? formatPrivateCurrencyAmount(
+          value,
+          currencyCode,
+          locale,
+          areAmountsVisible,
+          !isSingleCurrency,
+        )
+      : formatPrivateLocalizedAmount(
+          value,
+          currencyCode,
+          locale,
+          areAmountsVisible,
+        );
 
   if (isLoading) {
     return (
@@ -76,10 +98,7 @@ export default function AccountDetail() {
                 {t("Current Balance")}
               </Text>
               <Text variant="titleLarge" style={styles.balanceAmount}>
-                {formatPrivateAmount(
-                  account?.current_balance ?? 0,
-                  areAmountsVisible,
-                )}
+                {displayAmount(account?.current_balance ?? 0, true)}
               </Text>
             </View>
           </View>
@@ -102,7 +121,7 @@ export default function AccountDetail() {
                 {t("Opening")}
               </Text>
               <Text style={styles.periodAmount}>
-                {formatPrivateAmount(forwardBalance, areAmountsVisible)}
+                {displayAmount(forwardBalance)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
@@ -110,19 +129,19 @@ export default function AccountDetail() {
                 {t("Closing")}
               </Text>
               <Text style={styles.periodAmount}>
-                {formatPrivateAmount(periodEndBalance, areAmountsVisible)}
+                {displayAmount(periodEndBalance)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
               <Text style={{ color: THEME.onSurfaceVariant }}>{t("Out")}</Text>
               <Text style={[styles.periodAmount, { color: THEME.error }]}>
-                {formatPrivateAmount(moneyOut, areAmountsVisible)}
+                {displayAmount(moneyOut)}
               </Text>
             </View>
             <View style={styles.periodTotal}>
               <Text style={{ color: THEME.onSurfaceVariant }}>{t("In")}</Text>
               <Text style={[styles.periodAmount, { color: THEME.primary }]}>
-                {formatPrivateAmount(moneyIn, areAmountsVisible)}
+                {displayAmount(moneyIn)}
               </Text>
             </View>
           </View>

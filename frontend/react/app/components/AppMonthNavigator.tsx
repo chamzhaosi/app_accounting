@@ -5,11 +5,13 @@ import { useTranslation } from "../i18n/helper";
 
 type AppMonthNavigatorProps = {
   month: string;
+  maximumMonth?: string;
   onChange: (month: string) => void;
 };
 
 export default function AppMonthNavigator({
   month,
+  maximumMonth,
   onChange,
 }: AppMonthNavigatorProps) {
   const { locale, t } = useTranslation();
@@ -26,6 +28,7 @@ export default function AppMonthNavigator({
       <IconButton
         icon="chevron-right"
         accessibilityLabel={t("Next month")}
+        disabled={Boolean(maximumMonth && month >= maximumMonth)}
         onPress={() => onChange(shiftMonth(month, 1))}
       />
     </View>

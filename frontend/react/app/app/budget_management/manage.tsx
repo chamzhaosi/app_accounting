@@ -9,13 +9,15 @@ import AppButton, {
 } from "../../components/AppButton";
 import AppIcon, { AppIconProps } from "../../components/AppIcon";
 import AppIconButton from "../../components/AppIconButton";
+import AppSelect from "../../components/AppSelect";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppView from "../../components/AppView";
 import useBudgetManagement from "../../hook/budget_management/useBudgetManagement";
+import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
-import { absoluteAmount, AMOUNT_MAX_LENGTH } from "../../utils/amount";
-import { formatPrivateAmount } from "../../utils/number";
+import { absoluteAmount } from "../../utils/amount";
+import { formatPrivateCurrencyAmount } from "../../utils/number";
 import BudgetCategoryPickerModal from "./_components/BudgetCategoryPickerModal";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
@@ -27,15 +29,22 @@ export default function BudgetManagement() {
     allocatedAmount,
     allocationDifference,
     allocations,
+    amountDecimalPlaces,
+    amountMaxLength,
     availableCategories,
     control,
+    currencyCode,
+    currencyOptions,
     handleSubmit,
     hasCategories,
     isCategoryPickerVisible,
+    isCurrencyDisabled,
+    isCurrencyLocked,
     isError,
     isLoading,
     isSaving,
     onAllocationChange,
+    onCurrencyChange,
     onDismissCategoryPicker,
     onOpenCategoryPicker,
     onRemoveAllocation,
@@ -44,8 +53,10 @@ export default function BudgetManagement() {
     onSubmit,
     rspErrorMsg,
     selectedCategories,
+    showCurrencyField,
     errors,
   } = useBudgetManagement();
+  const isFormDisabled = isSaving || isCurrencyDisabled;
 
   if (isLoading) {
     return (
@@ -89,26 +100,71 @@ export default function BudgetManagement() {
           elevation={1}
           style={[styles.card, { backgroundColor: THEME.surfaceContainer }]}
         >
-          <Controller
-            control={control}
-            name="totalBudget"
-            render={({ field: { value, onBlur, onChange, ref } }) => (
-              <AppAmtInput
-                ref={ref}
-                mode="outlined"
-                label="Total monthly budget"
-                keyboardType="number-pad"
-                value={value}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                errorField={errors.totalBudget}
-                editable={!isSaving}
-                fixedDecimalInput
-                maxLength={AMOUNT_MAX_LENGTH}
-                showClear
+          {isCurrencyDisabled ? (
+            <View
+              style={[
+                styles.disabledNotice,
+                { backgroundColor: THEME.errorContainer },
+              ]}
+            >
+              <AppIcon
+                name="CircleAlert"
+                size={20}
+                color={THEME.onErrorContainer}
               />
-            )}
-          />
+              <Text style={{ color: THEME.onErrorContainer, flex: 1 }}>
+                {t(
+                  "This currency is disabled. Enable it in Currency Management before editing or reactivating this budget.",
+                )}
+              </Text>
+            </View>
+          ) : null}
+          <View style={styles.budgetFields}>
+            {showCurrencyField ? (
+              <Controller
+                control={control}
+                name="currencyCode"
+                render={({ field: { value } }) => (
+                  <AppSelect
+                    label="Currency"
+                    value={value}
+                    options={currencyOptions}
+                    onChange={(nextValue) =>
+                      onCurrencyChange(String(nextValue ?? ""))
+                    }
+                    errorField={errors.currencyCode}
+                    showClear={false}
+                    disabled={isFormDisabled || isCurrencyLocked}
+                    containerStyle={styles.currencyField}
+                  />
+                )}
+              />
+            ) : null}
+            <Controller
+              control={control}
+              name="totalBudget"
+              render={({ field: { value, onBlur, onChange, ref } }) => (
+                <View style={styles.totalBudgetContainer}>
+                  <AppAmtInput
+                    ref={ref}
+                    mode="outlined"
+                    label="Total monthly budget"
+                    keyboardType="number-pad"
+                    value={value}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    errorField={errors.totalBudget}
+                    editable={!isFormDisabled}
+                    fixedDecimalInput
+                    fixedDecimalPlaces={amountDecimalPlaces}
+                    maxLength={amountMaxLength}
+                    showClear
+                    style={styles.totalBudgetField}
+                  />
+                </View>
+              )}
+            />
+          </View>
           <Controller
             control={control}
             name="isActive"
@@ -120,13 +176,13 @@ export default function BudgetManagement() {
                     variant="bodySmall"
                     style={{ color: THEME.onSurfaceVariant }}
                   >
-                    {t("Pause tracking without removing this month's plan.")}
+                    {t("Pause tracking while keeping budget history.")}
                   </Text>
                 </View>
                 <Switch
                   value={value}
                   onValueChange={onChange}
-                  disabled={isSaving}
+                  disabled={isFormDisabled}
                 />
               </View>
             )}
@@ -140,10 +196,15 @@ export default function BudgetManagement() {
             { backgroundColor: THEME.secondaryContainer },
           ]}
         >
-          <SummaryValue label="Allocated" value={allocatedAmount} />
+          <SummaryValue
+            label="Allocated"
+            value={allocatedAmount}
+            currencyCode={currencyCode}
+          />
           <SummaryValue
             label={allocationDifference >= 0 ? "Unallocated" : "Overallocated"}
             value={absoluteAmount(allocationDifference)}
+            currencyCode={currencyCode}
             color={allocationDifference < 0 ? THEME.error : THEME.primary}
           />
         </Surface>
@@ -180,13 +241,14 @@ export default function BudgetManagement() {
               dense
               label="Amount"
               keyboardType="number-pad"
-              value={allocations[category.category_id] ?? "0.00"}
+              value={allocations[category.category_id] ?? "0"}
               onChangeText={(text) =>
                 onAllocationChange(category.category_id, text)
               }
-              editable={!isSaving}
+              editable={!isFormDisabled}
               fixedDecimalInput
-              maxLength={AMOUNT_MAX_LENGTH}
+              fixedDecimalPlaces={amountDecimalPlaces}
+              maxLength={amountMaxLength}
               showClear
               style={styles.amountInput}
             />
@@ -199,7 +261,7 @@ export default function BudgetManagement() {
                   t,
                 ),
               })}
-              disabled={isSaving}
+              disabled={isFormDisabled}
               onPress={() => onRemoveAllocation(category.category_id)}
               style={styles.removeButton}
             />
@@ -224,7 +286,7 @@ export default function BudgetManagement() {
             {...SUBMIT_BTN_CONTENT_STYLE}
             variant={ButtonType.SECONDARY}
             icon="plus"
-            disabled={isSaving || availableCategories.length === 0}
+            disabled={isFormDisabled || availableCategories.length === 0}
             onPress={onOpenCategoryPicker}
             style={styles.addCategoryButton}
           >
@@ -244,7 +306,7 @@ export default function BudgetManagement() {
         <AppButton
           {...SUBMIT_BTN_CONTENT_STYLE}
           loading={isSaving}
-          disabled={isSaving}
+          disabled={isFormDisabled}
           onPress={handleSubmit(onSubmit)}
           style={styles.saveButton}
         >
@@ -258,21 +320,30 @@ export default function BudgetManagement() {
 function SummaryValue({
   label,
   value,
+  currencyCode,
   color,
 }: {
   label: string;
   value: number;
+  currencyCode: string;
   color?: string;
 }) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
   return (
     <View style={styles.summaryValue}>
       <Text variant="labelLarge">{t(label)}</Text>
       <Text variant="titleLarge" style={color ? { color } : undefined}>
-        {formatPrivateAmount(value, areAmountsVisible)}
+        {formatPrivateCurrencyAmount(
+          value,
+          currencyCode,
+          locale,
+          areAmountsVisible,
+          !isSingleCurrency,
+        )}
       </Text>
     </View>
   );
@@ -281,6 +352,7 @@ function SummaryValue({
 const styles = StyleSheet.create({
   addCategoryButton: { borderRadius: 8, marginHorizontal: 12, marginTop: 8 },
   amountInput: { height: 48, width: 120 },
+  budgetFields: { alignItems: "flex-start", flexDirection: "row", gap: 10 },
   card: { borderRadius: 16, margin: 12, padding: 16 },
   categoryLabel: { flex: 1, marginHorizontal: 12 },
   categoryRow: {
@@ -292,6 +364,15 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   content: { paddingBottom: 32 },
+  currencyField: { flex: 1, minWidth: 0 },
+  disabledNotice: {
+    alignItems: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+    padding: 12,
+  },
   emptyAllocationText: {
     marginHorizontal: 24,
     marginVertical: 16,
@@ -318,4 +399,6 @@ const styles = StyleSheet.create({
   },
   summaryValue: { flex: 1 },
   switchRow: { alignItems: "center", flexDirection: "row", marginTop: 16 },
+  totalBudgetContainer: { flex: 1, minWidth: 0 },
+  totalBudgetField: { width: "100%" },
 });

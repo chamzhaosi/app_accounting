@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useLocales } from "expo-localization";
 import { type Language, useLanguageStore } from "../stores/useLanguageStore";
 import { ms } from "./ms";
 import { zhHans } from "./zh-Hans";
@@ -34,11 +35,12 @@ export const translate = (
 
 export const useTranslation = () => {
   const language = useLanguageStore((state) => state.language);
+  const locales = useLocales();
   const t = useCallback(
     (text: string, values?: TranslationValues) =>
       translate(text, values, language),
     [language],
   );
 
-  return { language, locale: getLocale(language), t };
+  return { language, locale: locales[0]?.languageTag ?? "en-MY", t };
 };

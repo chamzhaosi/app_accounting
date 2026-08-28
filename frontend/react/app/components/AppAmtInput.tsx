@@ -4,7 +4,7 @@ import { TextInput as RNTextInput, StyleSheet, View } from "react-native";
 import { TextInput, TextInputProps } from "react-native-paper";
 import { TEXTINPUT_FONTSIZE, TEXTINPUT_HEIGHT } from "../constants/size";
 import { useThemeStore } from "../stores/useThemeStore";
-import { toAmountString, toBigAmount } from "../utils/amount";
+import { toBigAmount } from "../utils/amount";
 import AppText, { TextTypEnum } from "./AppText";
 import { useTranslation } from "../i18n/helper";
 
@@ -13,18 +13,27 @@ type AppTextInputProps = TextInputProps & {
   showClear?: boolean;
   continerClassName?: string;
   fixedDecimalInput?: boolean;
+  fixedDecimalPlaces?: number;
 };
 
-const formatFixedDecimalInput = (value: string) => {
+const getZeroValue = (decimalPlaces: number) =>
+  decimalPlaces > 0 ? `0.${"0".repeat(decimalPlaces)}` : "0";
+
+const formatFixedDecimalInput = (value: string, decimalPlaces: number) => {
   const digits = value.replace(/\D/g, "");
-  return toBigAmount(digits).div(100).toFixed(2);
+  return toBigAmount(digits)
+    .div(10 ** decimalPlaces)
+    .toFixed(decimalPlaces);
 };
 
-const formatAmountOnBlur = (value?: string) => {
+const formatAmountOnBlur = (
+  value: string | undefined,
+  decimalPlaces: number,
+) => {
   try {
-    return toAmountString(value);
+    return toBigAmount(value).toFixed(decimalPlaces);
   } catch {
-    return "0.00";
+    return getZeroValue(decimalPlaces);
   }
 };
 
@@ -48,6 +57,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
       style,
       continerClassName,
       fixedDecimalInput = false,
+      fixedDecimalPlaces = 2,
       caretHidden,
       selection,
       label,
@@ -75,7 +85,11 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
             (!fixedDecimalInput || isNonZeroAmount(value)) && (
               <TextInput.Icon
                 icon="close"
-                onPress={() => onChangeText?.(fixedDecimalInput ? "0.00" : "")}
+                onPress={() =>
+                  onChangeText?.(
+                    fixedDecimalInput ? getZeroValue(fixedDecimalPlaces) : "",
+                  )
+                }
               />
             )
           }
@@ -85,12 +99,14 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
           error={!!errorField?.message}
           maxLength={maxLength}
           onBlur={(e) => {
-            onChangeText?.(formatAmountOnBlur(value));
+            onChangeText?.(formatAmountOnBlur(value, fixedDecimalPlaces));
             onBlur?.(e);
           }}
           onChangeText={(text) =>
             onChangeText?.(
-              fixedDecimalInput ? formatFixedDecimalInput(text) : text,
+              fixedDecimalInput
+                ? formatFixedDecimalInput(text, fixedDecimalPlaces)
+                : text,
             )
           }
           caretHidden={fixedDecimalInput || caretHidden}

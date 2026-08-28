@@ -1,8 +1,22 @@
 export type BudgetRspType = {
   id: string;
+  plan_id: string;
+  currency_code: string;
   month: string;
   total_budget: number;
   is_active: boolean;
+};
+
+export type BudgetPlanListItemType = {
+  plan_id: string;
+  currency_code: string;
+  revision_id: string;
+  effective_month: string;
+  total_budget: number;
+  is_active: boolean;
+  is_currency_enabled: boolean;
+  allocation_count: number;
+  allocated_amount: number;
 };
 
 export type BudgetCategoryProgressType = {
@@ -29,6 +43,7 @@ export type BudgetDailyRemainingType = {
   transaction_date: string;
   total_budget: number;
   remaining_amount: number;
+  has_budget: boolean;
 };
 
 export type BudgetManageCategoryType = {
@@ -41,12 +56,17 @@ export type BudgetManageCategoryType = {
 };
 
 export type BudgetManagementType = {
+  planId: string | null;
+  currencyCode: string | null;
+  isCurrencyEnabled: boolean;
   budget: BudgetRspType | null;
   categories: BudgetManageCategoryType[];
 };
 
 export type BudgetSaveReqType = {
-  month: string;
+  planId?: string;
+  currencyCode: string;
+  effectiveMonth: string;
   totalBudget: string;
   isActive: boolean;
   allocations: Array<{ categoryId: string; amount: string }>;
