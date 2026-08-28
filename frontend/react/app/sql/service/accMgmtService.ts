@@ -158,6 +158,8 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
       const expectedTypeId = expectedKind === "expense" ? 2 : 1;
       if (!category?.is_active || category.type_id !== expectedTypeId)
         return `Selected category is unavailable for this ${expectedKind}.`;
+      if ((data.balanceChangeDescription?.trim().length ?? 0) > 100)
+        return "Description must not exceed 100 characters.";
     }
   }
 

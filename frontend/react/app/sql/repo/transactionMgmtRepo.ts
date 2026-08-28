@@ -168,21 +168,23 @@ export const getCategoryDailyTotalsFromDB = async (
   categoryId: string,
   startDate: string,
   endDate: string,
+  currencyCode: string,
 ): Promise<CategoryDailyTotalType[]> => {
   try {
     const db = await getDB();
     const result = await db.getAllAsync<CategoryDailyTotalType>(
       `SELECT
          transaction_date,
-         ROUND(COALESCE(SUM(amount), 0), 3) AS daily_total
+         ROUND(COALESCE(SUM(converted_amount), 0), 3) AS daily_total
        FROM transactions
        WHERE category_id = ?
          AND transaction_date >= ?
          AND transaction_date <= ?
+         AND account_currency_code = ?
          AND deleted_at IS NULL
        GROUP BY transaction_date
        ORDER BY transaction_date ASC;`,
-      [categoryId, startDate, endDate],
+      [categoryId, startDate, endDate, currencyCode],
     );
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
@@ -191,6 +193,7 @@ export const getCategoryDailyTotalsFromDB = async (
         categoryId,
         startDate,
         endDate,
+        currencyCode,
         count: result.length,
       },
     );
@@ -429,31 +432,34 @@ export const getCategoryDateRangeSummaryFromDB = async (
   categoryId: string,
   startDate: string,
   endDate: string,
-): Promise<CategoryDateRangeSummaryType> => {
+  currencyCode?: string,
+): Promise<CategoryDateRangeSummaryType[]> => {
   try {
     const db = await getDB();
-    const result = await db.getFirstAsync<CategoryDateRangeSummaryType>(
+    const result = await db.getAllAsync<CategoryDateRangeSummaryType>(
       `
         SELECT
-          ROUND(COALESCE(SUM(amount), 0), 3) AS total_amount,
+          account_currency_code AS currency_code,
+          ROUND(COALESCE(SUM(converted_amount), 0), 3) AS total_amount,
           COUNT(*) AS transaction_count
         FROM transactions
         WHERE category_id = ?
           AND transaction_date >= ?
           AND transaction_date <= ?
-          AND deleted_at IS NULL;
+          ${currencyCode ? "AND account_currency_code = ?" : ""}
+          AND deleted_at IS NULL
+        GROUP BY account_currency_code;
       `,
-      [categoryId, startDate, endDate],
+      [categoryId, startDate, endDate, ...(currencyCode ? [currencyCode] : [])],
     );
 
-    const summary = result ?? { total_amount: 0, transaction_count: 0 };
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
       "Loaded category date range summary",
-      { categoryId, startDate, endDate, ...summary },
+      { categoryId, startDate, endDate, currencyCode, count: result.length },
     );
 
-    return summary;
+    return result;
   } catch (e) {
     console.error(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
@@ -702,6 +708,7 @@ export const getTransactionMgmtListFromDB = async (
   endDate: string,
   accountId?: string,
   categoryId?: string,
+  currencyCode?: string,
 ): Promise<TransactionMgmtRspType[]> => {
   try {
     const db = await getDB();
@@ -732,6 +739,11 @@ export const getTransactionMgmtListFromDB = async (
       filterParams.push(categoryId);
     }
 
+    if (currencyCode) {
+      filters.push("transactions.account_currency_code = ?");
+      filterParams.push(currencyCode);
+    }
+
     const transactionFilter = filters.length
       ? `
           AND ${filters.join(" AND ")}
@@ -757,6 +769,7 @@ export const getTransactionMgmtListFromDB = async (
       endDate,
       accountId,
       categoryId,
+      currencyCode,
       count: result.length,
     });
 

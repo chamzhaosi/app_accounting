@@ -59,8 +59,9 @@ export const getCategoryDailyTotals = async (
   categoryId: string,
   startDate: string,
   endDate: string,
+  currencyCode: string,
 ): Promise<CategoryDailyTotalType[]> =>
-  getCategoryDailyTotalsFromDB(categoryId, startDate, endDate);
+  getCategoryDailyTotalsFromDB(categoryId, startDate, endDate, currencyCode);
 
 export const getTransactionDailyTotals = async (
   startDate: string,
@@ -85,8 +86,14 @@ export const getCategoryDateRangeSummary = async (
   categoryId: string,
   startDate: string,
   endDate: string,
-): Promise<CategoryDateRangeSummaryType> =>
-  getCategoryDateRangeSummaryFromDB(categoryId, startDate, endDate);
+  currencyCode?: string,
+): Promise<CategoryDateRangeSummaryType[]> =>
+  getCategoryDateRangeSummaryFromDB(
+    categoryId,
+    startDate,
+    endDate,
+    currencyCode,
+  );
 
 export const getTransactionDateRangeTotals = async (
   startDate: string,
@@ -115,6 +122,7 @@ export const getTransactionMgmtList = async (
   endDate: string,
   accountId?: string,
   categoryId?: string,
+  currencyCode?: string,
 ): Promise<TransactionMgmtRspType[]> =>
   getTransactionMgmtListFromDB(
     {
@@ -129,6 +137,7 @@ export const getTransactionMgmtList = async (
     endDate,
     accountId,
     categoryId,
+    currencyCode,
   );
 
 export const getTransactionMgmtById = async (

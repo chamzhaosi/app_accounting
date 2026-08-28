@@ -1,12 +1,16 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Route } from "react-native-tab-view";
+import type { SelectOptionType } from "../../components/AppSelect";
 import type { AppDateRangeValue } from "../../components/AppDateRangePicker";
+import { ALL_CURRENCIES_VALUE } from "../../constants/currencies";
 import { categoryManagementQueryKeys } from "../../constants/queryKeys";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { getCategoryPeriodSummaryList } from "../../sql/service/categoryMgmtService";
 import { formatDateValue, getCurrentMonthDateRange } from "../../utils/date";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useTranslation } from "../../i18n/helper";
+import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
 
 export type CategoryHomeTabRoute = Route & {
   key: "expense" | "income";
@@ -20,18 +24,45 @@ export const CATEGORY_HOME_TAB_ROUTES: CategoryHomeTabRoute[] = [
 ];
 
 export default function useCategoriesList() {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
+  const [selectedCurrencyCode, setSelectedCurrencyCode] =
+    useState(ALL_CURRENCIES_VALUE);
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(
     getCurrentMonthDateRange,
   );
+  const { enabledCurrencyCodes } = useCurrencyPreferenceOptions();
+  const currencyOptions = useMemo<SelectOptionType[]>(
+    () => [
+      {
+        id: ALL_CURRENCIES_VALUE,
+        label: t("All"),
+        value: ALL_CURRENCIES_VALUE,
+      },
+      ...enabledCurrencyCodes.map((code) => ({
+        id: code,
+        label: code,
+        value: code,
+      })),
+    ],
+    [enabledCurrencyCodes, t],
+  );
 
   return {
+    currencyCode:
+      selectedCurrencyCode === ALL_CURRENCIES_VALUE
+        ? undefined
+        : selectedCurrencyCode,
+    currencyCodes: enabledCurrencyCodes,
+    currencyOptions,
     dateRange,
     endDate: formatDateValue(dateRange.endDate),
     index,
     routes: CATEGORY_HOME_TAB_ROUTES,
     setDateRange,
     setIndex,
+    setSelectedCurrencyCode,
+    selectedCurrencyCode,
     startDate: formatDateValue(dateRange.startDate),
   };
 }
@@ -40,6 +71,7 @@ export const useCategoryPeriodList = (
   typeId: number,
   startDate: string,
   endDate: string,
+  currencyCode?: string,
 ) => {
   const query = useInfiniteQuery({
     queryKey: categoryManagementQueryKeys.periodList({
@@ -47,6 +79,7 @@ export const useCategoryPeriodList = (
       pageSize: DEFAULT_PAGE_SIZE,
       startDate,
       endDate,
+      currencyCode,
     }),
     queryFn: ({ pageParam }) =>
       getCategoryPeriodSummaryList(
@@ -55,6 +88,7 @@ export const useCategoryPeriodList = (
         endDate,
         pageParam,
         DEFAULT_PAGE_SIZE,
+        currencyCode,
       ),
     enabled: Boolean(startDate && endDate),
     initialPageParam: 1,
@@ -69,14 +103,14 @@ export const useCategoryPeriodList = (
       "Error when loading category period list",
       { typeId, startDate, endDate, error: query.error },
     );
-  }, [endDate, query.error, startDate, typeId]);
+  }, [currencyCode, endDate, query.error, startDate, typeId]);
 
   const onLoadMore = () => {
     if (query.isFetchingNextPage || !query.hasNextPage) return;
     debugLog(
       DEBUG_TAG.CATEGORY_MANAGEMENT,
       "Fetching next category period page",
-      { typeId, startDate, endDate },
+      { typeId, startDate, endDate, currencyCode },
     );
     void query.fetchNextPage();
   };
@@ -86,6 +120,7 @@ export const useCategoryPeriodList = (
       typeId,
       startDate,
       endDate,
+      currencyCode,
     });
     await query.refetch();
   };

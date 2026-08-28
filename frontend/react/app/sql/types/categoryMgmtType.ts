@@ -13,6 +13,12 @@ export type CategoryMgmtRspType = {
 export type CategoryPeriodSummaryRspType = CategoryMgmtRspType & {
   period_total: number;
   transaction_count: number;
+  currency_totals: CategoryCurrencyTotalType[];
+};
+
+export type CategoryCurrencyTotalType = {
+  currency_code: string;
+  total_amount: number;
 };
 
 export type CategoryMgmtCreateReqType = {

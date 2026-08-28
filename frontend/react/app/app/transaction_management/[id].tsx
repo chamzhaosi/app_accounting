@@ -51,6 +51,7 @@ export default function TransactionManagementDetail() {
 
       <TransactionFormScreen
         logic={logic}
+        lockTransactionType
         footer={
           <View className="flex-row items-center justify-center gap-4 mt-2 mb-4">
             <AppButton

@@ -1,7 +1,8 @@
 import { Href, router } from "expo-router";
 import { useState } from "react";
 import { Pressable, SectionList, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Modal, Portal, Text } from "react-native-paper";
+import { ActivityIndicator, Text } from "react-native-paper";
+import AppCurrencyTotalsSheet from "../../components/AppCurrencyTotalsSheet";
 import AppEmpty from "../../components/AppEmpty";
 import AppIcon from "../../components/AppIcon";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
@@ -31,7 +32,7 @@ import type { TransactionDateSection } from "../../hook/transaction_management/u
 export default function TransactionManagementList(
   props: TransactionManagementListProps,
 ) {
-  const { accountId } = props;
+  const { accountId, currencyCodes } = props;
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
   const reportingCurrencyCode = useReportingCurrencyStore(
@@ -41,6 +42,9 @@ export default function TransactionManagementList(
     useState<TransactionDateSection | null>(null);
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
+  );
+  const currencyOrder = new Map(
+    (currencyCodes ?? []).map((code, index) => [code, index]),
   );
 
   const {
@@ -62,44 +66,20 @@ export default function TransactionManagementList(
 
   return (
     <>
-      <Portal>
-        <Modal
-          visible={Boolean(summarySection)}
-          onDismiss={() => setSummarySection(null)}
-          contentContainerStyle={[
-            styles.summaryModal,
-            { backgroundColor: THEME.surfaceContainerHigh },
-          ]}
-        >
-          <View className="flex-row">
-            <View className="flex-1 justify-center">
-              <Text variant="titleLarge">{t("Daily summary")}</Text>
-              {summarySection ? (
-                <Text
-                  variant="bodyMedium"
-                  style={{ color: THEME.onSurfaceVariant }}
-                >
-                  {formatSectionDate(summarySection.transactionDate, locale, t)}
-                </Text>
-              ) : null}
-            </View>
-            <View style={styles.summaryModalValues}>
-              {summarySection?.currencyNets.map((net) => (
-                <View key={net.currencyCode} style={styles.summaryModalRow}>
-                  <Text variant="titleMedium" style={styles.summaryModalAmount}>
-                    {formatPrivateSignedCurrencyAmount(
-                      net.netTotal,
-                      net.currencyCode,
-                      locale,
-                      areAmountsVisible,
-                    )}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </Modal>
-      </Portal>
+      <AppCurrencyTotalsSheet
+        title={t("Daily summary")}
+        subtitle={
+          summarySection
+            ? formatSectionDate(summarySection.transactionDate, locale, t)
+            : ""
+        }
+        totals={(summarySection?.currencyNets ?? []).map((net) => ({
+          amount: net.netTotal,
+          currencyCode: net.currencyCode,
+        }))}
+        visible={Boolean(summarySection)}
+        onDismiss={() => setSummarySection(null)}
+      />
       <SectionList
         style={styles.list}
         sections={transactionSections}
@@ -121,10 +101,22 @@ export default function TransactionManagementList(
         }
         renderSectionHeader={({ section }) => {
           const sortedCurrencyNets = [...section.currencyNets].sort(
-            (left, right) =>
-              Number(right.currencyCode === reportingCurrencyCode) -
-                Number(left.currencyCode === reportingCurrencyCode) ||
-              left.currencyCode.localeCompare(right.currencyCode),
+            (left, right) => {
+              if (currencyCodes?.length) {
+                return (
+                  (currencyOrder.get(left.currencyCode) ??
+                    Number.MAX_SAFE_INTEGER) -
+                    (currencyOrder.get(right.currencyCode) ??
+                      Number.MAX_SAFE_INTEGER) ||
+                  left.currencyCode.localeCompare(right.currencyCode)
+                );
+              }
+              return (
+                Number(right.currencyCode === reportingCurrencyCode) -
+                  Number(left.currencyCode === reportingCurrencyCode) ||
+                left.currencyCode.localeCompare(right.currencyCode)
+              );
+            },
           );
           const primaryNet = sortedCurrencyNets[0] ?? {
             currencyCode: reportingCurrencyCode,
@@ -250,11 +242,12 @@ export default function TransactionManagementList(
                 areAmountsVisible,
               )
             : undefined;
-
           return (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`${item.title}, ${displayAmount}${
+              accessibilityLabel={`${item.title}${
+                item.description ? `, ${item.description}` : ""
+              }, ${displayAmount}${
                 secondaryAmount ? `, ${secondaryAmount}` : ""
               }`}
               accessibilityHint={
@@ -286,6 +279,7 @@ export default function TransactionManagementList(
                 <View style={styles.transactionText}>
                   <Text
                     numberOfLines={1}
+                    ellipsizeMode="tail"
                     style={[
                       styles.transactionTitle,
                       { color: THEME.onSurface },
@@ -334,6 +328,18 @@ export default function TransactionManagementList(
                       {item.subtitle}
                     </Text>
                   )}
+                  {item.description ? (
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={[
+                        styles.transactionDescription,
+                        { color: THEME.onSurfaceVariant },
+                      ]}
+                    >
+                      {item.description}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View style={styles.transactionAmounts}>
@@ -473,6 +479,11 @@ const styles = StyleSheet.create({
     fontSize: LIST_ITEM_DESCRIPTION_FONTSIZE - 2,
     marginTop: 2,
   },
+  transactionDescription: {
+    fontFamily: FONTS.ROBOTO,
+    fontSize: LIST_ITEM_DESCRIPTION_FONTSIZE - 3,
+    marginTop: 2,
+  },
   transferSubtitle: {
     alignItems: "center",
     flexDirection: "row",
@@ -506,19 +517,6 @@ const styles = StyleSheet.create({
     maxWidth: "50%",
     minWidth: 0,
   },
-  summaryModal: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    bottom: 0,
-    left: 0,
-    padding: 20,
-    paddingTop: 6,
-    position: "absolute",
-    right: 0,
-  },
-  summaryModalValues: { gap: 12, marginTop: 20 },
-  summaryModalRow: { alignItems: "flex-end" },
-  summaryModalAmount: { fontWeight: "700", fontSize: 20 },
   footerLoader: {
     marginVertical: 16,
   },

@@ -28,4 +28,5 @@ export type AccMgmtUpdateReqType = AccMgmtCreateReqType & {
   balanceChangeKind?: BalanceChangeKind;
   balanceChangeCategoryId?: string;
   balanceChangeDate?: string;
+  balanceChangeDescription?: string;
 };

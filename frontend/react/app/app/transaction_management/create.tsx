@@ -24,6 +24,7 @@ import { getCurrencyDecimalDigits } from "../../constants/currencies";
 import { getAmountMaxLength } from "../../utils/amount";
 import useTransactionManagementCreate from "../../hook/transaction_management/useTransactionManagementCreate";
 import { useTranslation } from "../../i18n/helper";
+import { useThemeStore } from "../../stores/useThemeStore";
 import { EXCHANGE_RATE_ZERO } from "../../utils/exchangeRate";
 import AccountIdField from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
@@ -37,13 +38,16 @@ type TransactionFormScreenLogic = Omit<
 type TransactionFormScreenProps = {
   footer: ReactNode;
   logic: TransactionFormScreenLogic;
+  lockTransactionType?: boolean;
 };
 
 export function TransactionFormScreen({
   footer,
   logic,
+  lockTransactionType = false,
 }: TransactionFormScreenProps) {
   const { t } = useTranslation();
+  const { THEME } = useThemeStore();
   const {
     accountCurrencyCode,
     accountFieldProps,
@@ -206,6 +210,8 @@ export function TransactionFormScreen({
             <SegmentedButtons
               value={value}
               onValueChange={(selectedType) => {
+                if (lockTransactionType) return;
+
                 onChange(selectedType);
                 setValue("categoryId", "");
                 if (selectedType === TXN_TYPE_ENUM.TRANSFER) {
@@ -227,16 +233,34 @@ export function TransactionFormScreen({
                   value: TXN_TYPE_ENUM.EXPENSE,
                   label: t("Expense"),
                   icon: "arrow-up",
+                  disabled:
+                    lockTransactionType && value !== TXN_TYPE_ENUM.EXPENSE,
+                  style:
+                    lockTransactionType && value !== TXN_TYPE_ENUM.EXPENSE
+                      ? { backgroundColor: THEME.surfaceDisabled }
+                      : undefined,
                 },
                 {
                   value: TXN_TYPE_ENUM.INCOME,
                   label: t("Income"),
                   icon: "arrow-down",
+                  disabled:
+                    lockTransactionType && value !== TXN_TYPE_ENUM.INCOME,
+                  style:
+                    lockTransactionType && value !== TXN_TYPE_ENUM.INCOME
+                      ? { backgroundColor: THEME.surfaceDisabled }
+                      : undefined,
                 },
                 {
                   value: TXN_TYPE_ENUM.TRANSFER,
                   label: t("Transfer"),
                   icon: "swap-horizontal",
+                  disabled:
+                    lockTransactionType && value !== TXN_TYPE_ENUM.TRANSFER,
+                  style:
+                    lockTransactionType && value !== TXN_TYPE_ENUM.TRANSFER
+                      ? { backgroundColor: THEME.surfaceDisabled }
+                      : undefined,
                 },
               ]}
             />

@@ -21,10 +21,22 @@ type AppDatePickerProps = Omit<
   onChange: (date: Date) => void;
   onBlur?: () => void;
   errorField?: FieldError;
+  withBottomSpacing?: boolean;
 };
 
 const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
-  ({ value, onChange, errorField, onBlur, disabled, ...props }, ref) => {
+  (
+    {
+      value,
+      onChange,
+      errorField,
+      onBlur,
+      disabled,
+      withBottomSpacing = true,
+      ...props
+    },
+    ref,
+  ) => {
     const [visible, setVisible] = useState(false);
     const theme = useTheme();
     const { locale, t } = useTranslation();
@@ -44,7 +56,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
           <AppTextInput
             {...props}
             ref={ref}
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: withBottomSpacing ? 16 : 0 }}
             value={formatDateValue(value)}
             editable={false}
             disabled={disabled}

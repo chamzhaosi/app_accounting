@@ -19,6 +19,12 @@ type CategoryListQueryOptions = SQLQueryOptions & {
   typeId: number;
 };
 
+type CategoryCurrencyTotalRow = {
+  category_id: string;
+  currency_code: string;
+  total_amount: number;
+};
+
 export const getCategoryMgmtListFromDB = async ({
   typeId,
   orderBy,
@@ -66,15 +72,24 @@ export const getCategoryPeriodSummaryListFromDB = async (
   }: CategoryListQueryOptions,
   startDate: string,
   endDate: string,
+  currencyCode?: string,
 ): Promise<CategoryPeriodSummaryRspType[]> => {
   try {
     const offset = (curPage - 1) * pageSize;
     const db = await getDB();
-    const result = await db.getAllAsync<CategoryPeriodSummaryRspType>(
+    const currencyFilter = currencyCode
+      ? "AND transactions.account_currency_code = ?"
+      : "";
+    const periodTotalSelect = currencyCode
+      ? "ROUND(SUM(transactions.converted_amount), 3)"
+      : "0";
+    const result = await db.getAllAsync<
+      Omit<CategoryPeriodSummaryRspType, "currency_totals">
+    >(
       `
         SELECT
           categories.*,
-          ROUND(SUM(transactions.amount), 3) AS period_total,
+          ${periodTotalSelect} AS period_total,
           COUNT(transactions.id) AS transaction_count
         FROM categories
         INNER JOIN transactions
@@ -82,14 +97,50 @@ export const getCategoryPeriodSummaryListFromDB = async (
           AND transactions.transaction_date >= ?
           AND transactions.transaction_date <= ?
           AND transactions.deleted_at IS NULL
+          ${currencyFilter}
         WHERE categories.type_id = ?
           AND categories.deleted_at IS NULL
         GROUP BY categories.id
         ${buildOrderBy(orderBy)}
         LIMIT ? OFFSET ?;
       `,
-      [startDate, endDate, typeId, pageSize, offset],
+      [
+        startDate,
+        endDate,
+        ...(currencyCode ? [currencyCode] : []),
+        typeId,
+        pageSize,
+        offset,
+      ],
     );
+    const categoryIds = result.map(({ id }) => id);
+    const currencyTotals = categoryIds.length
+      ? await db.getAllAsync<CategoryCurrencyTotalRow>(
+          `SELECT
+             category_id,
+             account_currency_code AS currency_code,
+             ROUND(SUM(converted_amount), 3) AS total_amount
+           FROM transactions
+           WHERE deleted_at IS NULL
+             AND transaction_date >= ?
+             AND transaction_date <= ?
+             AND category_id IN (${categoryIds.map(() => "?").join(", ")})
+             ${currencyCode ? "AND account_currency_code = ?" : ""}
+           GROUP BY category_id, account_currency_code;`,
+          [
+            startDate,
+            endDate,
+            ...categoryIds,
+            ...(currencyCode ? [currencyCode] : []),
+          ],
+        )
+      : [];
+    const totalsByCategory = new Map<string, CategoryCurrencyTotalRow[]>();
+    currencyTotals.forEach((total) => {
+      const totals = totalsByCategory.get(total.category_id) ?? [];
+      totals.push(total);
+      totalsByCategory.set(total.category_id, totals);
+    });
     debugLog(
       DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
       "Loaded category period summary page",
@@ -99,11 +150,20 @@ export const getCategoryPeriodSummaryListFromDB = async (
         endDate,
         curPage,
         pageSize,
+        currencyCode,
         count: result.length,
       },
     );
 
-    return result;
+    return result.map((category) => ({
+      ...category,
+      currency_totals: (totalsByCategory.get(category.id) ?? []).map(
+        ({ currency_code, total_amount }) => ({
+          currency_code,
+          total_amount,
+        }),
+      ),
+    }));
   } catch (e) {
     console.error(
       DEBUG_TAG.CATEGORY_MANAGEMENT_DB,

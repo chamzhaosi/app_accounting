@@ -1,6 +1,7 @@
 import { zhHans } from "./zh-Hans";
 
 export const ms: Record<keyof typeof zhHans, string> = {
+  "Open all currency totals": "Buka semua jumlah mata wang",
   "Personal Accounting App": "Aplikasi Perakaunan Peribadi",
   Dashboard: "Ringkasan",
   Accounts: "Akaun",
@@ -9,6 +10,8 @@ export const ms: Record<keyof typeof zhHans, string> = {
   Category: "Kategori",
   Salary: "Gaji",
   Allowance: "Elaun",
+  All: "Semua",
+  "+{{count}} more": "+{{count}} lagi",
   Bonus: "Bonus",
   Freelance: "Kerja Bebas",
   Investment: "Pelaburan",

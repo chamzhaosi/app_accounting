@@ -50,6 +50,7 @@ export default function useAccountManagementDetail() {
     BalanceChangeKind | undefined
   >();
   const [balanceChangeCategoryId, setBalanceChangeCategoryId] = useState("");
+  const [balanceChangeDescription, setBalanceChangeDescription] = useState("");
   const [balanceChangeDate, setBalanceChangeDate] = useState(() =>
     formatDateValue(new Date()),
   );
@@ -127,6 +128,7 @@ export default function useAccountManagementDetail() {
   const setBalanceChangeKind = (kind: BalanceChangeKind) => {
     setBalanceChangeKindState(kind);
     setBalanceChangeCategoryId("");
+    setBalanceChangeDescription("");
   };
 
   const onSubmit = async (value: AccountManagementFormType) => {
@@ -146,6 +148,10 @@ export default function useAccountManagementDetail() {
         compareAmounts(balanceDifference, 0) === 0
           ? undefined
           : balanceChangeDate,
+      balanceChangeDescription:
+        compareAmounts(balanceDifference, 0) === 0
+          ? undefined
+          : balanceChangeDescription.trim() || undefined,
     };
     try {
       setRspErrorMsg("");
@@ -218,6 +224,7 @@ export default function useAccountManagementDetail() {
   useEffect(() => {
     setBalanceChangeKindState(undefined);
     setBalanceChangeCategoryId("");
+    setBalanceChangeDescription("");
   }, [balanceDirection]);
 
   useEffect(() => {
@@ -255,6 +262,7 @@ export default function useAccountManagementDetail() {
     balanceChangeCategoryId,
     balanceChangeCategoryOptions,
     balanceChangeDate,
+    balanceChangeDescription,
     balanceChangeKind,
     balanceDifference,
     control,
@@ -272,6 +280,7 @@ export default function useAccountManagementDetail() {
     setValue,
     setBalanceChangeCategoryId,
     setBalanceChangeDate,
+    setBalanceChangeDescription,
     setBalanceChangeKind,
     setShowDialog,
     showCurrencyField: currencyPreferences.showCurrencyField,

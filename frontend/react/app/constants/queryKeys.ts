@@ -76,6 +76,7 @@ export const categoryManagementQueryKeys = {
     pageSize: number;
     startDate: string;
     endDate: string;
+    currencyCode?: string;
   }) => [...categoryManagementQueryKeys.lists(), "periodList", params] as const,
   details: () => [...categoryManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
@@ -132,6 +133,7 @@ export const transactionManagementQueryKeys = {
     categoryId: string;
     startDate: string;
     endDate: string;
+    currencyCode?: string;
   }) =>
     [
       ...transactionManagementQueryKeys.lists(),
@@ -142,6 +144,7 @@ export const transactionManagementQueryKeys = {
     categoryId: string;
     startDate: string;
     endDate: string;
+    currencyCode: string;
   }) =>
     [
       ...transactionManagementQueryKeys.lists(),
@@ -154,6 +157,7 @@ export const transactionManagementQueryKeys = {
     endDate: string;
     accountId?: string;
     categoryId?: string;
+    currencyCode?: string;
   }) => [...transactionManagementQueryKeys.lists(), params] as const,
   details: () => [...transactionManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>

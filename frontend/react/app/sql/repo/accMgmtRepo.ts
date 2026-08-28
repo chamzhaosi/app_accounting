@@ -309,7 +309,8 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         const description =
           transactionType === TXN_TYPE_ENUM.ADJUSTMENT
             ? "Balance correction"
-            : `Missing ${transactionType} from balance reconciliation`;
+            : data.balanceChangeDescription?.trim() ||
+              `Missing ${transactionType} from balance reconciliation`;
         const adjustmentTransactionId = randomUUID();
         await db.runAsync(
           `

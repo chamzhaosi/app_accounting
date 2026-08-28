@@ -1,6 +1,7 @@
 export const zhHans: Record<string, string> = {
   "No {{currency}} budget configured": "尚未配置 {{currency}} 预算",
   "Open all daily currency totals": "打开所有每日货币汇总",
+  "Open all currency totals": "打开所有货币总额",
   "Personal Accounting App": "个人记账应用",
   Dashboard: "概览",
   Accounts: "账户",
@@ -9,6 +10,8 @@ export const zhHans: Record<string, string> = {
   Category: "分类",
   Salary: "薪资",
   Allowance: "津贴",
+  All: "全部",
+  "+{{count}} more": "另有 {{count}} 项",
   Bonus: "奖金",
   Freelance: "自由职业",
   Investment: "投资",

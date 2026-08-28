@@ -13,7 +13,7 @@ import type { ChartPoint } from "../../../hook/dashboard/useDailyTransactionChar
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import {
-  formatPrivateCompactCurrencyAmount,
+  formatPrivateCompactAmount,
   formatPrivateCurrencyAmount,
 } from "../../../utils/number";
 import { useTranslation } from "../../../i18n/helper";
@@ -187,12 +187,7 @@ export default function DailyTransactionChart({
             }}
             xAxisLabelsHeight={22}
             formatYLabel={(label) =>
-              formatPrivateCompactCurrencyAmount(
-                label,
-                currencyCode,
-                locale,
-                areAmountsVisible,
-              )
+              formatPrivateCompactAmount(label, areAmountsVisible)
             }
             pointerConfig={{
               pointer1Color: expenseColor,

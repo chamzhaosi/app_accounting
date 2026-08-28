@@ -16,9 +16,12 @@ export type TransactionManagementListProps = {
   endDate: string;
   accountId?: string;
   categoryId?: string;
+  currencyCode?: string;
+  currencyCodes?: string[];
 };
 
 export type TransactionListItem = {
+  description?: string;
   id: string;
   icon: AppIconProps["name"];
   title: string;
@@ -49,6 +52,7 @@ export default function useTransactionManagementList({
   endDate,
   accountId,
   categoryId,
+  currencyCode,
 }: TransactionManagementListProps) {
   const { t } = useTranslation();
   const {
@@ -67,6 +71,7 @@ export default function useTransactionManagementList({
       endDate,
       accountId,
       categoryId,
+      currencyCode,
     }),
     queryFn: ({ pageParam }) =>
       getTransactionMgmtList(
@@ -76,6 +81,7 @@ export default function useTransactionManagementList({
         endDate,
         accountId,
         categoryId,
+        currencyCode,
       ),
     enabled: Boolean(startDate && endDate),
     initialPageParam: 1,
@@ -136,12 +142,10 @@ export default function useTransactionManagementList({
             : t("Balance Adjustment");
       const subtitle =
         isIncome || isExpense
-          ? `${transaction.currency_code} - ${transaction.account_label ?? t("Account")} · ${t(
-              capitalizeFirst(transaction.transaction_type),
-            )}`
+          ? `${transaction.account_currency_code} - ${transaction.account_label ?? t("Account")}`
           : isTransfer
             ? `${transaction.from_account_label ?? "Account"} → ${transaction.to_account_label ?? "Account"}`
-            : `${transaction.account_label ?? t("Account")} · ${t(
+            : `${transaction.account_currency_code} - ${transaction.account_label ?? t("Account")} · ${t(
                 "Balance {{direction}}",
                 {
                   direction: t(
@@ -152,6 +156,7 @@ export default function useTransactionManagementList({
                 },
               )}`;
       const item: TransactionListItem = {
+        description: transaction.descriptions?.trim() || undefined,
         id: transaction.id,
         icon: (transaction.category_icon ??
           (isTransfer

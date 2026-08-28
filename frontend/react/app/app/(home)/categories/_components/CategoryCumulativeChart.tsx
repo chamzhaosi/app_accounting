@@ -8,6 +8,7 @@ type CategoryCumulativeChartProps = {
   typeId: number;
   startDate: string;
   endDate: string;
+  currencyCode: string;
 };
 
 export default function CategoryCumulativeChart({
@@ -15,12 +16,14 @@ export default function CategoryCumulativeChart({
   typeId,
   startDate,
   endDate,
+  currencyCode,
 }: CategoryCumulativeChartProps) {
   const { THEME } = useThemeStore();
   const logic = useCategoryCumulativeChart({
     categoryId,
     endDate,
     startDate,
+    currencyCode,
   });
 
   const isIncome = typeId === 1;

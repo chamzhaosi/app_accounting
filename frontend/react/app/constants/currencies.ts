@@ -6,6 +6,7 @@ export type CurrencyDefinition = {
 };
 
 export const DEFAULT_CURRENCY_CODE = "MYR";
+export const ALL_CURRENCIES_VALUE = "__ALL_CURRENCIES__";
 
 export const CURRENCIES: CurrencyDefinition[] = [
   {

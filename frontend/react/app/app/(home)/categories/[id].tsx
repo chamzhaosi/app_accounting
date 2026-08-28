@@ -1,7 +1,8 @@
 import { router } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
 import AppDateRangePicker from "../../../components/AppDateRangePicker";
+import AppCurrencyTotalsSheet from "../../../components/AppCurrencyTotalsSheet";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
 import AppSwipePager from "../../../components/AppSwipePager";
@@ -12,24 +13,36 @@ import useCategoryDetail from "../../../hook/category_management/useCategoryDeta
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import TransactionManagementList from "../../transaction_management/list";
-import { formatPrivateAmount } from "../../../utils/number";
+import { formatPrivateLocalizedAmount } from "../../../utils/number";
 import CategoryCumulativeChart from "./_components/CategoryCumulativeChart";
 import { useTranslation } from "../../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
+import CategoryCurrencyNavigator from "./_components/CategoryCurrencyNavigator";
 
 export default function CategoryDetail() {
   const { THEME } = useThemeStore();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
   const {
     category,
+    currencyCode,
+    currencyCodes,
+    currencyOptions,
+    currencyTotalPreview,
+    currencyTotals,
     dateRange,
     endDate,
     id,
+    hiddenCurrencyTotalCount,
+    isCurrencyTotalsVisible,
     isLoading,
+    onCloseCurrencyTotals,
+    onOpenCurrencyTotals,
     periodTotal,
+    selectedCurrencyCode,
+    setSelectedCurrencyCode,
     setDateRange,
     startDate,
     transactionCount,
@@ -47,6 +60,16 @@ export default function CategoryDetail() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <AppCurrencyTotalsSheet
+        title={t("Period Total")}
+        subtitle={`${t("Date Range")}: ${startDate} – ${endDate}`}
+        totals={currencyTotals.map((total) => ({
+          amount: total.total_amount,
+          currencyCode: total.currency_code,
+        }))}
+        visible={isCurrencyTotalsVisible}
+        onDismiss={onCloseCurrencyTotals}
+      />
       <AppSwipePager>
         <Surface
           elevation={1}
@@ -88,6 +111,12 @@ export default function CategoryDetail() {
                 </Text>
               )}
             </View>
+            <CategoryCurrencyNavigator
+              value={selectedCurrencyCode}
+              options={currencyOptions}
+              onChange={setSelectedCurrencyCode}
+              style={styles.currencyNavigator}
+            />
           </View>
 
           <AppDateRangePicker
@@ -107,17 +136,61 @@ export default function CategoryDetail() {
               <Text style={{ color: THEME.onSurfaceVariant }}>
                 {t("Period Total")}
               </Text>
-              <Text
-                style={[
-                  styles.summaryAmount,
-                  {
-                    color:
-                      category?.type_id === 1 ? THEME.primary : THEME.error,
-                  },
-                ]}
-              >
-                {formatPrivateAmount(periodTotal, areAmountsVisible)}
-              </Text>
+              <View style={styles.currencyTotals}>
+                {currencyTotalPreview.length > 0 ? (
+                  currencyTotalPreview.map((total) => (
+                    <Text
+                      key={total.currency_code}
+                      style={[
+                        styles.summaryAmount,
+                        {
+                          color:
+                            category?.type_id === 1
+                              ? THEME.primary
+                              : THEME.error,
+                        },
+                      ]}
+                    >
+                      {`${total.currency_code} ${formatPrivateLocalizedAmount(
+                        total.total_amount,
+                        total.currency_code,
+                        locale,
+                        areAmountsVisible,
+                      )}`}
+                    </Text>
+                  ))
+                ) : (
+                  <Text style={styles.summaryAmount}>
+                    {currencyCode
+                      ? `${currencyCode} ${formatPrivateLocalizedAmount(
+                          periodTotal,
+                          currencyCode,
+                          locale,
+                          areAmountsVisible,
+                        )}`
+                      : "—"}
+                  </Text>
+                )}
+                {hiddenCurrencyTotalCount > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("Open all currency totals")}
+                    onPress={onOpenCurrencyTotals}
+                    style={({ pressed }) => [
+                      styles.moreTotalsButton,
+                      { backgroundColor: THEME.surfaceContainerHighest },
+                      pressed && styles.moreTotalsButtonPressed,
+                    ]}
+                  >
+                    <Text
+                      variant="labelLarge"
+                      style={{ color: THEME.primary, fontWeight: "700" }}
+                    >
+                      +{hiddenCurrencyTotalCount}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
             <View style={styles.summaryItem}>
               <Text style={{ color: THEME.onSurfaceVariant }}>
@@ -127,12 +200,13 @@ export default function CategoryDetail() {
             </View>
           </View>
         </Surface>
-        {category ? (
+        {category && currencyCode ? (
           <CategoryCumulativeChart
             categoryId={id}
             typeId={category.type_id}
             startDate={startDate}
             endDate={endDate}
+            currencyCode={currencyCode}
           />
         ) : null}
       </AppSwipePager>
@@ -142,6 +216,8 @@ export default function CategoryDetail() {
           startDate={startDate}
           endDate={endDate}
           categoryId={id}
+          currencyCode={currencyCode}
+          currencyCodes={currencyCodes}
         />
       )}
 
@@ -173,7 +249,7 @@ export default function CategoryDetail() {
 const styles = StyleSheet.create({
   summary: {
     borderRadius: 20,
-    height: CATEGORY_DETAIL_CARD_HEIGHT,
+    minHeight: CATEGORY_DETAIL_CARD_HEIGHT,
     marginHorizontal: 12,
     marginVertical: 8,
     overflow: "hidden",
@@ -195,6 +271,10 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     flex: 1,
+    minWidth: 0,
+  },
+  currencyNavigator: {
+    marginLeft: 8,
   },
   summaryRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -212,4 +292,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 4,
   },
+  currencyTotals: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
+  },
+  moreTotalsButton: {
+    borderRadius: 12,
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  moreTotalsButtonPressed: { opacity: 0.7 },
 });

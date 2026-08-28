@@ -13,12 +13,14 @@ type UseCategoryCumulativeChartParams = {
   categoryId: string;
   startDate: string;
   endDate: string;
+  currencyCode: string;
 };
 
 export default function useCategoryCumulativeChart({
   categoryId,
   startDate,
   endDate,
+  currencyCode,
 }: UseCategoryCumulativeChartParams) {
   const { locale } = useTranslation();
   const query = useQuery({
@@ -26,10 +28,11 @@ export default function useCategoryCumulativeChart({
       categoryId,
       startDate,
       endDate,
+      currencyCode,
     }),
-    queryFn: () => getCategoryDailyTotals(categoryId, startDate, endDate),
-    enabled: Boolean(categoryId && startDate && endDate),
-    placeholderData: (previousData) => previousData,
+    queryFn: () =>
+      getCategoryDailyTotals(categoryId, startDate, endDate, currencyCode),
+    enabled: Boolean(categoryId && startDate && endDate && currencyCode),
   });
 
   useEffect(() => {

@@ -65,6 +65,7 @@ export type AccountDateRangeFlowTotalsType = {
 };
 
 export type CategoryDateRangeSummaryType = {
+  currency_code: string;
   total_amount: number;
   transaction_count: number;
 };

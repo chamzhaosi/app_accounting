@@ -32,16 +32,24 @@ export default function useCurrencyPreferenceOptions(
     const enabledCodes = new Set(enabledCurrencyCodes);
     return CURRENCIES.filter(
       ({ code }) => enabledCodes.has(code) || code === additionalCurrencyCode,
-    ).map((currency) => ({
-      id: currency.code,
-      label: `${currency.code} · ${currency.name} (${currency.symbol})`,
-      value: currency.code,
-    }));
-  }, [additionalCurrencyCode, enabledCurrencyCodes]);
+    )
+      .sort(
+        (left, right) =>
+          Number(right.code === defaultCurrencyCode) -
+            Number(left.code === defaultCurrencyCode) ||
+          left.code.localeCompare(right.code),
+      )
+      .map((currency) => ({
+        id: currency.code,
+        label: `${currency.code} · ${currency.name} (${currency.symbol})`,
+        value: currency.code,
+      }));
+  }, [additionalCurrencyCode, defaultCurrencyCode, enabledCurrencyCodes]);
 
   return {
     currencyOptions,
     defaultCurrencyCode,
+    enabledCurrencyCodes: currencyOptions.map(({ value }) => value),
     isFetched: query.isFetched,
     showCurrencyField: enabledCurrencyCodes.length > 1,
   };

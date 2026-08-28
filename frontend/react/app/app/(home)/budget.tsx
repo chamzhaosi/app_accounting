@@ -387,6 +387,7 @@ export default function Budget() {
                         id: category.category_id,
                         startDate: logic.month,
                         endDate: getMonthEndKey(logic.month),
+                        currencyCode: logic.selectedCurrencyCode,
                       },
                     } as Href)
                   }

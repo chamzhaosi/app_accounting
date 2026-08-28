@@ -1,23 +1,28 @@
 import { StyleSheet, View } from "react-native";
 import { SegmentedButtons, Surface, Text } from "react-native-paper";
 import AppDatePicker from "../../../components/AppDatePicker";
-import AppSelect, { SelectOptionType } from "../../../components/AppSelect";
+import AppTextInput from "../../../components/AppTextInput";
+import type { AppListCardItemType } from "../../../components/AppListCardView";
 import type { BalanceChangeKind } from "../../../sql/types/accMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { formatDateValue, parseDateValue } from "../../../utils/date";
 import { useTranslation } from "../../../i18n/helper";
 import { toAmountString, toBigAmount } from "../../../utils/amount";
+import { CategoryCardPicker } from "../../transaction_management/_components/CategoryIdField";
+import { DESCRIPTION_MAX_LEN } from "../../../forms/schemas/transaction_management.schema";
 
 type BalanceChangeClassificationProps = {
   difference: number;
   kind?: BalanceChangeKind;
   categoryId: string;
-  categoryOptions: SelectOptionType[];
+  categoryOptions: AppListCardItemType[];
+  description: string;
   transactionDate: string;
   disabled: boolean;
   onKindChange: (kind: BalanceChangeKind) => void;
   onCategoryChange: (categoryId: string) => void;
   onDateChange: (date: string) => void;
+  onDescriptionChange: (description: string) => void;
 };
 
 export default function BalanceChangeClassification({
@@ -25,11 +30,13 @@ export default function BalanceChangeClassification({
   kind,
   categoryId,
   categoryOptions,
+  description,
   transactionDate,
   disabled,
   onKindChange,
   onCategoryChange,
   onDateChange,
+  onDescriptionChange,
 }: BalanceChangeClassificationProps) {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
@@ -72,12 +79,14 @@ export default function BalanceChangeClassification({
             label: t(`Missing ${transactionKind}`),
             icon: difference < 0 ? "arrow-up" : "arrow-down",
             disabled,
+            style: styles.segmentButton,
           },
           {
             value: "correction",
             label: t("Correction"),
             icon: "calculator",
             disabled,
+            style: styles.segmentButton,
           },
         ]}
         style={styles.segmentedButtons}
@@ -85,21 +94,34 @@ export default function BalanceChangeClassification({
 
       {kind === transactionKind ? (
         <View>
-          <AppSelect
-            mode="outlined"
-            label={`${difference < 0 ? "Expense" : "Income"} Category`}
+          <CategoryCardPicker
+            label="Category"
             value={categoryId}
-            options={categoryOptions}
+            categoryItems={categoryOptions}
             disabled={disabled}
-            showClear
-            onChange={(value) => onCategoryChange(String(value ?? ""))}
+            onChange={onCategoryChange}
+            useInternalScroll={false}
+            leadingControl={
+              <AppDatePicker
+                mode="outlined"
+                label="Transaction Date"
+                value={parseDateValue(transactionDate)}
+                disabled={disabled}
+                onChange={(date) => onDateChange(formatDateValue(date))}
+                withBottomSpacing={false}
+              />
+            }
           />
-          <AppDatePicker
+          <AppTextInput
             mode="outlined"
-            label="Transaction Date"
-            value={parseDateValue(transactionDate)}
+            label="Description"
+            value={description}
             disabled={disabled}
-            onChange={(date) => onDateChange(formatDateValue(date))}
+            maxLength={DESCRIPTION_MAX_LEN}
+            multiline
+            numberOfLines={3}
+            showClear
+            onChangeText={onDescriptionChange}
           />
           <Text variant="bodySmall" style={{ color: THEME.onSurfaceVariant }}>
             {t("This creates a normal {{kind}} and updates budget reports.", {
@@ -127,4 +149,5 @@ const styles = StyleSheet.create({
   },
   description: { marginTop: 4 },
   segmentedButtons: { marginBottom: 16, marginTop: 12 },
+  segmentButton: { flex: 1 },
 });
