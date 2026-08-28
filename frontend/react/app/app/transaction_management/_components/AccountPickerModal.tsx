@@ -26,7 +26,8 @@ import {
 } from "../../../constants/size";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
-import { formatPrivateAmount } from "../../../utils/number";
+import { formatPrivateCurrencyAmount } from "../../../utils/number";
+import { DEFAULT_CURRENCY_CODE } from "../../../constants/currencies";
 import { useTranslation } from "../../../i18n/helper";
 
 type AccountPickerModalItem = AppListItemType & {
@@ -78,7 +79,7 @@ export default function AccountPickerModal({
   title = "Select Account",
 }: AccountPickerModalProps) {
   const { THEME } = useThemeStore();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -243,7 +244,12 @@ export default function AccountPickerModal({
                         <Text
                           style={[styles.accountBalance, { color: textColor }]}
                         >
-                          {formatPrivateAmount(item.balance, areAmountsVisible)}
+                          {formatPrivateCurrencyAmount(
+                            item.balance,
+                            item.currencyCode ?? DEFAULT_CURRENCY_CODE,
+                            locale,
+                            areAmountsVisible,
+                          )}
                         </Text>
                       </View>
                       <View style={styles.selectionIndicator}>

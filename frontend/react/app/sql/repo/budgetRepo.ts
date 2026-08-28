@@ -1,7 +1,7 @@
 import { randomUUID } from "expo-crypto";
 import * as SQLite from "expo-sqlite";
 import { DB_SYNC_STATUS } from "../../constants/enum";
-import { toAmountNumber } from "../../utils/amount";
+import { toCurrencyAmountNumber } from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { getDB } from "../db/database";
 import type {
@@ -53,19 +53,20 @@ export const getBudgetDailyRemainingFromDB = async (
        )
        SELECT
          dated_budgets.transaction_date,
-         ROUND(COALESCE(b.total_budget, 0), 2) AS total_budget,
+         CASE WHEN b.id IS NULL THEN 0 ELSE 1 END AS has_budget,
+         ROUND(COALESCE(b.total_budget, 0), 3) AS total_budget,
          CASE
            WHEN b.id IS NULL OR b.is_active = 0 THEN 0
            ELSE ROUND(b.total_budget - COALESCE((
-             SELECT SUM(t.amount)
+             SELECT SUM(t.converted_amount)
              FROM transactions t
              JOIN accounts a ON a.id = t.account_id
              WHERE t.transaction_type = 'expense'
                AND t.deleted_at IS NULL
-               AND a.currency_code = ?
+               AND t.account_currency_code = ?
                AND t.transaction_date >= date(dated_budgets.transaction_date, 'start of month')
                AND t.transaction_date <= dated_budgets.transaction_date
-           ), 0), 2)
+           ), 0), 3)
          END AS remaining_amount
        FROM dated_budgets
        LEFT JOIN budgets b ON b.id = dated_budgets.budget_id
@@ -162,7 +163,7 @@ export const getBudgetPlanListFromDB = async (
          (SELECT COUNT(*) FROM budget_categories bc
           WHERE bc.budget_id = b.id AND bc.deleted_at IS NULL) AS allocation_count,
          ROUND(COALESCE((SELECT SUM(bc.amount) FROM budget_categories bc
-          WHERE bc.budget_id = b.id AND bc.deleted_at IS NULL), 0), 2)
+          WHERE bc.budget_id = b.id AND bc.deleted_at IS NULL), 0), 3)
           AS allocated_amount
        FROM budget_plans bp
        JOIN budgets b ON b.id = (
@@ -221,12 +222,12 @@ export const getBudgetCategoryProgressFromDB = async (
     const db = await getDB();
     const result = await db.getAllAsync<BudgetCategoryProgressType>(
       `WITH category_spending AS (
-         SELECT t.category_id, ROUND(SUM(t.amount), 2) AS spent_amount
+         SELECT t.category_id, ROUND(SUM(t.converted_amount), 3) AS spent_amount
          FROM transactions t
          JOIN accounts a ON a.id = t.account_id
          WHERE t.transaction_type = 'expense'
            AND t.deleted_at IS NULL
-           AND a.currency_code = ?
+           AND t.account_currency_code = ?
            AND t.transaction_date >= ?
            AND t.transaction_date < date(?, '+1 month')
          GROUP BY t.category_id
@@ -303,12 +304,12 @@ export const getMonthExpenseTotalFromDB = async (
   try {
     const db = await getDB();
     const result = await db.getFirstAsync<{ total: number }>(
-      `SELECT ROUND(COALESCE(SUM(t.amount), 0), 2) AS total
+      `SELECT ROUND(COALESCE(SUM(t.converted_amount), 0), 3) AS total
        FROM transactions t
        JOIN accounts a ON a.id = t.account_id
        WHERE t.transaction_type = 'expense'
          AND t.deleted_at IS NULL
-         AND a.currency_code = ?
+         AND t.account_currency_code = ?
          AND t.transaction_date >= ?
          AND t.transaction_date < date(?, '+1 month');`,
       [currencyCode, month, month],
@@ -327,6 +328,7 @@ export const getMonthExpenseTotalFromDB = async (
 const saveAllocations = async (
   db: SQLite.SQLiteDatabase,
   budgetId: string,
+  currencyCode: string,
   allocations: BudgetSaveReqType["allocations"],
 ) => {
   const existingAllocations = await db.getAllAsync<{
@@ -346,7 +348,7 @@ const saveAllocations = async (
 
   for (const allocation of allocations) {
     const allocationId = existingByCategory.get(allocation.categoryId);
-    const amount = toAmountNumber(allocation.amount);
+    const amount = toCurrencyAmountNumber(allocation.amount, currencyCode);
     if (allocationId) {
       await db.runAsync(
         `UPDATE budget_categories
@@ -377,7 +379,10 @@ const saveAllocations = async (
 export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
   try {
     const db = await getDB();
-    const totalBudget = toAmountNumber(data.totalBudget);
+    const totalBudget = toCurrencyAmountNumber(
+      data.totalBudget,
+      data.currencyCode,
+    );
     let planId = data.planId;
 
     await db.withTransactionAsync(async () => {
@@ -422,7 +427,7 @@ export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
         );
       }
 
-      await saveAllocations(db, budgetId, data.allocations);
+      await saveAllocations(db, budgetId, data.currencyCode, data.allocations);
     });
 
     debugLog(DEBUG_TAG.BUDGET_DB, "Saved budget revision", {

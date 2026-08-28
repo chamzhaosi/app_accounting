@@ -9,10 +9,14 @@ export const EXCHANGE_RATE_ZERO = `0.${"0".repeat(
 export const calculateConvertedAmount = (
   amount: string,
   exchangeRate: string,
+  destinationCurrencyCode?: string,
 ): string => {
   try {
     if (!amount || !exchangeRate) return "";
-    return toAmountString(new Big(amount).times(exchangeRate));
+    return toAmountString(
+      new Big(amount).times(exchangeRate),
+      destinationCurrencyCode,
+    );
   } catch {
     return "";
   }

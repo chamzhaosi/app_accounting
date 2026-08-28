@@ -3,7 +3,7 @@ import {
   absoluteAmount,
   compareAmounts,
   subtractAmounts,
-  toAmountNumber,
+  toCurrencyAmountNumber,
 } from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
@@ -20,31 +20,27 @@ import {
 import { SQLQueryOptions } from "../types/common";
 import { randomUUID } from "expo-crypto";
 
-export const getMainAccountBalanceFromDB = async (): Promise<number> => {
+export const getMainAccountBalanceFromDB = async (
+  currencyCode: string,
+): Promise<number> => {
   try {
     const db = await getDB();
     const result = await db.getFirstAsync<{ balance: number }>(
       `
-        SELECT ROUND(COALESCE(SUM(current_balance), 0), 2) AS balance
+        SELECT ROUND(COALESCE(SUM(current_balance), 0), 3) AS balance
         FROM accounts
         WHERE is_main_account = 1
           AND is_active = 1
-          AND currency_code = COALESCE(
-            (
-              SELECT code
-              FROM currency_preferences
-              WHERE is_default = 1
-              LIMIT 1
-            ),
-            'MYR'
-          )
+          AND currency_code = ?
           AND deleted_at IS NULL;
       `,
+      [currencyCode],
     );
 
     const balance = result?.balance ?? 0;
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Loaded main account balance", {
       balance,
+      currencyCode,
     });
 
     return balance;
@@ -199,7 +195,10 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
   try {
     const db = await getDB();
     const id = randomUUID();
-    const currentBalance = toAmountNumber(data.currentBalance);
+    const currentBalance = toCurrencyAmountNumber(
+      data.currentBalance,
+      data.currencyCode,
+    );
     await db.runAsync(
       `
         INSERT INTO accounts (
@@ -239,7 +238,10 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
 export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
   try {
     const db = await getDB();
-    const currentBalance = toAmountNumber(data.currentBalance);
+    const currentBalance = toCurrencyAmountNumber(
+      data.currentBalance,
+      data.currencyCode,
+    );
     let balanceAdjustment = 0;
 
     await db.withTransactionAsync(async () => {
@@ -266,7 +268,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
             currency_code = ?,
             label = ?,
             descriptions = ?,
-            current_balance = ROUND(?, 2),
+            current_balance = ROUND(?, 3),
             is_main_account = ?,
             sync_status = ?,
             updated_at = datetime('now')

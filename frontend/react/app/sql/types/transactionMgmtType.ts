@@ -38,6 +38,7 @@ export type TransactionMgmtUpdateReqType = TransactionMgmtCreateReqType & {
 };
 
 export type TransactionDateRangeTotalsType = {
+  currency_code: string;
   income_total: number;
   expense_total: number;
 };

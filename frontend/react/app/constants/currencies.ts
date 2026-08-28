@@ -779,3 +779,69 @@ export const CURRENCIES: CurrencyDefinition[] = [
 ];
 
 export const CURRENCY_CODES = new Set(CURRENCIES.map(({ code }) => code));
+
+export const DEFAULT_CURRENCY_DECIMAL_DIGITS = 2;
+export const MAX_CURRENCY_DECIMAL_DIGITS = 3;
+
+const ZERO_DECIMAL_CURRENCY_CODES = new Set([
+  "AFN",
+  "ALL",
+  "BIF",
+  "CLP",
+  "COP",
+  "DJF",
+  "GNF",
+  "HUF",
+  "IDR",
+  "IQD",
+  "IRR",
+  "ISK",
+  "JPY",
+  "KMF",
+  "KPW",
+  "KRW",
+  "LAK",
+  "LBP",
+  "MGA",
+  "MMK",
+  "PKR",
+  "PYG",
+  "RWF",
+  "SOS",
+  "SYP",
+  "UGX",
+  "VND",
+  "VUV",
+  "XAF",
+  "XOF",
+  "XPF",
+  "YER",
+]);
+
+const THREE_DECIMAL_CURRENCY_CODES = new Set([
+  "BHD",
+  "JOD",
+  "KWD",
+  "LYD",
+  "OMR",
+  "TND",
+]);
+
+export const CURRENCY_DECIMAL_DIGITS: Readonly<Record<string, number>> =
+  Object.freeze(
+    Object.fromEntries(
+      CURRENCIES.map(({ code }) => [
+        code,
+        ZERO_DECIMAL_CURRENCY_CODES.has(code)
+          ? 0
+          : THREE_DECIMAL_CURRENCY_CODES.has(code)
+            ? 3
+            : DEFAULT_CURRENCY_DECIMAL_DIGITS,
+      ]),
+    ),
+  );
+
+export const getCurrencyDecimalDigits = (currencyCode?: string): number =>
+  currencyCode
+    ? (CURRENCY_DECIMAL_DIGITS[currencyCode] ?? DEFAULT_CURRENCY_DECIMAL_DIGITS)
+    : DEFAULT_CURRENCY_DECIMAL_DIGITS;

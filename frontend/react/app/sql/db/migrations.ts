@@ -54,6 +54,86 @@ const addSeededCategoryTranslationKeys = async (db: SQLite.SQLiteDatabase) => {
   `);
 };
 
+const migrateCurrencyAmountPrecision = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+    DROP INDEX IF EXISTS idx_accounts_active_type_currency_label;
+    DROP INDEX IF EXISTS idx_accounts_active_currency;
+    DROP INDEX IF EXISTS idx_transactions_active_date;
+    DROP INDEX IF EXISTS idx_transactions_active_account;
+    DROP INDEX IF EXISTS idx_transactions_active_from_account;
+    DROP INDEX IF EXISTS idx_transactions_active_to_account;
+    DROP INDEX IF EXISTS idx_transactions_active_operation;
+    DROP INDEX IF EXISTS idx_transactions_active_exchange_pair_date;
+    DROP INDEX IF EXISTS idx_transactions_active_category_date;
+    DROP INDEX IF EXISTS idx_budgets_active_plan_month;
+    DROP INDEX IF EXISTS idx_budgets_active_month;
+    DROP INDEX IF EXISTS idx_budget_categories_active_budget_category;
+    DROP INDEX IF EXISTS idx_budget_categories_active_budget;
+
+    ALTER TABLE accounts RENAME TO accounts_precision_v12;
+    ALTER TABLE transactions RENAME TO transactions_precision_v12;
+    ALTER TABLE budgets RENAME TO budgets_precision_v12;
+    ALTER TABLE budget_categories RENAME TO budget_categories_precision_v12;
+  `);
+
+  await createAccMgmtTable(db);
+  await createTransactionMgmtTable(db);
+  await createBudgetTables(db);
+
+  await db.execAsync(`
+    INSERT INTO accounts (
+      id, type_id, currency_code, label, descriptions, current_balance,
+      is_main_account, is_active, sync_status, synced_at, deleted_at,
+      created_at, updated_at
+    )
+    SELECT
+      id, type_id, currency_code, label, descriptions, current_balance,
+      is_main_account, is_active, sync_status, synced_at, deleted_at,
+      created_at, updated_at
+    FROM accounts_precision_v12;
+
+    INSERT INTO transactions (
+      id, transaction_type, category_id, account_id, from_account_id,
+      to_account_id, operation_id, transaction_role, amount, currency_code,
+      account_currency_code, converted_amount, exchange_rate,
+      exchange_rate_source, exchange_rate_source_transaction_id, descriptions,
+      transaction_date, is_active, sync_status, synced_at, deleted_at,
+      created_at, updated_at
+    )
+    SELECT
+      id, transaction_type, category_id, account_id, from_account_id,
+      to_account_id, operation_id, transaction_role, amount, currency_code,
+      account_currency_code, converted_amount, exchange_rate,
+      exchange_rate_source, exchange_rate_source_transaction_id, descriptions,
+      transaction_date, is_active, sync_status, synced_at, deleted_at,
+      created_at, updated_at
+    FROM transactions_precision_v12;
+
+    INSERT INTO budgets (
+      id, plan_id, month, total_budget, is_active, sync_status, synced_at,
+      deleted_at, created_at, updated_at
+    )
+    SELECT
+      id, plan_id, month, total_budget, is_active, sync_status, synced_at,
+      deleted_at, created_at, updated_at
+    FROM budgets_precision_v12;
+
+    INSERT INTO budget_categories (
+      id, budget_id, category_id, amount, sync_status, synced_at, deleted_at,
+      created_at, updated_at
+    )
+    SELECT
+      id, budget_id, category_id, amount, sync_status, synced_at, deleted_at,
+      created_at, updated_at
+    FROM budget_categories_precision_v12;
+
+    DROP TABLE budget_categories_precision_v12;
+    DROP TABLE budgets_precision_v12;
+    DROP TABLE transactions_precision_v12;
+    DROP TABLE accounts_precision_v12;
+  `);
+};
+
 export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
   const currentVersion = (await checkCurrentDBVersion(db))?.user_version ?? 0;
 
@@ -419,5 +499,17 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
       `);
       await updateDBVersion(db, 12);
     });
+  }
+
+  if (currentVersion < 13) {
+    await db.execAsync("PRAGMA foreign_keys = OFF;");
+    try {
+      await db.withTransactionAsync(async () => {
+        await migrateCurrencyAmountPrecision(db);
+        await updateDBVersion(db, 13);
+      });
+    } finally {
+      await db.execAsync("PRAGMA foreign_keys = ON;");
+    }
   }
 };

@@ -24,6 +24,7 @@ export default function AccountManagementCreate() {
           control={logic.control}
           isSubmitting={logic.isSubmitting}
           setFocus={logic.setFocus}
+          setValue={logic.setValue}
           showCurrencyField={logic.showCurrencyField}
         />
         <AppDivider />

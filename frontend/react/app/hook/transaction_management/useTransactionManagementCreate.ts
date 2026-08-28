@@ -46,6 +46,7 @@ import {
   getExchangeRateSuggestion,
 } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
+import { getZeroAmount, toAmountString } from "../../utils/amount";
 import {
   calculateConvertedAmount,
   calculateExchangeRate,
@@ -304,7 +305,9 @@ export default function useTransactionManagementCreate() {
     clearExchangeRate();
     setValue(
       "convertedAmount",
-      sourceCurrencyCode === destinationCurrencyCode ? amount : "0.00",
+      sourceCurrencyCode === destinationCurrencyCode
+        ? amount
+        : getZeroAmount(destinationCurrencyCode),
       { shouldValidate: false },
     );
   };
@@ -342,11 +345,15 @@ export default function useTransactionManagementCreate() {
   };
 
   const onCurrencyChange = (nextCurrencyCode: string) => {
+    const nextAmount = toAmountString(amount, nextCurrencyCode);
+    setValue("amount", nextAmount, { shouldValidate: true });
     setValue("currencyCode", nextCurrencyCode, { shouldValidate: true });
     clearExchangeRate();
     setValue(
       "convertedAmount",
-      nextCurrencyCode === accountCurrencyCode ? amount : "0.00",
+      nextCurrencyCode === accountCurrencyCode
+        ? nextAmount
+        : getZeroAmount(accountCurrencyCode),
       { shouldValidate: false },
     );
   };
@@ -360,7 +367,7 @@ export default function useTransactionManagementCreate() {
     if (Number(exchangeRate) > 0) {
       setValue(
         "convertedAmount",
-        calculateConvertedAmount(nextAmount, exchangeRate),
+        calculateConvertedAmount(nextAmount, exchangeRate, accountCurrencyCode),
         { shouldValidate: true },
       );
     }
@@ -373,9 +380,13 @@ export default function useTransactionManagementCreate() {
     setValue("exchangeRateSourceTransactionId", "");
     setRateSuggestionLabel(hasRate ? t("Manual rate") : "");
     if (hasRate) {
-      setValue("convertedAmount", calculateConvertedAmount(amount, nextRate), {
-        shouldValidate: true,
-      });
+      setValue(
+        "convertedAmount",
+        calculateConvertedAmount(amount, nextRate, accountCurrencyCode),
+        {
+          shouldValidate: true,
+        },
+      );
     }
   };
 
@@ -416,9 +427,13 @@ export default function useTransactionManagementCreate() {
         "exchangeRateSourceTransactionId",
         suggestion.sourceTransactionId,
       );
-      setValue("convertedAmount", calculateConvertedAmount(amount, nextRate), {
-        shouldValidate: true,
-      });
+      setValue(
+        "convertedAmount",
+        calculateConvertedAmount(amount, nextRate, accountCurrencyCode),
+        {
+          shouldValidate: true,
+        },
+      );
       setRateSuggestionLabel(
         `${t(suggestion.source === "inverse" ? "Suggested from reverse rate" : "Previous rate")} · ${suggestion.transactionDate}`,
       );
@@ -438,7 +453,11 @@ export default function useTransactionManagementCreate() {
     appendFeeField({
       accountId:
         transactionType === TXN_TYPE_ENUM.TRANSFER ? fromAccountId : accountId,
-      amount: "0.00",
+      amount: getZeroAmount(
+        transactionType === TXN_TYPE_ENUM.TRANSFER
+          ? currencyCode
+          : accountCurrencyCode,
+      ),
       categoryId: defaultFeeCategoryId,
     });
   };

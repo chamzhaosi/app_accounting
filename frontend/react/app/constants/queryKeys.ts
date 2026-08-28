@@ -29,8 +29,11 @@ export const budgetQueryKeys = {
   months: () => [...budgetQueryKeys.all, "month"] as const,
   month: (params: { month: string; currencyCode: string }) =>
     [...budgetQueryKeys.months(), params] as const,
-  dailyRemaining: (params: { startDate: string; endDate: string }) =>
-    [...budgetQueryKeys.months(), "dailyRemaining", params] as const,
+  dailyRemaining: (params: {
+    startDate: string;
+    endDate: string;
+    currencyCode: string;
+  }) => [...budgetQueryKeys.months(), "dailyRemaining", params] as const,
   management: (planId?: string) =>
     [...budgetQueryKeys.all, "management", planId ?? "create"] as const,
 };
@@ -47,8 +50,12 @@ export const accountTypeQueryKeys = {
 export const accountManagementQueryKeys = {
   all: [QueryKeyModule.ACCOUNT_MANAGEMENT] as const,
   lists: () => [...accountManagementQueryKeys.all, "list"] as const,
-  mainBalance: () =>
+  mainBalances: () =>
     [...accountManagementQueryKeys.lists(), "mainBalance"] as const,
+  mainBalance: (currencyCode?: string) =>
+    currencyCode
+      ? ([...accountManagementQueryKeys.mainBalances(), currencyCode] as const)
+      : accountManagementQueryKeys.mainBalances(),
   list: (params: { pageSize: number }) =>
     [...accountManagementQueryKeys.lists(), params] as const,
   selectableList: (params: { pageSize: number }) =>
@@ -81,6 +88,7 @@ export const transactionManagementQueryKeys = {
   dateRangeTotals: (params: {
     startDate: string;
     endDate: string;
+    currencyCode: string;
     accountId?: string;
   }) =>
     [
@@ -88,7 +96,11 @@ export const transactionManagementQueryKeys = {
       "dateRangeTotals",
       params,
     ] as const,
-  dailyTotals: (params: { startDate: string; endDate: string }) =>
+  dailyTotals: (params: {
+    startDate: string;
+    endDate: string;
+    currencyCode: string;
+  }) =>
     [...transactionManagementQueryKeys.lists(), "dailyTotals", params] as const,
   accountForwardBalance: (params: { accountId: string; startDate: string }) =>
     [

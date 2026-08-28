@@ -1,4 +1,6 @@
 export const zhHans: Record<string, string> = {
+  "No {{currency}} budget configured": "尚未配置 {{currency}} 预算",
+  "Open all daily currency totals": "打开所有每日货币汇总",
   "Personal Accounting App": "个人记账应用",
   Dashboard: "概览",
   Accounts: "账户",
@@ -226,6 +228,7 @@ export const zhHans: Record<string, string> = {
   Balance: "余额",
   "Cash flow": "现金流",
   "Budget pace": "预算进度",
+  "Budget used": "预算使用率",
   "Monthly budget": "每月预算",
   Paused: "已暂停",
   Spent: "已支出",
@@ -259,6 +262,8 @@ export const zhHans: Record<string, string> = {
   "No budget yet": "尚未设置预算",
   "No active budget for this month": "本月没有有效预算",
   "Unable to load budget": "无法加载预算",
+  "Something went wrong while loading this budget. Try again or choose another currency.":
+    "加载此预算时出现问题。请重试或选择其他货币。",
   "No budget for this month": "本月没有预算",
   "Create Budget": "创建预算",
   "No category allocations for this month.": "本月没有分类预算分配。",

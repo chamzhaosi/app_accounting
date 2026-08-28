@@ -74,7 +74,7 @@ export const getCategoryPeriodSummaryListFromDB = async (
       `
         SELECT
           categories.*,
-          ROUND(SUM(transactions.amount), 2) AS period_total,
+          ROUND(SUM(transactions.amount), 3) AS period_total,
           COUNT(transactions.id) AS transaction_count
         FROM categories
         INNER JOIN transactions

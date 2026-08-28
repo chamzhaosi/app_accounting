@@ -234,6 +234,7 @@ export const ms: Record<keyof typeof zhHans, string> = {
   Balance: "Baki",
   "Cash flow": "Aliran tunai",
   "Budget pace": "Kemajuan bajet",
+  "Budget used": "Bajet digunakan",
   "Monthly budget": "Bajet bulanan",
   Paused: "Dijeda",
   Spent: "Dibelanjakan",
@@ -267,6 +268,8 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "No budget yet": "Belum ada bajet",
   "No active budget for this month": "Tiada bajet aktif untuk bulan ini",
   "Unable to load budget": "Tidak dapat memuatkan bajet",
+  "Something went wrong while loading this budget. Try again or choose another currency.":
+    "Sesuatu telah berlaku semasa memuatkan bajet ini. Cuba lagi atau pilih mata wang lain.",
   "No budget for this month": "Tiada bajet untuk bulan ini",
   "Create Budget": "Cipta Bajet",
   "No category allocations for this month.":
@@ -582,4 +585,7 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Manual rate": "Kadar manual",
   "Previous rate": "Kadar sebelumnya",
   "Suggested from reverse rate": "Cadangan daripada kadar songsang",
+  "No {{currency}} budget configured":
+    "Tiada bajet {{currency}} dikonfigurasikan",
+  "Open all daily currency totals": "Buka semua jumlah mata wang harian",
 };

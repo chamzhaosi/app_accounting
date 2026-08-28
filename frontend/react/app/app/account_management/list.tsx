@@ -19,12 +19,12 @@ import useAccountManagementList from "../../hook/account_management/useAccountMa
 import { useTranslation } from "../../i18n/helper";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { formatPrivateAmount } from "../../utils/number";
+import { formatPrivateCurrencyAmount } from "../../utils/number";
 
 export default function AccountManagementList() {
   const logic = useAccountManagementList();
   const { THEME } = useThemeStore();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -128,8 +128,10 @@ export default function AccountManagementList() {
                     {account.currency_code}
                   </Text>
                   <Text style={styles.accountBalance}>
-                    {formatPrivateAmount(
+                    {formatPrivateCurrencyAmount(
                       account.current_balance,
+                      account.currency_code,
+                      locale,
                       areAmountsVisible,
                     )}
                   </Text>

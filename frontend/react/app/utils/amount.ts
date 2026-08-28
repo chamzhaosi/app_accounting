@@ -1,28 +1,59 @@
 import Big from "big.js";
+import {
+  getCurrencyDecimalDigits,
+  MAX_CURRENCY_DECIMAL_DIGITS,
+} from "../constants/currencies";
 
 export const AMOUNT_INTEGER_DIGITS = 13;
-export const AMOUNT_DECIMAL_PLACES = 2;
+export const AMOUNT_DECIMAL_PLACES = MAX_CURRENCY_DECIMAL_DIGITS;
 export const AMOUNT_MAX_LENGTH =
   AMOUNT_INTEGER_DIGITS + 1 + AMOUNT_DECIMAL_PLACES;
-export const AMOUNT_MAX_VALUE = "9999999999999.99";
-export const AMOUNT_PATTERN = /^\d{1,13}(?:\.\d{1,2})?$/;
+export const AMOUNT_MAX_VALUE = "9999999999999.999";
+export const AMOUNT_PATTERN = /^\d{1,13}(?:\.\d{1,3})?$/;
+
+export const getAmountPattern = (decimalPlaces: number): RegExp =>
+  decimalPlaces === 0
+    ? /^\d{1,13}$/
+    : new RegExp(`^\\d{1,13}(?:\\.\\d{1,${decimalPlaces}})?$`);
+
+export const getAmountMaxLength = (currencyCode?: string): number => {
+  const decimalPlaces = getCurrencyDecimalDigits(currencyCode);
+  return AMOUNT_INTEGER_DIGITS + (decimalPlaces > 0 ? decimalPlaces + 1 : 0);
+};
 
 export type AmountValue = Big.BigSource | null | undefined;
 
 export const toBigAmount = (value: AmountValue): Big =>
   new Big(value === "" || value == null ? 0 : value);
 
-export const isValidAmount = (value: string): boolean =>
-  AMOUNT_PATTERN.test(value) && toBigAmount(value).lte(AMOUNT_MAX_VALUE);
+export const isValidAmount = (value: string, currencyCode?: string): boolean =>
+  getAmountPattern(getCurrencyDecimalDigits(currencyCode)).test(value) &&
+  toBigAmount(value).lte(AMOUNT_MAX_VALUE);
 
 export const isAmountWithinRange = (value: AmountValue): boolean =>
   toBigAmount(value).abs().lte(AMOUNT_MAX_VALUE);
 
-export const toAmountNumber = (value: AmountValue): number =>
-  Number(toBigAmount(value).round(AMOUNT_DECIMAL_PLACES).toFixed(2));
+export const toAmountNumber = (
+  value: AmountValue,
+  decimalPlaces = AMOUNT_DECIMAL_PLACES,
+): number =>
+  Number(toBigAmount(value).round(decimalPlaces).toFixed(decimalPlaces));
 
-export const toAmountString = (value: AmountValue): string =>
-  toBigAmount(value).round(AMOUNT_DECIMAL_PLACES).toFixed(2);
+export const toAmountString = (
+  value: AmountValue,
+  currencyCode?: string,
+): string => {
+  const decimalPlaces = getCurrencyDecimalDigits(currencyCode);
+  return toBigAmount(value).round(decimalPlaces).toFixed(decimalPlaces);
+};
+
+export const getZeroAmount = (currencyCode?: string): string =>
+  toAmountString(0, currencyCode);
+
+export const toCurrencyAmountNumber = (
+  value: AmountValue,
+  currencyCode?: string,
+): number => toAmountNumber(value, getCurrencyDecimalDigits(currencyCode));
 
 export const sumAmounts = (values: AmountValue[]): number =>
   toAmountNumber(

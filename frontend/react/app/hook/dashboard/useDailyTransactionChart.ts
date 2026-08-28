@@ -8,6 +8,7 @@ import { DEBUG_TAG } from "../../utils/debugLog";
 import useBudgetDailyRemaining from "./useBudgetDailyRemaining";
 import { useTranslation } from "../../i18n/helper";
 import { formatLocalizedDateLabel } from "../../utils/date";
+import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 
 export type ChartPoint = {
   value: number;
@@ -27,6 +28,7 @@ export default function useDailyTransactionChart(
   endDate: string,
 ) {
   const { locale } = useTranslation();
+  const currencyCode = useReportingCurrencyStore((state) => state.currencyCode);
   const [mode, setMode] = useState<ChartMode>("daily");
   const isCumulative = mode === "cumulative";
   const queryStartDate = dayjs(startDate).startOf("month").format("YYYY-MM-DD");
@@ -34,12 +36,14 @@ export default function useDailyTransactionChart(
     queryKey: transactionManagementQueryKeys.dailyTotals({
       startDate: queryStartDate,
       endDate,
+      currencyCode,
     }),
-    queryFn: () => getTransactionDailyTotals(queryStartDate, endDate),
-    enabled: Boolean(startDate && endDate),
+    queryFn: () =>
+      getTransactionDailyTotals(queryStartDate, endDate, currencyCode),
+    enabled: Boolean(startDate && endDate && currencyCode),
     placeholderData: (previousData) => previousData,
   });
-  const budgetQuery = useBudgetDailyRemaining(startDate, endDate);
+  const budgetQuery = useBudgetDailyRemaining(startDate, endDate, currencyCode);
 
   useEffect(() => {
     if (!dailyTotalsQuery.error) return;
@@ -179,6 +183,7 @@ export default function useDailyTransactionChart(
 
   return {
     budgetPaceData: chartData.cumulative.budgetPace,
+    currencyCode,
     dateRangeLabel: `${formatLocalizedDateLabel(
       dayjs(startDate).toDate(),
       locale,

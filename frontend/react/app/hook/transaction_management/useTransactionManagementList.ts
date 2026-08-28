@@ -24,17 +24,23 @@ export type TransactionListItem = {
   title: string;
   subtitle: string;
   fromAccountLabel?: string;
+  fromAccountCurrencyCode?: string;
   toAccountLabel?: string;
+  toAccountCurrencyCode?: string;
   accountId?: string;
-  amount: number;
+  primaryAmount: number;
+  primaryCurrencyCode: string;
+  secondaryAmount?: number;
+  secondaryCurrencyCode?: string;
   balanceEffect: number;
+  dailyNetEffect: number;
   transactionType: TXN_TYPE_ENUM;
   transactionDate: string;
 };
 
 export type TransactionDateSection = {
   transactionDate: string;
-  netTotal: number;
+  currencyNets: Array<{ currencyCode: string; netTotal: number }>;
   data: TransactionListItem[];
 };
 
@@ -85,19 +91,38 @@ export default function useTransactionManagementList({
       const isExpense = transaction.transaction_type === TXN_TYPE_ENUM.EXPENSE;
       const isTransfer =
         transaction.transaction_type === TXN_TYPE_ENUM.TRANSFER;
-      const isOutgoingTransfer =
+      const isViewingOutgoingTransfer =
         isTransfer && transaction.from_account_id === accountId;
-      const balanceEffect = isIncome
+      const primaryAmount = isViewingOutgoingTransfer
         ? transaction.amount
+        : transaction.converted_amount;
+      const primaryCurrencyCode = isViewingOutgoingTransfer
+        ? transaction.currency_code
+        : transaction.account_currency_code;
+      const balanceEffect = isIncome
+        ? primaryAmount
         : isExpense
-          ? multiplyAmount(transaction.amount, -1)
+          ? multiplyAmount(primaryAmount, -1)
           : isTransfer
             ? accountId
-              ? isOutgoingTransfer
-                ? multiplyAmount(transaction.amount, -1)
-                : transaction.amount
-              : 0
-            : transaction.amount;
+              ? isViewingOutgoingTransfer
+                ? multiplyAmount(primaryAmount, -1)
+                : primaryAmount
+              : primaryAmount
+            : transaction.converted_amount;
+      const dailyNetEffect = isTransfer && !accountId ? 0 : balanceEffect;
+      const hasDifferentCurrencies =
+        transaction.currency_code !== transaction.account_currency_code;
+      const secondaryAmount = hasDifferentCurrencies
+        ? isViewingOutgoingTransfer
+          ? transaction.converted_amount
+          : transaction.amount
+        : undefined;
+      const secondaryCurrencyCode = hasDifferentCurrencies
+        ? isViewingOutgoingTransfer
+          ? transaction.account_currency_code
+          : transaction.currency_code
+        : undefined;
       const title =
         isIncome || isExpense
           ? getCategoryDisplayLabel(
@@ -111,7 +136,7 @@ export default function useTransactionManagementList({
             : t("Balance Adjustment");
       const subtitle =
         isIncome || isExpense
-          ? `${transaction.account_label ?? t("Account")} · ${t(
+          ? `${transaction.currency_code} - ${transaction.account_label ?? t("Account")} · ${t(
               capitalizeFirst(transaction.transaction_type),
             )}`
           : isTransfer
@@ -137,12 +162,22 @@ export default function useTransactionManagementList({
         fromAccountLabel: isTransfer
           ? (transaction.from_account_label ?? t("Account"))
           : undefined,
+        fromAccountCurrencyCode: isTransfer
+          ? transaction.currency_code
+          : undefined,
         toAccountLabel: isTransfer
           ? (transaction.to_account_label ?? t("Account"))
           : undefined,
+        toAccountCurrencyCode: isTransfer
+          ? transaction.account_currency_code
+          : undefined,
         accountId: transaction.account_id ?? undefined,
-        amount: transaction.amount,
+        primaryAmount,
+        primaryCurrencyCode,
+        secondaryAmount,
+        secondaryCurrencyCode,
         balanceEffect,
+        dailyNetEffect,
         transactionType: transaction.transaction_type,
         transactionDate: transaction.transaction_date,
       };
@@ -151,11 +186,24 @@ export default function useTransactionManagementList({
       groups.set(item.transactionDate, items);
     });
 
-    return Array.from(groups, ([transactionDate, items]) => ({
-      transactionDate,
-      netTotal: sumAmounts(items.map((item) => item.balanceEffect)),
-      data: items,
-    }));
+    return Array.from(groups, ([transactionDate, items]) => {
+      const totals = new Map<string, number[]>();
+      items.forEach((item) => {
+        if (!accountId && item.transactionType === TXN_TYPE_ENUM.TRANSFER)
+          return;
+        const values = totals.get(item.primaryCurrencyCode) ?? [];
+        values.push(item.dailyNetEffect);
+        totals.set(item.primaryCurrencyCode, values);
+      });
+      return {
+        transactionDate,
+        currencyNets: Array.from(totals, ([currencyCode, values]) => ({
+          currencyCode,
+          netTotal: sumAmounts(values),
+        })),
+        data: items,
+      };
+    });
   }, [accountId, data, t]);
 
   useEffect(() => {

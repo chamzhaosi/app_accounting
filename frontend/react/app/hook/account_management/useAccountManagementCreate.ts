@@ -132,6 +132,7 @@ export default function useAccountManagementCreate() {
     onSubmit,
     rspErrorMsg,
     setFocus,
+    setValue,
     showCurrencyField: currencyPreferences.showCurrencyField,
   };
 }

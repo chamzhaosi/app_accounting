@@ -5,6 +5,7 @@ import {
   isAmountWithinRange,
   multiplyAmount,
   toAmountNumber,
+  toCurrencyAmountNumber,
 } from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import {
@@ -121,7 +122,7 @@ export const getAccountDailyBalanceChangesFromDB = async (
              WHEN transaction_type = 'transfer' AND to_account_id = ? THEN converted_amount
              ELSE 0
            END
-         ), 0), 2) AS balance_change
+         ), 0), 3) AS balance_change
        FROM transactions
        WHERE deleted_at IS NULL
          AND transaction_date >= ?
@@ -173,7 +174,7 @@ export const getCategoryDailyTotalsFromDB = async (
     const result = await db.getAllAsync<CategoryDailyTotalType>(
       `SELECT
          transaction_date,
-         ROUND(COALESCE(SUM(amount), 0), 2) AS daily_total
+         ROUND(COALESCE(SUM(amount), 0), 3) AS daily_total
        FROM transactions
        WHERE category_id = ?
          AND transaction_date >= ?
@@ -207,6 +208,7 @@ export const getCategoryDailyTotalsFromDB = async (
 export const getTransactionDailyTotalsFromDB = async (
   startDate: string,
   endDate: string,
+  currencyCode: string,
 ): Promise<TransactionDailyTotalsType[]> => {
   try {
     const db = await getDB();
@@ -214,36 +216,38 @@ export const getTransactionDailyTotalsFromDB = async (
       `
         SELECT
           transaction_date,
+          account_currency_code AS currency_code,
           ROUND(COALESCE(SUM(
             CASE
-              WHEN transaction_type = 'income' THEN amount
-              WHEN transaction_type = 'adjustment' AND amount > 0 THEN amount
+              WHEN transaction_type = 'income' THEN converted_amount
+              WHEN transaction_type = 'adjustment' AND converted_amount > 0 THEN converted_amount
               ELSE 0
             END
-          ), 0), 2) AS income_total,
+          ), 0), 3) AS income_total,
           ROUND(COALESCE(SUM(
             CASE
-              WHEN transaction_type = 'expense' THEN amount
-              WHEN transaction_type = 'adjustment' AND amount < 0 THEN ABS(amount)
+              WHEN transaction_type = 'expense' THEN converted_amount
+              WHEN transaction_type = 'adjustment' AND converted_amount < 0 THEN ABS(converted_amount)
               ELSE 0
             END
-          ), 0), 2) AS expense_total,
-          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0), 2) AS recorded_income_total,
-          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0), 2) AS recorded_expense_total
+          ), 0), 3) AS expense_total,
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN converted_amount ELSE 0 END), 0), 3) AS recorded_income_total,
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN converted_amount ELSE 0 END), 0), 3) AS recorded_expense_total
         FROM transactions
         WHERE deleted_at IS NULL
           AND transaction_date >= ?
           AND transaction_date <= ?
+          AND account_currency_code = ?
         GROUP BY transaction_date
         ORDER BY transaction_date ASC;
       `,
-      [startDate, endDate],
+      [startDate, endDate, currencyCode],
     );
 
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
       "Loaded daily transaction totals",
-      { startDate, endDate, count: result.length },
+      { startDate, endDate, currencyCode, count: result.length },
     );
 
     return result;
@@ -326,7 +330,7 @@ export const getAccountForwardBalanceFromDB = async (
             FROM transactions
             WHERE deleted_at IS NULL
               AND transaction_date >= ?
-          ), 0), 2) AS forward_balance
+          ), 0), 3) AS forward_balance
         FROM accounts
         WHERE id = ?
           AND deleted_at IS NULL;
@@ -377,7 +381,7 @@ export const getAccountDateRangeFlowTotalsFromDB = async (
               WHEN transaction_type = 'transfer' AND to_account_id = ? THEN converted_amount
               ELSE 0
             END
-          ), 0), 2) AS in_total,
+          ), 0), 3) AS in_total,
           ROUND(COALESCE(SUM(
             CASE
               WHEN transaction_type = 'expense' AND account_id = ? THEN converted_amount
@@ -385,7 +389,7 @@ export const getAccountDateRangeFlowTotalsFromDB = async (
               WHEN transaction_type = 'transfer' AND from_account_id = ? THEN amount
               ELSE 0
             END
-          ), 0), 2) AS out_total
+          ), 0), 3) AS out_total
         FROM transactions
         WHERE deleted_at IS NULL
           AND transaction_date >= ?
@@ -431,7 +435,7 @@ export const getCategoryDateRangeSummaryFromDB = async (
     const result = await db.getFirstAsync<CategoryDateRangeSummaryType>(
       `
         SELECT
-          ROUND(COALESCE(SUM(amount), 0), 2) AS total_amount,
+          ROUND(COALESCE(SUM(amount), 0), 3) AS total_amount,
           COUNT(*) AS transaction_count
         FROM transactions
         WHERE category_id = ?
@@ -463,6 +467,7 @@ export const getCategoryDateRangeSummaryFromDB = async (
 export const getTransactionDateRangeTotalsFromDB = async (
   startDate: string,
   endDate: string,
+  currencyCode: string,
   accountId?: string,
 ): Promise<TransactionDateRangeTotalsType> => {
   try {
@@ -470,22 +475,30 @@ export const getTransactionDateRangeTotalsFromDB = async (
     const result = await db.getFirstAsync<TransactionDateRangeTotalsType>(
       `
         SELECT
-          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0), 2) AS income_total,
-          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0), 2) AS expense_total
+          ? AS currency_code,
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN converted_amount ELSE 0 END), 0), 3) AS income_total,
+          ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN converted_amount ELSE 0 END), 0), 3) AS expense_total
         FROM transactions
         WHERE deleted_at IS NULL
           AND transaction_date >= ?
           AND transaction_date <= ?
+          AND account_currency_code = ?
           ${accountId ? "AND account_id = ?" : ""};
       `,
-      accountId ? [startDate, endDate, accountId] : [startDate, endDate],
+      accountId
+        ? [currencyCode, startDate, endDate, currencyCode, accountId]
+        : [currencyCode, startDate, endDate, currencyCode],
     );
 
-    const totals = result ?? { income_total: 0, expense_total: 0 };
+    const totals = result ?? {
+      currency_code: currencyCode,
+      income_total: 0,
+      expense_total: 0,
+    };
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
       "Loaded transaction date range totals",
-      { startDate, endDate, accountId, ...totals },
+      { startDate, endDate, currencyCode, accountId, ...totals },
     );
 
     return totals;
@@ -506,8 +519,11 @@ const getBalanceTransaction = (
   accountId: data.accountId || null,
   fromAccountId: data.fromAccountId || null,
   toAccountId: data.toAccountId || null,
-  amount: toAmountNumber(data.amount),
-  accountAmount: toAmountNumber(data.convertedAmount),
+  amount: toCurrencyAmountNumber(data.amount, data.currencyCode),
+  accountAmount: toCurrencyAmountNumber(
+    data.convertedAmount,
+    data.accountCurrencyCode,
+  ),
 });
 
 const getStoredBalanceTransaction = (
@@ -863,13 +879,16 @@ export const createNewTransactionMgmtToDB = async (
           isTransfer ? data.fromAccountId : null,
           isTransfer ? data.toAccountId : null,
           operationId,
-          toAmountNumber(data.amount),
+          toCurrencyAmountNumber(data.amount, data.currencyCode),
           data.currencyCode,
           data.accountCurrencyCode,
-          toAmountNumber(data.convertedAmount),
+          toCurrencyAmountNumber(
+            data.convertedAmount,
+            data.accountCurrencyCode,
+          ),
           data.exchangeRate ? Number(data.exchangeRate) : null,
           data.exchangeRateSource ?? null,
-          data.exchangeRateSourceTransactionId ?? null,
+          data.exchangeRateSourceTransactionId?.trim() || null,
           data.description || null,
           data.transactionDate,
         ],
@@ -911,10 +930,10 @@ export const createNewTransactionMgmtToDB = async (
             fee.categoryId,
             fee.accountId,
             operationId,
-            toAmountNumber(fee.amount),
+            toCurrencyAmountNumber(fee.amount, feeAccount.currency_code),
             feeAccount.currency_code,
             feeAccount.currency_code,
-            toAmountNumber(fee.amount),
+            toCurrencyAmountNumber(fee.amount, feeAccount.currency_code),
             data.transactionDate,
           ],
         );
@@ -1000,13 +1019,16 @@ export const updateTransactionMgmtToDB = async (
           isTransfer ? null : data.accountId,
           isTransfer ? data.fromAccountId : null,
           isTransfer ? data.toAccountId : null,
-          toAmountNumber(data.amount),
+          toCurrencyAmountNumber(data.amount, data.currencyCode),
           data.currencyCode,
           data.accountCurrencyCode,
-          toAmountNumber(data.convertedAmount),
+          toCurrencyAmountNumber(
+            data.convertedAmount,
+            data.accountCurrencyCode,
+          ),
           data.exchangeRate ? Number(data.exchangeRate) : null,
           data.exchangeRateSource ?? null,
-          data.exchangeRateSourceTransactionId ?? null,
+          data.exchangeRateSourceTransactionId?.trim() || null,
           data.description || null,
           data.transactionDate,
           DB_SYNC_STATUS.PENDING,
@@ -1056,10 +1078,10 @@ export const updateTransactionMgmtToDB = async (
             fee.categoryId,
             fee.accountId,
             currentMain.operation_id,
-            toAmountNumber(fee.amount),
+            toCurrencyAmountNumber(fee.amount, feeAccount.currency_code),
             feeAccount.currency_code,
             feeAccount.currency_code,
-            toAmountNumber(fee.amount),
+            toCurrencyAmountNumber(fee.amount, feeAccount.currency_code),
             data.transactionDate,
           ],
         );

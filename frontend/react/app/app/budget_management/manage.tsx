@@ -15,8 +15,8 @@ import AppView from "../../components/AppView";
 import useBudgetManagement from "../../hook/budget_management/useBudgetManagement";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
-import { absoluteAmount, AMOUNT_MAX_LENGTH } from "../../utils/amount";
-import { formatPrivateAmount } from "../../utils/number";
+import { absoluteAmount } from "../../utils/amount";
+import { formatPrivateCurrencyAmount } from "../../utils/number";
 import BudgetCategoryPickerModal from "./_components/BudgetCategoryPickerModal";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
@@ -28,8 +28,11 @@ export default function BudgetManagement() {
     allocatedAmount,
     allocationDifference,
     allocations,
+    amountDecimalPlaces,
+    amountMaxLength,
     availableCategories,
     control,
+    currencyCode,
     currencyOptions,
     handleSubmit,
     hasCategories,
@@ -40,6 +43,7 @@ export default function BudgetManagement() {
     isLoading,
     isSaving,
     onAllocationChange,
+    onCurrencyChange,
     onDismissCategoryPicker,
     onOpenCategoryPicker,
     onRemoveAllocation,
@@ -119,12 +123,14 @@ export default function BudgetManagement() {
               <Controller
                 control={control}
                 name="currencyCode"
-                render={({ field: { value, onChange } }) => (
+                render={({ field: { value } }) => (
                   <AppSelect
                     label="Currency"
                     value={value}
                     options={currencyOptions}
-                    onChange={(nextValue) => onChange(nextValue ?? "")}
+                    onChange={(nextValue) =>
+                      onCurrencyChange(String(nextValue ?? ""))
+                    }
                     errorField={errors.currencyCode}
                     showClear={false}
                     disabled={isFormDisabled || isCurrencyLocked}
@@ -149,7 +155,8 @@ export default function BudgetManagement() {
                     errorField={errors.totalBudget}
                     editable={!isFormDisabled}
                     fixedDecimalInput
-                    maxLength={AMOUNT_MAX_LENGTH}
+                    fixedDecimalPlaces={amountDecimalPlaces}
+                    maxLength={amountMaxLength}
                     showClear
                     style={styles.totalBudgetField}
                   />
@@ -188,10 +195,15 @@ export default function BudgetManagement() {
             { backgroundColor: THEME.secondaryContainer },
           ]}
         >
-          <SummaryValue label="Allocated" value={allocatedAmount} />
+          <SummaryValue
+            label="Allocated"
+            value={allocatedAmount}
+            currencyCode={currencyCode}
+          />
           <SummaryValue
             label={allocationDifference >= 0 ? "Unallocated" : "Overallocated"}
             value={absoluteAmount(allocationDifference)}
+            currencyCode={currencyCode}
             color={allocationDifference < 0 ? THEME.error : THEME.primary}
           />
         </Surface>
@@ -228,13 +240,14 @@ export default function BudgetManagement() {
               dense
               label="Amount"
               keyboardType="number-pad"
-              value={allocations[category.category_id] ?? "0.00"}
+              value={allocations[category.category_id] ?? "0"}
               onChangeText={(text) =>
                 onAllocationChange(category.category_id, text)
               }
               editable={!isFormDisabled}
               fixedDecimalInput
-              maxLength={AMOUNT_MAX_LENGTH}
+              fixedDecimalPlaces={amountDecimalPlaces}
+              maxLength={amountMaxLength}
               showClear
               style={styles.amountInput}
             />
@@ -306,13 +319,15 @@ export default function BudgetManagement() {
 function SummaryValue({
   label,
   value,
+  currencyCode,
   color,
 }: {
   label: string;
   value: number;
+  currencyCode: string;
   color?: string;
 }) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -320,7 +335,12 @@ function SummaryValue({
     <View style={styles.summaryValue}>
       <Text variant="labelLarge">{t(label)}</Text>
       <Text variant="titleLarge" style={color ? { color } : undefined}>
-        {formatPrivateAmount(value, areAmountsVisible)}
+        {formatPrivateCurrencyAmount(
+          value,
+          currencyCode,
+          locale,
+          areAmountsVisible,
+        )}
       </Text>
     </View>
   );

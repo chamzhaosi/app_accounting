@@ -28,8 +28,9 @@ const isEnabledCurrency = async (currencyCode: string) => {
   return preferences?.enabledCurrencyCodes.includes(currencyCode) ?? false;
 };
 
-export const getMainAccountBalance = async (): Promise<number> =>
-  getMainAccountBalanceFromDB();
+export const getMainAccountBalance = async (
+  currencyCode: string,
+): Promise<number> => getMainAccountBalanceFromDB(currencyCode);
 
 export const getAccMgmtList = async (
   curPage: number,
@@ -62,8 +63,8 @@ export const createNewAccMgmt = async (
   if (!(await isEnabledCurrency(data.currencyCode)))
     return "Selected currency is not enabled.";
 
-  if (!isValidAmount(data.currentBalance || "0"))
-    return "Enter a balance with up to 13 integer digits and 2 decimal places.";
+  if (!isValidAmount(data.currentBalance || "0", data.currencyCode))
+    return "Enter a balance using the currency's decimal precision.";
 
   const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
     data.typeId,
@@ -96,8 +97,8 @@ export const getAccMgmtById = async (
 export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
   if (!CURRENCY_CODES.has(data.currencyCode)) return "Please select a currency";
 
-  if (!isValidAmount(data.currentBalance || "0"))
-    return "Enter a balance with up to 13 integer digits and 2 decimal places.";
+  if (!isValidAmount(data.currentBalance || "0", data.currencyCode))
+    return "Enter a balance using the currency's decimal precision.";
 
   const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
     data.typeId,

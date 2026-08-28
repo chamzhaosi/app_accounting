@@ -45,7 +45,7 @@ import {
   updateTransactionMgmt,
 } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
-import { toAmountString } from "../../utils/amount";
+import { getZeroAmount, toAmountString } from "../../utils/amount";
 import {
   calculateConvertedAmount,
   calculateExchangeRate,
@@ -336,7 +336,9 @@ export default function useTransactionManagementDetail() {
     clearExchangeRate();
     setValue(
       "convertedAmount",
-      sourceCurrencyCode === destinationCurrencyCode ? amount : "0.00",
+      sourceCurrencyCode === destinationCurrencyCode
+        ? amount
+        : getZeroAmount(destinationCurrencyCode),
       { shouldValidate: false },
     );
   };
@@ -372,11 +374,15 @@ export default function useTransactionManagementDetail() {
   };
 
   const onCurrencyChange = (nextCurrencyCode: string) => {
+    const nextAmount = toAmountString(amount, nextCurrencyCode);
+    setValue("amount", nextAmount, { shouldValidate: true });
     setValue("currencyCode", nextCurrencyCode, { shouldValidate: true });
     clearExchangeRate();
     setValue(
       "convertedAmount",
-      nextCurrencyCode === accountCurrencyCode ? amount : "0.00",
+      nextCurrencyCode === accountCurrencyCode
+        ? nextAmount
+        : getZeroAmount(accountCurrencyCode),
       { shouldValidate: false },
     );
   };
@@ -388,7 +394,7 @@ export default function useTransactionManagementDetail() {
     } else if (Number(exchangeRate) > 0) {
       setValue(
         "convertedAmount",
-        calculateConvertedAmount(nextAmount, exchangeRate),
+        calculateConvertedAmount(nextAmount, exchangeRate, accountCurrencyCode),
         { shouldValidate: true },
       );
     }
@@ -401,9 +407,13 @@ export default function useTransactionManagementDetail() {
     setValue("exchangeRateSourceTransactionId", "");
     setRateSuggestionLabel(hasRate ? t("Manual rate") : "");
     if (hasRate) {
-      setValue("convertedAmount", calculateConvertedAmount(amount, nextRate), {
-        shouldValidate: true,
-      });
+      setValue(
+        "convertedAmount",
+        calculateConvertedAmount(amount, nextRate, accountCurrencyCode),
+        {
+          shouldValidate: true,
+        },
+      );
     }
   };
 
@@ -444,9 +454,13 @@ export default function useTransactionManagementDetail() {
         "exchangeRateSourceTransactionId",
         suggestion.sourceTransactionId,
       );
-      setValue("convertedAmount", calculateConvertedAmount(amount, nextRate), {
-        shouldValidate: true,
-      });
+      setValue(
+        "convertedAmount",
+        calculateConvertedAmount(amount, nextRate, accountCurrencyCode),
+        {
+          shouldValidate: true,
+        },
+      );
       setRateSuggestionLabel(
         `${t(suggestion.source === "inverse" ? "Suggested from reverse rate" : "Previous rate")} · ${suggestion.transactionDate}`,
       );
@@ -459,7 +473,11 @@ export default function useTransactionManagementDetail() {
     appendFeeField({
       accountId:
         transactionType === TXN_TYPE_ENUM.TRANSFER ? fromAccountId : accountId,
-      amount: "0.00",
+      amount: getZeroAmount(
+        transactionType === TXN_TYPE_ENUM.TRANSFER
+          ? currencyCode
+          : accountCurrencyCode,
+      ),
       categoryId: defaultFeeCategoryId,
     });
   };
@@ -531,10 +549,13 @@ export default function useTransactionManagementDetail() {
       accountId: transaction.account_id ?? "",
       fromAccountId: transaction.from_account_id ?? "",
       toAccountId: transaction.to_account_id ?? "",
-      amount: toAmountString(transaction.amount),
+      amount: toAmountString(transaction.amount, transaction.currency_code),
       currencyCode: transaction.currency_code,
       accountCurrencyCode: transaction.account_currency_code,
-      convertedAmount: toAmountString(transaction.converted_amount),
+      convertedAmount: toAmountString(
+        transaction.converted_amount,
+        transaction.account_currency_code,
+      ),
       exchangeRate: transaction.exchange_rate
         ? formatExchangeRate(transaction.exchange_rate)
         : EXCHANGE_RATE_ZERO,
@@ -544,7 +565,10 @@ export default function useTransactionManagementDetail() {
       fees:
         operation?.fees.map((fee) => ({
           accountId: fee.account_id ?? "",
-          amount: toAmountString(fee.converted_amount),
+          amount: toAmountString(
+            fee.converted_amount,
+            fee.account_currency_code,
+          ),
           categoryId: fee.category_id ?? "",
         })) ?? [],
       description: transaction.descriptions ?? "",

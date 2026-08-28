@@ -70,7 +70,6 @@ export default function StackLayout() {
         name="budget"
         options={{
           title: t("Budget"),
-          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <HandCoins color={color} size={size} />
           ),

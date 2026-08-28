@@ -67,6 +67,7 @@ export default function AccountManagementDetail() {
             control={logic.control}
             isSubmitting={logic.isSubmitting}
             setFocus={logic.setFocus}
+            setValue={logic.setValue}
             showCurrencyField={logic.showCurrencyField}
           />
           <BalanceChangeClassification

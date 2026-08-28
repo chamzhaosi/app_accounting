@@ -1,5 +1,6 @@
 import type { AmountValue } from "./amount";
 import { toAmountNumber, toBigAmount } from "./amount";
+import { getCurrencyDecimalDigits } from "../constants/currencies";
 
 const amountFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
@@ -48,3 +49,99 @@ export const formatPrivateSignedAmount = (
   amount: AmountValue,
   areAmountsVisible: boolean,
 ): string => (areAmountsVisible ? formatSignedAmount(amount) : MASKED_AMOUNT);
+
+const getCurrencyFormatter = (
+  locale: string,
+  currencyCode: string,
+  compact = false,
+) => {
+  const decimalDigits = getCurrencyDecimalDigits(currencyCode);
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currencyCode,
+    currencyDisplay: "code",
+    ...(compact
+      ? { notation: "compact", maximumFractionDigits: 1 }
+      : {
+          minimumFractionDigits: decimalDigits,
+          maximumFractionDigits: decimalDigits,
+        }),
+  });
+};
+
+export const formatCurrencyAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+): string =>
+  getCurrencyFormatter(locale, currencyCode).format(toAmountNumber(amount));
+
+export const formatAbsoluteCurrencyAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+): string =>
+  formatCurrencyAmount(toBigAmount(amount).abs(), currencyCode, locale);
+
+export const formatSignedCurrencyAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+): string => {
+  const comparison = toBigAmount(amount).cmp(0);
+  const prefix = comparison > 0 ? "+" : comparison < 0 ? "-" : "";
+  return `${prefix}${formatAbsoluteCurrencyAmount(amount, currencyCode, locale)}`;
+};
+
+export const formatCompactCurrencyAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+): string =>
+  getCurrencyFormatter(locale, currencyCode, true).format(
+    toAmountNumber(amount),
+  );
+
+export const formatPrivateCurrencyAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+  areAmountsVisible: boolean,
+): string =>
+  areAmountsVisible
+    ? formatCurrencyAmount(amount, currencyCode, locale)
+    : `${currencyCode} ${MASKED_AMOUNT}`;
+
+export const formatPrivateSignedCurrencyAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+  areAmountsVisible: boolean,
+): string =>
+  areAmountsVisible
+    ? formatSignedCurrencyAmount(amount, currencyCode, locale)
+    : `${currencyCode} ${MASKED_AMOUNT}`;
+
+export const formatPrivateCompactCurrencyAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+  areAmountsVisible: boolean,
+): string =>
+  areAmountsVisible
+    ? formatCompactCurrencyAmount(amount, currencyCode, locale)
+    : `${currencyCode} ${MASKED_AMOUNT}`;
+
+export const formatPrivateLocalizedAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+  areAmountsVisible: boolean,
+): string => {
+  if (!areAmountsVisible) return MASKED_AMOUNT;
+  const decimalDigits = getCurrencyDecimalDigits(currencyCode);
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: decimalDigits,
+    maximumFractionDigits: decimalDigits,
+  }).format(toAmountNumber(amount));
+};

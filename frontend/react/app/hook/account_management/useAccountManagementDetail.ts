@@ -78,7 +78,7 @@ export default function useAccountManagementDetail() {
     [accountTypes, t],
   );
 
-  const { control, handleSubmit, reset, setFocus, watch } =
+  const { control, handleSubmit, reset, setFocus, setValue, watch } =
     useForm<AccountManagementFormType>({
       resolver: zodResolver(accountManagementFormSchema),
       mode: "onChange",
@@ -227,7 +227,10 @@ export default function useAccountManagementDetail() {
       currencyCode: accountQuery.data.currency_code,
       label: accountQuery.data.label,
       descriptions: accountQuery.data.descriptions ?? "",
-      currentBalance: toAmountString(accountQuery.data.current_balance),
+      currentBalance: toAmountString(
+        accountQuery.data.current_balance,
+        accountQuery.data.currency_code,
+      ),
       isMainAccount: Boolean(accountQuery.data.is_main_account),
     });
   }, [accountQuery.data, reset]);
@@ -266,6 +269,7 @@ export default function useAccountManagementDetail() {
     onSubmit,
     rspErrorMsg,
     setFocus,
+    setValue,
     setBalanceChangeCategoryId,
     setBalanceChangeDate,
     setBalanceChangeKind,

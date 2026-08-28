@@ -92,7 +92,7 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         current_balance REAL NOT NULL DEFAULT 0
           CHECK (
             ABS(current_balance) <= ${AMOUNT_MAX_VALUE}
-            AND current_balance = ROUND(current_balance, 2)
+            AND current_balance = ROUND(current_balance, 3)
           ),
         is_main_account BOOLEAN NOT NULL DEFAULT 0,
 
@@ -173,7 +173,7 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         amount REAL NOT NULL
           CHECK (
             ABS(amount) <= ${AMOUNT_MAX_VALUE}
-            AND amount = ROUND(amount, 2)
+            AND amount = ROUND(amount, 3)
           ),
         currency_code CHAR(3) NOT NULL
           CHECK (
@@ -188,7 +188,7 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
         converted_amount REAL NOT NULL
           CHECK (
             ABS(converted_amount) <= ${AMOUNT_MAX_VALUE}
-            AND converted_amount = ROUND(converted_amount, 2)
+            AND converted_amount = ROUND(converted_amount, 3)
           ),
         exchange_rate REAL,
         exchange_rate_source VARCHAR(20)
@@ -318,7 +318,7 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
           CHECK (
             total_budget > 0
             AND total_budget <= ${AMOUNT_MAX_VALUE}
-            AND total_budget = ROUND(total_budget, 2)
+            AND total_budget = ROUND(total_budget, 3)
           ),
         is_active BOOLEAN NOT NULL DEFAULT 1,
 
@@ -347,7 +347,7 @@ export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
           CHECK (
             amount > 0
             AND amount <= ${AMOUNT_MAX_VALUE}
-            AND amount = ROUND(amount, 2)
+            AND amount = ROUND(amount, 3)
           ),
 
         sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',

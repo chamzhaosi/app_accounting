@@ -8,7 +8,8 @@ import AppIconButton from "../../../components/AppIconButton";
 import type { SelectOptionType } from "../../../components/AppSelect";
 import AppText from "../../../components/AppText";
 import AppTextInput from "../../../components/AppTextInput";
-import { AMOUNT_MAX_LEN } from "../../../forms/schemas/transaction_management.schema";
+import { getCurrencyDecimalDigits } from "../../../constants/currencies";
+import { getAmountMaxLength } from "../../../utils/amount";
 import type { TransactionManagementFormType } from "../../../forms/schemas/transaction_management.schema";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useTranslation } from "../../../i18n/helper";
@@ -105,9 +106,10 @@ export default function TransactionFeeFields({
                     value={amountField.value}
                     onChangeText={amountField.onChange}
                     onBlur={amountField.onBlur}
-                    maxLength={AMOUNT_MAX_LEN}
+                    maxLength={getAmountMaxLength(currencyCode)}
                     keyboardType="number-pad"
                     fixedDecimalInput
+                    fixedDecimalPlaces={getCurrencyDecimalDigits(currencyCode)}
                     showClear
                     errorField={error}
                   />

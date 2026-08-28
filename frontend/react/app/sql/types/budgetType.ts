@@ -43,6 +43,7 @@ export type BudgetDailyRemainingType = {
   transaction_date: string;
   total_budget: number;
   remaining_amount: number;
+  has_budget: boolean;
 };
 
 export type BudgetManageCategoryType = {

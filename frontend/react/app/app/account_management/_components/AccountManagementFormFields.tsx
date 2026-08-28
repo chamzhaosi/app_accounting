@@ -1,16 +1,21 @@
-import type { Control, UseFormSetFocus } from "react-hook-form";
-import { Controller } from "react-hook-form";
+import type {
+  Control,
+  UseFormSetFocus,
+  UseFormSetValue,
+} from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import AppAmtInput from "../../../components/AppAmtInput";
 import AppSelect from "../../../components/AppSelect";
 import type { SelectOptionType } from "../../../components/AppSelect";
 import AppSwitch from "../../../components/AppSwitch";
 import AppTextInput from "../../../components/AppTextInput";
 import {
-  CURRENT_BALANCE_MAX_LEN,
   DESCRIPTION_MAX_LEN,
   LABEL_MAX_LEN,
 } from "../../../forms/schemas/account_management.schema";
 import type { AccountManagementFormType } from "../../../forms/schemas/account_management.schema";
+import { getCurrencyDecimalDigits } from "../../../constants/currencies";
+import { getAmountMaxLength, toAmountString } from "../../../utils/amount";
 
 type AccountManagementFormFieldsProps = {
   accountTypeOptions: SelectOptionType[];
@@ -18,6 +23,7 @@ type AccountManagementFormFieldsProps = {
   control: Control<AccountManagementFormType>;
   isSubmitting: boolean;
   setFocus: UseFormSetFocus<AccountManagementFormType>;
+  setValue: UseFormSetValue<AccountManagementFormType>;
   showCurrencyField: boolean;
 };
 
@@ -27,8 +33,11 @@ export default function AccountManagementFormFields({
   control,
   isSubmitting,
   setFocus,
+  setValue,
   showCurrencyField,
 }: AccountManagementFormFieldsProps) {
+  const currencyCode = useWatch({ control, name: "currencyCode" });
+  const currentBalance = useWatch({ control, name: "currentBalance" });
   return (
     <>
       <Controller
@@ -113,7 +122,15 @@ export default function AccountManagementFormFields({
               ref={ref}
               label="Currency"
               value={value}
-              onChange={(currencyCode) => onChange(String(currencyCode ?? ""))}
+              onChange={(nextCurrencyCode) => {
+                const code = String(nextCurrencyCode ?? "");
+                onChange(code);
+                setValue(
+                  "currentBalance",
+                  toAmountString(currentBalance, code),
+                  { shouldValidate: true },
+                );
+              }}
               onBlur={onBlur}
               options={currencyOptions}
               errorField={error}
@@ -140,9 +157,10 @@ export default function AccountManagementFormFields({
             onChange={onChange}
             onBlur={onBlur}
             value={value}
-            maxLength={CURRENT_BALANCE_MAX_LEN}
+            maxLength={getAmountMaxLength(currencyCode)}
             showClear
             fixedDecimalInput
+            fixedDecimalPlaces={getCurrencyDecimalDigits(currencyCode)}
             errorField={error}
           />
         )}

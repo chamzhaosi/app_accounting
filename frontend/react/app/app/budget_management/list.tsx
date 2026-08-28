@@ -11,11 +11,14 @@ import useBudgetPlanList from "../../hook/budget_management/useBudgetPlanList";
 import { useTranslation } from "../../i18n/helper";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { useThemeStore } from "../../stores/useThemeStore";
-import { formatPrivateAmount } from "../../utils/number";
+import {
+  formatPrivateCurrencyAmount,
+  formatPrivateLocalizedAmount,
+} from "../../utils/number";
 
 export default function BudgetPlanList() {
   const logic = useBudgetPlanList();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const { THEME } = useThemeStore();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
@@ -111,17 +114,21 @@ export default function BudgetPlanList() {
 
           return (
             <List.Item
-              title={`${item.currency_code} ${formatPrivateAmount(
+              title={formatPrivateCurrencyAmount(
                 item.total_budget,
+                item.currency_code,
+                locale,
                 areAmountsVisible,
-              )}`}
+              )}
               description={t(
                 "{{count}} categories · {{currency}} {{amount}} allocated",
                 {
                   count: item.allocation_count,
                   currency: item.currency_code,
-                  amount: formatPrivateAmount(
+                  amount: formatPrivateLocalizedAmount(
                     item.allocated_amount,
+                    item.currency_code,
+                    locale,
                     areAmountsVisible,
                   ),
                 },

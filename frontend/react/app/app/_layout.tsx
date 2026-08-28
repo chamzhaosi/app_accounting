@@ -29,6 +29,7 @@ import { DARK, LIGHT } from "../constants/colors";
 import { initDB } from "../sql/db/database";
 import { useToastStore } from "../stores/useToastStore";
 import { useLanguageStore } from "../stores/useLanguageStore";
+import { useReportingCurrencyStore } from "../stores/useReportingCurrencyStore";
 import { DEBUG_TAG, debugLog } from "../utils/debugLog";
 import { useTranslation } from "../i18n/helper";
 
@@ -43,6 +44,12 @@ export default function StackLayout() {
   const hydrateAmountPrivacy = useAmountPrivacyStore((state) => state.hydrate);
   const hydrateLanguage = useLanguageStore((state) => state.hydrate);
   const isLanguageHydrated = useLanguageStore((state) => state.isHydrated);
+  const hydrateReportingCurrency = useReportingCurrencyStore(
+    (state) => state.hydrate,
+  );
+  const isReportingCurrencyHydrated = useReportingCurrencyStore(
+    (state) => state.isHydrated,
+  );
   const { t } = useTranslation();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
@@ -101,12 +108,28 @@ export default function StackLayout() {
   }, [hydrateLanguage]);
 
   useEffect(() => {
-    if (!loaded || !isDatabaseReady || !isLanguageHydrated || isAppReady)
+    void hydrateReportingCurrency();
+  }, [hydrateReportingCurrency]);
+
+  useEffect(() => {
+    if (
+      !loaded ||
+      !isDatabaseReady ||
+      !isLanguageHydrated ||
+      !isReportingCurrencyHydrated ||
+      isAppReady
+    )
       return;
 
     debugLog(DEBUG_TAG.APP, "Database and assets ready; starting application");
     setIsAppReady(true);
-  }, [isAppReady, isDatabaseReady, isLanguageHydrated, loaded]);
+  }, [
+    isAppReady,
+    isDatabaseReady,
+    isLanguageHydrated,
+    isReportingCurrencyHydrated,
+    loaded,
+  ]);
 
   if (!isAppReady) {
     return null;

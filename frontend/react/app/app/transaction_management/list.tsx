@@ -1,6 +1,7 @@
 import { Href, router } from "expo-router";
+import { useState } from "react";
 import { Pressable, SectionList, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
+import { ActivityIndicator, Modal, Portal, Text } from "react-native-paper";
 import AppEmpty from "../../components/AppEmpty";
 import AppIcon from "../../components/AppIcon";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
@@ -19,11 +20,13 @@ import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { compareAmounts } from "../../utils/amount";
 import {
-  formatPrivateAbsoluteAmount,
-  formatPrivateSignedAmount,
+  formatPrivateCurrencyAmount,
+  formatPrivateSignedCurrencyAmount,
 } from "../../utils/number";
 import { useTranslation } from "../../i18n/helper";
 import { formatSectionDate } from "../../utils/date";
+import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
+import type { TransactionDateSection } from "../../hook/transaction_management/useTransactionManagementList";
 
 export default function TransactionManagementList(
   props: TransactionManagementListProps,
@@ -31,6 +34,11 @@ export default function TransactionManagementList(
   const { accountId } = props;
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
+  const reportingCurrencyCode = useReportingCurrencyStore(
+    (state) => state.currencyCode,
+  );
+  const [summarySection, setSummarySection] =
+    useState<TransactionDateSection | null>(null);
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
@@ -53,193 +61,311 @@ export default function TransactionManagementList(
   }
 
   return (
-    <SectionList
-      style={styles.list}
-      sections={transactionSections}
-      keyExtractor={(item) => item.id}
-      stickySectionHeadersEnabled
-      refreshing={isRefetching && !isFetchingNextPage}
-      onRefresh={onRefresh}
-      onEndReached={onLoadMore}
-      onEndReachedThreshold={0.5}
-      contentContainerStyle={[
-        styles.contentContainer,
-        transactionSections.length === 0 && styles.emptyContentContainer,
-      ]}
-      ListEmptyComponent={<AppEmpty />}
-      ListFooterComponent={
-        isFetchingNextPage ? (
-          <ActivityIndicator style={styles.footerLoader} />
-        ) : null
-      }
-      renderSectionHeader={({ section }) => {
-        const netColor =
-          section.netTotal > 0
-            ? THEME.primary
-            : section.netTotal < 0
-              ? THEME.error
-              : THEME.onSurfaceVariant;
-        const netBackgroundColor =
-          section.netTotal > 0
-            ? THEME.primaryContainer
-            : section.netTotal < 0
-              ? THEME.errorContainer
-              : THEME.surfaceContainerHighest;
-
-        return (
-          <View
-            style={[
-              styles.sectionHeader,
-              {
-                backgroundColor: THEME.surfaceContainerHigh,
-                borderLeftColor: THEME.primary,
-              },
-            ]}
-          >
-            <View style={styles.sectionHeading}>
-              <Text
-                variant="labelSmall"
-                style={[
-                  styles.dailySummaryLabel,
-                  { color: THEME.onSurfaceVariant },
-                ]}
-              >
-                {t("Daily summary")}
-              </Text>
-              <Text
-                variant="titleMedium"
-                style={[styles.sectionDate, { color: THEME.onSurface }]}
-              >
-                {formatSectionDate(section.transactionDate, locale, t)}
-              </Text>
+    <>
+      <Portal>
+        <Modal
+          visible={Boolean(summarySection)}
+          onDismiss={() => setSummarySection(null)}
+          contentContainerStyle={[
+            styles.summaryModal,
+            { backgroundColor: THEME.surfaceContainerHigh },
+          ]}
+        >
+          <View className="flex-row">
+            <View className="flex-1 justify-center">
+              <Text variant="titleLarge">{t("Daily summary")}</Text>
+              {summarySection ? (
+                <Text
+                  variant="bodyMedium"
+                  style={{ color: THEME.onSurfaceVariant }}
+                >
+                  {formatSectionDate(summarySection.transactionDate, locale, t)}
+                </Text>
+              ) : null}
             </View>
-
-            <View
-              style={[styles.netBadge, { backgroundColor: netBackgroundColor }]}
-            >
-              <Text variant="labelSmall" style={{ color: netColor }}>
-                {t("Net")}
-              </Text>
-              <Text
-                variant="titleLarge"
-                style={[styles.sectionNet, { color: netColor }]}
-              >
-                {formatPrivateSignedAmount(section.netTotal, areAmountsVisible)}
-              </Text>
+            <View style={styles.summaryModalValues}>
+              {summarySection?.currencyNets.map((net) => (
+                <View key={net.currencyCode} style={styles.summaryModalRow}>
+                  <Text variant="titleMedium" style={styles.summaryModalAmount}>
+                    {formatPrivateSignedCurrencyAmount(
+                      net.netTotal,
+                      net.currencyCode,
+                      locale,
+                      areAmountsVisible,
+                    )}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
-        );
-      }}
-      renderItem={({ item }) => {
-        const isAdjustment = item.transactionType === TXN_TYPE_ENUM.ADJUSTMENT;
-        const isPositiveEffect = compareAmounts(item.balanceEffect, 0) > 0;
-        const isNegativeEffect = compareAmounts(item.balanceEffect, 0) < 0;
-        const amountColor = isNegativeEffect
-          ? THEME.error
-          : isPositiveEffect
-            ? THEME.primary
-            : THEME.onSurface;
-        const iconColor = isNegativeEffect
-          ? THEME.error
-          : isPositiveEffect
-            ? THEME.primary
-            : THEME.onSurfaceVariant;
-        const transactionUrl =
-          isAdjustment && item.accountId
-            ? `${ACCOUNT_MANAGEMENT_BASE_URL}/${item.accountId}`
-            : `${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}`;
-        const displayAmount = accountId
-          ? formatPrivateSignedAmount(item.balanceEffect, areAmountsVisible)
-          : formatPrivateAbsoluteAmount(item.amount, areAmountsVisible);
+        </Modal>
+      </Portal>
+      <SectionList
+        style={styles.list}
+        sections={transactionSections}
+        keyExtractor={(item) => item.id}
+        stickySectionHeadersEnabled
+        refreshing={isRefetching && !isFetchingNextPage}
+        onRefresh={onRefresh}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={[
+          styles.contentContainer,
+          transactionSections.length === 0 && styles.emptyContentContainer,
+        ]}
+        ListEmptyComponent={<AppEmpty />}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <ActivityIndicator style={styles.footerLoader} />
+          ) : null
+        }
+        renderSectionHeader={({ section }) => {
+          const sortedCurrencyNets = [...section.currencyNets].sort(
+            (left, right) =>
+              Number(right.currencyCode === reportingCurrencyCode) -
+                Number(left.currencyCode === reportingCurrencyCode) ||
+              left.currencyCode.localeCompare(right.currencyCode),
+          );
+          const primaryNet = sortedCurrencyNets[0] ?? {
+            currencyCode: reportingCurrencyCode,
+            netTotal: 0,
+          };
+          const netColor =
+            primaryNet.netTotal > 0
+              ? THEME.primary
+              : primaryNet.netTotal < 0
+                ? THEME.error
+                : THEME.onSurfaceVariant;
+          const netBackgroundColor =
+            primaryNet.netTotal > 0
+              ? THEME.primaryContainer
+              : primaryNet.netTotal < 0
+                ? THEME.errorContainer
+                : THEME.surfaceContainerHighest;
 
-        return (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${item.title}, ${displayAmount}`}
-            accessibilityHint={
-              isAdjustment
-                ? t("Opens the account for balance editing")
-                : t("Opens transaction details for editing")
-            }
-            android_ripple={{ color: THEME.outlineVariant }}
-            onPress={() => router.push(transactionUrl as Href)}
-            style={({ pressed }) => [
-              styles.transactionPressable,
-              { backgroundColor: THEME.surfaceContainerLow },
-              pressed && [
-                styles.transactionPressed,
-                { backgroundColor: THEME.surfaceContainerHighest },
-              ],
-            ]}
-          >
-            <View style={styles.transactionRow}>
-              <View
-                style={[
-                  styles.iconContainer,
-                  { backgroundColor: THEME.surfaceContainerHighest },
-                ]}
-              >
-                <AppIcon name={item.icon} color={iconColor} size={22} />
+          return (
+            <View
+              style={[
+                styles.sectionHeader,
+                {
+                  backgroundColor: THEME.surfaceContainerHigh,
+                  borderLeftColor: THEME.primary,
+                },
+              ]}
+            >
+              <View style={styles.sectionHeading}>
+                <Text
+                  variant="labelSmall"
+                  style={[
+                    styles.dailySummaryLabel,
+                    { color: THEME.onSurfaceVariant },
+                  ]}
+                >
+                  {t("Daily summary")}
+                </Text>
+                <Text
+                  variant="titleMedium"
+                  style={[styles.sectionDate, { color: THEME.onSurface }]}
+                >
+                  {formatSectionDate(section.transactionDate, locale, t)}
+                </Text>
               </View>
 
-              <View style={styles.transactionText}>
-                <Text
-                  numberOfLines={1}
-                  style={[styles.transactionTitle, { color: THEME.onSurface }]}
-                >
-                  {item.title}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("Open all daily currency totals")}
+                disabled={sortedCurrencyNets.length <= 1}
+                onPress={() =>
+                  setSummarySection({
+                    ...section,
+                    currencyNets: sortedCurrencyNets,
+                  })
+                }
+                style={[
+                  styles.netBadge,
+                  { backgroundColor: netBackgroundColor },
+                ]}
+              >
+                <Text variant="labelSmall" style={{ color: netColor }}>
+                  {t("Net")}
                 </Text>
-                {item.transactionType === TXN_TYPE_ENUM.TRANSFER ? (
-                  <View style={styles.transferSubtitle}>
+                <View style={styles.netAmountRow}>
+                  <Text
+                    variant="titleLarge"
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    numberOfLines={2}
+                    style={[styles.sectionNet, { color: netColor }]}
+                  >
+                    {formatPrivateSignedCurrencyAmount(
+                      primaryNet.netTotal,
+                      primaryNet.currencyCode,
+                      locale,
+                      areAmountsVisible,
+                    )}
+                  </Text>
+                  {sortedCurrencyNets.length > 1 ? (
                     <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.transactionSubtitle,
-                        styles.transferAccountText,
-                        { color: THEME.onSurfaceVariant },
-                      ]}
+                      variant="labelSmall"
+                      style={{ color: netColor, alignSelf: "flex-end" }}
                     >
-                      {item.fromAccountLabel}
+                      +{sortedCurrencyNets.length - 1}
                     </Text>
-                    <View style={styles.transferArrow}>
-                      <AppIcon
-                        name="MoveRight"
-                        color={THEME.onSurfaceVariant}
-                        size={14}
-                      />
-                    </View>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.transactionSubtitle,
-                        styles.transferAccountText,
-                        { color: THEME.onSurfaceVariant },
-                      ]}
-                    >
-                      {item.toAccountLabel}
-                    </Text>
-                  </View>
-                ) : (
+                  ) : null}
+                </View>
+              </Pressable>
+            </View>
+          );
+        }}
+        renderItem={({ item }) => {
+          const isAdjustment =
+            item.transactionType === TXN_TYPE_ENUM.ADJUSTMENT;
+          const isPositiveEffect = compareAmounts(item.balanceEffect, 0) > 0;
+          const isNegativeEffect = compareAmounts(item.balanceEffect, 0) < 0;
+          const amountColor = isNegativeEffect
+            ? THEME.error
+            : isPositiveEffect
+              ? THEME.primary
+              : THEME.onSurface;
+          const iconColor = isNegativeEffect
+            ? THEME.error
+            : isPositiveEffect
+              ? THEME.primary
+              : THEME.onSurfaceVariant;
+          const transactionUrl =
+            isAdjustment && item.accountId
+              ? `${ACCOUNT_MANAGEMENT_BASE_URL}/${item.accountId}`
+              : `${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}`;
+          const displayAmount = formatPrivateSignedCurrencyAmount(
+            item.balanceEffect,
+            item.primaryCurrencyCode,
+            locale,
+            areAmountsVisible,
+          );
+          const secondaryAmount = item.secondaryCurrencyCode
+            ? formatPrivateCurrencyAmount(
+                item.secondaryAmount,
+                item.secondaryCurrencyCode,
+                locale,
+                areAmountsVisible,
+              )
+            : undefined;
+
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title}, ${displayAmount}${
+                secondaryAmount ? `, ${secondaryAmount}` : ""
+              }`}
+              accessibilityHint={
+                isAdjustment
+                  ? t("Opens the account for balance editing")
+                  : t("Opens transaction details for editing")
+              }
+              android_ripple={{ color: THEME.outlineVariant }}
+              onPress={() => router.push(transactionUrl as Href)}
+              style={({ pressed }) => [
+                styles.transactionPressable,
+                { backgroundColor: THEME.surfaceContainerLow },
+                pressed && [
+                  styles.transactionPressed,
+                  { backgroundColor: THEME.surfaceContainerHighest },
+                ],
+              ]}
+            >
+              <View style={styles.transactionRow}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: THEME.surfaceContainerHighest },
+                  ]}
+                >
+                  <AppIcon name={item.icon} color={iconColor} size={22} />
+                </View>
+
+                <View style={styles.transactionText}>
                   <Text
                     numberOfLines={1}
                     style={[
-                      styles.transactionSubtitle,
-                      { color: THEME.onSurfaceVariant },
+                      styles.transactionTitle,
+                      { color: THEME.onSurface },
                     ]}
                   >
-                    {item.subtitle}
+                    {item.title}
                   </Text>
-                )}
-              </View>
+                  {item.transactionType === TXN_TYPE_ENUM.TRANSFER ? (
+                    <View style={styles.transferSubtitle}>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.transactionSubtitle,
+                          styles.transferAccountText,
+                          { color: THEME.onSurfaceVariant },
+                        ]}
+                      >
+                        {`${item.fromAccountCurrencyCode} - ${item.fromAccountLabel}`}
+                      </Text>
+                      <View style={styles.transferArrow}>
+                        <AppIcon
+                          name="MoveRight"
+                          color={THEME.onSurfaceVariant}
+                          size={14}
+                        />
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.transactionSubtitle,
+                          styles.transferAccountText,
+                          { color: THEME.onSurfaceVariant },
+                        ]}
+                      >
+                        {`${item.toAccountCurrencyCode} - ${item.toAccountLabel}`}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.transactionSubtitle,
+                        { color: THEME.onSurfaceVariant },
+                      ]}
+                    >
+                      {item.subtitle}
+                    </Text>
+                  )}
+                </View>
 
-              <Text style={[styles.transactionAmount, { color: amountColor }]}>
-                {displayAmount}
-              </Text>
-            </View>
-          </Pressable>
-        );
-      }}
-    />
+                <View style={styles.transactionAmounts}>
+                  <Text
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    numberOfLines={2}
+                    style={[styles.transactionAmount, { color: amountColor }]}
+                  >
+                    {displayAmount}
+                  </Text>
+                  {secondaryAmount ? (
+                    <Text
+                      variant="labelSmall"
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      numberOfLines={2}
+                      style={[
+                        styles.secondaryTransactionAmount,
+                        { color: THEME.onSurfaceVariant },
+                      ]}
+                    >
+                      {secondaryAmount}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            </Pressable>
+          );
+        }}
+      />
+    </>
   );
 }
 
@@ -284,15 +410,26 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   sectionNet: {
+    flexShrink: 1,
     fontFamily: FONTS.ROBOTO,
     fontSize: 20,
     fontWeight: "700",
     marginTop: 1,
+    textAlign: "right",
+  },
+  netAmountRow: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 8,
+    maxWidth: "100%",
+    minWidth: 0,
   },
   netBadge: {
     alignItems: "flex-end",
     borderRadius: 12,
+    maxWidth: "50%",
     minWidth: 96,
+    minHeight: 56,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
@@ -352,11 +489,36 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   transactionAmount: {
-    flexShrink: 0,
+    flexShrink: 1,
     fontFamily: FONTS.ROBOTO,
     fontSize: LIST_ITEM_TITLE_FONTSIZE,
     fontWeight: "700",
+    maxWidth: "100%",
+    textAlign: "right",
   },
+  secondaryTransactionAmount: {
+    maxWidth: "100%",
+    textAlign: "right",
+  },
+  transactionAmounts: {
+    alignItems: "flex-end",
+    flexShrink: 1,
+    maxWidth: "50%",
+    minWidth: 0,
+  },
+  summaryModal: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    bottom: 0,
+    left: 0,
+    padding: 20,
+    paddingTop: 6,
+    position: "absolute",
+    right: 0,
+  },
+  summaryModalValues: { gap: 12, marginTop: 20 },
+  summaryModalRow: { alignItems: "flex-end" },
+  summaryModalAmount: { fontWeight: "700", fontSize: 20 },
   footerLoader: {
     marginVertical: 16,
   },

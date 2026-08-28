@@ -65,8 +65,9 @@ export const getCategoryDailyTotals = async (
 export const getTransactionDailyTotals = async (
   startDate: string,
   endDate: string,
+  currencyCode: string,
 ): Promise<TransactionDailyTotalsType[]> =>
-  getTransactionDailyTotalsFromDB(startDate, endDate);
+  getTransactionDailyTotalsFromDB(startDate, endDate, currencyCode);
 
 export const getAccountForwardBalance = async (
   accountId: string,
@@ -90,9 +91,15 @@ export const getCategoryDateRangeSummary = async (
 export const getTransactionDateRangeTotals = async (
   startDate: string,
   endDate: string,
+  currencyCode: string,
   accountId?: string,
 ): Promise<TransactionDateRangeTotalsType> =>
-  getTransactionDateRangeTotalsFromDB(startDate, endDate, accountId);
+  getTransactionDateRangeTotalsFromDB(
+    startDate,
+    endDate,
+    currencyCode,
+    accountId,
+  );
 
 const CATEGORY_TYPE_IDS = {
   [TXN_TYPE_ENUM.INCOME]: 1,
@@ -136,10 +143,13 @@ export const getTransactionOperationById = async (
 const validateTransactionMgmt = async (
   data: TransactionMgmtCreateReqType,
 ): Promise<string | void> => {
-  if (!isValidAmount(data.amount) || compareAmounts(data.amount, 0) <= 0)
-    return "Enter an amount with up to 13 integer digits and 2 decimal places.";
   if (
-    !isValidAmount(data.convertedAmount) ||
+    !isValidAmount(data.amount, data.currencyCode) ||
+    compareAmounts(data.amount, 0) <= 0
+  )
+    return "Enter an amount using the transaction currency's decimal precision.";
+  if (
+    !isValidAmount(data.convertedAmount, data.accountCurrencyCode) ||
     compareAmounts(data.convertedAmount, 0) <= 0
   )
     return "Enter a valid account amount.";
@@ -170,7 +180,14 @@ const validateTransactionMgmt = async (
       ? data.fromAccountId
       : data.accountId;
   for (const fee of data.fees) {
-    if (!isValidAmount(fee.amount) || compareAmounts(fee.amount, 0) <= 0)
+    const feeCurrencyCode =
+      data.transactionType === TXN_TYPE_ENUM.TRANSFER
+        ? data.currencyCode
+        : data.accountCurrencyCode;
+    if (
+      !isValidAmount(fee.amount, feeCurrencyCode) ||
+      compareAmounts(fee.amount, 0) <= 0
+    )
       return "Enter a valid fee amount.";
     if (fee.accountId !== feeAccountId)
       return "Fee account must match the transaction account.";

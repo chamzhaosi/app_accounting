@@ -6,7 +6,10 @@ import { useForm, useWatch } from "react-hook-form";
 import { Keyboard } from "react-native";
 import type { SelectOptionType } from "../../components/AppSelect";
 import { AppToast } from "../../components/AppToast";
-import { CURRENCIES } from "../../constants/currencies";
+import {
+  CURRENCIES,
+  getCurrencyDecimalDigits,
+} from "../../constants/currencies";
 import {
   budgetQueryKeys,
   currencyManagementQueryKeys,
@@ -27,17 +30,23 @@ import { getCurrencyPreferences } from "../../sql/service/currencyManagementServ
 import type { BudgetManageCategoryType } from "../../sql/types/budgetType";
 import {
   compareAmounts,
+  getAmountMaxLength,
+  getZeroAmount,
   subtractAmounts,
   sumAmounts,
   toAmountString,
 } from "../../utils/amount";
 import { getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
+import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 
 export default function useBudgetManagement() {
   const { id: planId } = useLocalSearchParams<{ id?: string }>();
   const queryClient = useQueryClient();
   const initializedCreateCurrency = useRef(false);
+  const reportingCurrencyCode = useReportingCurrencyStore(
+    (state) => state.currencyCode,
+  );
   const [allocations, setAllocations] = useState<Record<string, string>>({});
   const [isCategoryPickerVisible, setIsCategoryPickerVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -68,6 +77,7 @@ export default function useBudgetManagement() {
     defaultValues: budgetManagementFormDefaultValues,
   });
   const totalBudgetInput = useWatch({ control, name: "totalBudget" });
+  const currencyCode = useWatch({ control, name: "currencyCode" });
 
   const availableCurrencyCodes = availableCurrenciesQuery.data ?? [];
   const currencyOptions = useMemo<SelectOptionType[]>(() => {
@@ -88,7 +98,10 @@ export default function useBudgetManagement() {
     if (query.data.budget) {
       reset({
         currencyCode: query.data.budget.currency_code,
-        totalBudget: toAmountString(query.data.budget.total_budget),
+        totalBudget: toAmountString(
+          query.data.budget.total_budget,
+          query.data.budget.currency_code,
+        ),
         isActive: query.data.budget.is_active,
       });
     }
@@ -98,7 +111,10 @@ export default function useBudgetManagement() {
           .filter((category) => compareAmounts(category.amount, 0) > 0)
           .map((category) => [
             category.category_id,
-            toAmountString(category.amount),
+            toAmountString(
+              category.amount,
+              query.data.currencyCode ?? undefined,
+            ),
           ]),
       ),
     );
@@ -112,7 +128,9 @@ export default function useBudgetManagement() {
       !preferencesQuery.isFetched
     )
       return;
-    const preferredCode = preferencesQuery.data?.defaultCurrencyCode;
+    const preferredCode = availableCurrencyCodes.includes(reportingCurrencyCode)
+      ? reportingCurrencyCode
+      : preferencesQuery.data?.defaultCurrencyCode;
     const initialCode =
       (preferredCode && availableCurrencyCodes.includes(preferredCode)
         ? preferredCode
@@ -125,6 +143,7 @@ export default function useBudgetManagement() {
     planId,
     preferencesQuery.data?.defaultCurrencyCode,
     preferencesQuery.isFetched,
+    reportingCurrencyCode,
     setValue,
   ]);
 
@@ -178,9 +197,26 @@ export default function useBudgetManagement() {
   const onSelectCategory = (category: BudgetManageCategoryType) => {
     setAllocations((current) => ({
       ...current,
-      [category.category_id]: "0.00",
+      [category.category_id]: getZeroAmount(currencyCode),
     }));
     setIsCategoryPickerVisible(false);
+  };
+
+  const onCurrencyChange = (nextCurrencyCode: string) => {
+    setValue("currencyCode", nextCurrencyCode, { shouldValidate: true });
+    setValue(
+      "totalBudget",
+      toAmountString(totalBudgetInput, nextCurrencyCode),
+      { shouldValidate: true },
+    );
+    setAllocations((current) =>
+      Object.fromEntries(
+        Object.entries(current).map(([categoryId, amount]) => [
+          categoryId,
+          toAmountString(amount, nextCurrencyCode),
+        ]),
+      ),
+    );
   };
 
   const onSubmit = async (value: BudgetManagementFormType) => {
@@ -192,12 +228,12 @@ export default function useBudgetManagement() {
         planId,
         currencyCode: value.currencyCode,
         effectiveMonth: getMonthKey(),
-        totalBudget: toAmountString(value.totalBudget),
+        totalBudget: toAmountString(value.totalBudget, value.currencyCode),
         isActive: value.isActive,
         allocations: Object.entries(allocations).map(
           ([categoryId, amount]) => ({
             categoryId,
-            amount: toAmountString(amount),
+            amount: toAmountString(amount, value.currencyCode),
           }),
         ),
       });
@@ -223,8 +259,11 @@ export default function useBudgetManagement() {
     allocatedAmount,
     allocationDifference,
     allocations,
+    amountDecimalPlaces: getCurrencyDecimalDigits(currencyCode),
+    amountMaxLength: getAmountMaxLength(currencyCode),
     availableCategories,
     control,
+    currencyCode,
     currencyOptions,
     errors,
     handleSubmit,
@@ -239,6 +278,7 @@ export default function useBudgetManagement() {
         (availableCurrenciesQuery.isLoading || preferencesQuery.isLoading)),
     isSaving,
     onAllocationChange,
+    onCurrencyChange,
     onDismissCategoryPicker: () => setIsCategoryPickerVisible(false),
     onOpenCategoryPicker: () => setIsCategoryPickerVisible(true),
     onRemoveAllocation,

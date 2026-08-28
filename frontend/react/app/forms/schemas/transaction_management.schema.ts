@@ -2,9 +2,10 @@ import { z } from "zod";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
 import {
   AMOUNT_MAX_LENGTH,
-  AMOUNT_PATTERN,
   compareAmounts,
+  isValidAmount,
 } from "../../utils/amount";
+import { getCurrencyDecimalDigits } from "../../constants/currencies";
 import { EXCHANGE_RATE_ZERO } from "../../utils/exchangeRate";
 
 export const DESCRIPTION_MAX_LEN = 100;
@@ -17,12 +18,13 @@ const positiveAmountSchema = (requiredMessage: string) =>
   z
     .string()
     .min(1, requiredMessage)
-    .refine((value) => AMOUNT_PATTERN.test(value), {
-      message: "Maximum 13 integer digits and 2 decimal places",
-    })
-    .refine((value) => compareAmounts(value, 0) > 0, {
-      message: requiredMessage,
-    });
+    .refine((value) => {
+      try {
+        return compareAmounts(value, 0) > 0;
+      } catch {
+        return false;
+      }
+    }, requiredMessage);
 
 const transactionFeeSchema = z.object({
   accountId: z.string(),
@@ -80,6 +82,8 @@ export const transactionManagementFormSchema = z
         accountCurrencyCode,
         convertedAmount,
         exchangeRate,
+        amount,
+        fees,
       },
       context,
     ) => {
@@ -99,11 +103,22 @@ export const transactionManagementFormSchema = z
       }
 
       if (currencyCode && accountCurrencyCode) {
-        if (!convertedAmount || !AMOUNT_PATTERN.test(convertedAmount)) {
+        if (!isValidAmount(amount, currencyCode)) {
+          context.addIssue({
+            code: "custom",
+            path: ["amount"],
+            message: `Maximum 13 integer digits and ${getCurrencyDecimalDigits(currencyCode)} decimal places`,
+          });
+        }
+
+        if (
+          !convertedAmount ||
+          !isValidAmount(convertedAmount, accountCurrencyCode)
+        ) {
           context.addIssue({
             code: "custom",
             path: ["convertedAmount"],
-            message: "Please enter a valid account amount",
+            message: `Maximum 13 integer digits and ${getCurrencyDecimalDigits(accountCurrencyCode)} decimal places`,
           });
         } else if (compareAmounts(convertedAmount, 0) <= 0) {
           context.addIssue({
@@ -112,6 +127,20 @@ export const transactionManagementFormSchema = z
             message: "Account amount must be greater than zero",
           });
         }
+
+        const feeCurrencyCode =
+          transactionType === TXN_TYPE_ENUM.TRANSFER
+            ? currencyCode
+            : accountCurrencyCode;
+        fees.forEach((fee, index) => {
+          if (!isValidAmount(fee.amount, feeCurrencyCode)) {
+            context.addIssue({
+              code: "custom",
+              path: ["fees", index, "amount"],
+              message: `Maximum 13 integer digits and ${getCurrencyDecimalDigits(feeCurrencyCode)} decimal places`,
+            });
+          }
+        });
 
         if (
           currencyCode !== accountCurrencyCode &&
@@ -186,7 +215,7 @@ export const getTransactionManagementFormDefaultValues = (
   toAccountId: "",
   currencyCode: "",
   accountCurrencyCode: "",
-  convertedAmount: "0.00",
+  convertedAmount: "0",
   exchangeRate: EXCHANGE_RATE_ZERO,
   exchangeRateSource: undefined,
   exchangeRateSourceTransactionId: "",

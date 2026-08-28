@@ -29,14 +29,9 @@ import { getCurrencyPreferences } from "./currencyManagementService";
 export const getBudgetDailyRemaining = async (
   startDate: string,
   endDate: string,
+  currencyCode: string,
 ): Promise<BudgetDailyRemainingType[]> => {
-  const preferences = await getCurrencyPreferences();
-  if (!preferences) return [];
-  return getBudgetDailyRemainingFromDB(
-    startDate,
-    endDate,
-    preferences.defaultCurrencyCode,
-  );
+  return getBudgetDailyRemainingFromDB(startDate, endDate, currencyCode);
 };
 
 export const getBudgetPlanList = async (month = getMonthKey()) =>
@@ -129,7 +124,7 @@ export const saveBudget = async (
     return "Budgets can only be changed for the current month.";
 
   if (
-    !isValidAmount(data.totalBudget) ||
+    !isValidAmount(data.totalBudget, data.currencyCode) ||
     compareAmounts(data.totalBudget, 0) <= 0
   )
     return "Total budget must be greater than zero.";
@@ -152,8 +147,12 @@ export const saveBudget = async (
       return "A budget already exists for this currency.";
   }
 
-  if (data.allocations.some((item) => !isValidAmount(item.amount)))
-    return "Enter allocations with up to 13 integer digits and 2 decimal places.";
+  if (
+    data.allocations.some(
+      (item) => !isValidAmount(item.amount, data.currencyCode),
+    )
+  )
+    return "Enter allocations using the currency's decimal precision.";
 
   if (data.allocations.some((item) => compareAmounts(item.amount, 0) === 0))
     return "Enter an amount greater than zero for every selected category.";

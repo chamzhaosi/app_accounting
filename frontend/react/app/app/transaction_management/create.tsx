@@ -17,10 +17,11 @@ import AppTextInput from "../../components/AppTextInput";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
 import { TEXTINPUT_HEIGHT } from "../../constants/size";
 import {
-  AMOUNT_MAX_LEN,
   DESCRIPTION_MAX_LEN,
   EXCHANGE_RATE_MAX_LEN,
 } from "../../forms/schemas/transaction_management.schema";
+import { getCurrencyDecimalDigits } from "../../constants/currencies";
+import { getAmountMaxLength } from "../../utils/amount";
 import useTransactionManagementCreate from "../../hook/transaction_management/useTransactionManagementCreate";
 import { useTranslation } from "../../i18n/helper";
 import { EXCHANGE_RATE_ZERO } from "../../utils/exchangeRate";
@@ -107,11 +108,12 @@ export function TransactionFormScreen({
             value={value}
             onChangeText={logic.onAmountChange}
             onBlur={onBlur}
-            maxLength={AMOUNT_MAX_LEN}
+            maxLength={getAmountMaxLength(currencyCode)}
             keyboardType="number-pad"
             showClear
             errorField={error}
             fixedDecimalInput
+            fixedDecimalPlaces={getCurrencyDecimalDigits(currencyCode)}
           />
         )}
       />
@@ -138,11 +140,12 @@ export function TransactionFormScreen({
             value={value}
             onChangeText={logic.onConvertedAmountChange}
             onBlur={onBlur}
-            maxLength={AMOUNT_MAX_LEN}
+            maxLength={getAmountMaxLength(accountCurrencyCode)}
             keyboardType="number-pad"
             showClear
             errorField={isTouched || isSubmitted ? error : undefined}
             fixedDecimalInput
+            fixedDecimalPlaces={getCurrencyDecimalDigits(accountCurrencyCode)}
           />
         )}
       />
@@ -213,7 +216,7 @@ export function TransactionFormScreen({
                 }
                 setValue("currencyCode", "");
                 setValue("accountCurrencyCode", "");
-                setValue("convertedAmount", "0.00");
+                setValue("convertedAmount", "0");
                 setValue("exchangeRate", EXCHANGE_RATE_ZERO);
                 setValue("exchangeRateSource", undefined);
                 setValue("exchangeRateSourceTransactionId", "");
