@@ -17,6 +17,7 @@ import useCategoriesList, {
   CategoryHomeTabRoute,
   useCategoryPeriodList,
 } from "../../../hook/category_management/useCategoriesList";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import type { CategoryPeriodSummaryRspType } from "../../../sql/types/categoryMgmtType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
@@ -30,6 +31,7 @@ export default function CategoriesList() {
   const { locale, t } = useTranslation();
   const layout = useWindowDimensions();
   const logic = useCategoriesList();
+  const isSingleCurrency = useSingleCurrencyMode();
 
   const renderTabBar = (props: TabBarProps<CategoryHomeTabRoute>) => (
     <TabBar
@@ -56,12 +58,16 @@ export default function CategoriesList() {
           value={logic.dateRange}
           onChange={logic.setDateRange}
         />
-        <CategoryCurrencyNavigator
-          value={logic.selectedCurrencyCode}
-          options={logic.currencyOptions}
-          onChange={logic.setSelectedCurrencyCode}
-          style={styles.currencyNavigator}
-        />
+        {!isSingleCurrency ? (
+          <CategoryCurrencyNavigator
+            value={logic.selectedCurrencyCode}
+            options={logic.currencyOptions}
+            onChange={logic.setSelectedCurrencyCode}
+            style={styles.currencyNavigator}
+          />
+        ) : (
+          <View style={styles.singleCurrencySpacing} />
+        )}
       </Surface>
 
       <TabView
@@ -116,6 +122,7 @@ function CategoryPeriodTab({
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
   const logic = useCategoryPeriodList(typeId, startDate, endDate, currencyCode);
   const amountColor = typeId === 1 ? THEME.primary : THEME.error;
 
@@ -159,7 +166,7 @@ function CategoryPeriodTab({
         const primaryTotal = sortedTotals[0];
         const hiddenCurrencyCount = Math.max(sortedTotals.length - 1, 0);
         const amountLabel = primaryTotal
-          ? `${primaryTotal.currency_code} ${formatPrivateLocalizedAmount(
+          ? `${isSingleCurrency ? "" : `${primaryTotal.currency_code} `}${formatPrivateLocalizedAmount(
               primaryTotal.total_amount,
               primaryTotal.currency_code,
               locale,
@@ -248,6 +255,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginBottom: 16,
   },
+  singleCurrencySpacing: { height: 16 },
   tabView: {
     flex: 1,
   },

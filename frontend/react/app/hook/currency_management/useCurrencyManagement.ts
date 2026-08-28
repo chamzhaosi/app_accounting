@@ -153,7 +153,7 @@ export default function useCurrencyManagement() {
       }
 
       await Promise.all([
-        invalidateQuery(queryClient, currencyManagementQueryKeys.preferences()),
+        invalidateQuery(queryClient, currencyManagementQueryKeys.all),
         invalidateQuery(queryClient, budgetQueryKeys.all),
         invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
       ]);

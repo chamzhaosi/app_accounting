@@ -13,6 +13,7 @@ import AppPinVerificationDialog from "../../../components/AppPinVerificationDial
 import { BUDGET_REMAINING_COLOR } from "../../../constants/colors";
 import { DASHBOARD_SUMMARY_CARD_HEIGHT } from "../../../constants/size";
 import useAccountBalanceSummary from "../../../hook/dashboard/useAccountBalanceSummary";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import useAmountPrivacyToggle from "../../../hook/security/useAmountPrivacyToggle";
 import { useTranslation } from "../../../i18n/helper";
 import { useThemeStore } from "../../../stores/useThemeStore";
@@ -57,6 +58,7 @@ export default function AccountBalanceSummary({
     previousCurrency,
     remainingBudget,
   } = useAccountBalanceSummary(startDate, endDate);
+  const isSingleCurrency = useSingleCurrencyMode();
   const remainingBudgetColor = isBudgetOver
     ? THEME.error
     : isDark
@@ -98,8 +100,18 @@ export default function AccountBalanceSummary({
         </View>
 
         <View style={styles.balanceContainer}>
-          <View style={styles.balanceHeaderRow}>
-            <View style={styles.balanceValueContainer}>
+          <View
+            style={[
+              styles.balanceHeaderRow,
+              isSingleCurrency && styles.singleCurrencyBalanceHeader,
+            ]}
+          >
+            <View
+              style={[
+                styles.balanceValueContainer,
+                isSingleCurrency && styles.singleCurrencyBalanceValue,
+              ]}
+            >
               <Text
                 variant="labelLarge"
                 style={{ color: THEME.onSurfaceVariant }}
@@ -109,7 +121,12 @@ export default function AccountBalanceSummary({
               {isBalanceLoading ? (
                 <ActivityIndicator style={styles.loader} />
               ) : (
-                <View style={styles.balanceAmountRow}>
+                <View
+                  style={[
+                    styles.balanceAmountRow,
+                    isSingleCurrency && styles.singleCurrencyBalanceAmount,
+                  ]}
+                >
                   <Text
                     variant="headlineLarge"
                     adjustsFontSizeToFit
@@ -139,46 +156,48 @@ export default function AccountBalanceSummary({
               )}
             </View>
 
-            <View
-              style={[
-                styles.currencyNavigator,
-                { backgroundColor: THEME.surfaceContainerHighest },
-              ]}
-            >
-              <AppIconButton
-                iconName="ChevronLeft"
-                iconSize={20}
-                accessibilityLabel={t("Previous currency")}
-                disabled={!canSelectPreviousCurrency}
-                onPress={previousCurrency}
-                style={{
-                  ...styles.currencyButton,
-                  backgroundColor: THEME.surfaceContainerHighest,
-                }}
-              />
-              <View style={styles.currencyLabel}>
-                <Text
-                  variant="labelSmall"
-                  style={{ color: THEME.onSurfaceVariant }}
-                >
-                  {t("Currency")}
-                </Text>
-                <Text variant="titleMedium" style={styles.currencyCode}>
-                  {currencyCode}
-                </Text>
+            {!isSingleCurrency && (
+              <View
+                style={[
+                  styles.currencyNavigator,
+                  { backgroundColor: THEME.surfaceContainerHighest },
+                ]}
+              >
+                <AppIconButton
+                  iconName="ChevronLeft"
+                  iconSize={20}
+                  accessibilityLabel={t("Previous currency")}
+                  disabled={!canSelectPreviousCurrency}
+                  onPress={previousCurrency}
+                  style={{
+                    ...styles.currencyButton,
+                    backgroundColor: THEME.surfaceContainerHighest,
+                  }}
+                />
+                <View style={styles.currencyLabel}>
+                  <Text
+                    variant="labelSmall"
+                    style={{ color: THEME.onSurfaceVariant }}
+                  >
+                    {t("Currency")}
+                  </Text>
+                  <Text variant="titleMedium" style={styles.currencyCode}>
+                    {currencyCode}
+                  </Text>
+                </View>
+                <AppIconButton
+                  iconName="ChevronRight"
+                  iconSize={20}
+                  accessibilityLabel={t("Next currency")}
+                  disabled={!canSelectNextCurrency}
+                  onPress={nextCurrency}
+                  style={{
+                    ...styles.currencyButton,
+                    backgroundColor: THEME.surfaceContainerHighest,
+                  }}
+                />
               </View>
-              <AppIconButton
-                iconName="ChevronRight"
-                iconSize={20}
-                accessibilityLabel={t("Next currency")}
-                disabled={!canSelectNextCurrency}
-                onPress={nextCurrency}
-                style={{
-                  ...styles.currencyButton,
-                  backgroundColor: THEME.surfaceContainerHighest,
-                }}
-              />
-            </View>
+            )}
           </View>
 
           <View style={styles.cashFlowRow}>
@@ -329,6 +348,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  singleCurrencyBalanceHeader: { justifyContent: "center" },
+  singleCurrencyBalanceValue: { alignItems: "center", flex: 0 },
+  singleCurrencyBalanceAmount: { alignSelf: "center" },
   balanceAmountRow: {
     alignItems: "center",
     alignSelf: "flex-start",

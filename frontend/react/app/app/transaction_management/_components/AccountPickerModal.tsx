@@ -29,6 +29,7 @@ import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { formatPrivateCurrencyAmount } from "../../../utils/number";
 import { DEFAULT_CURRENCY_CODE } from "../../../constants/currencies";
 import { useTranslation } from "../../../i18n/helper";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 
 type AccountPickerModalItem = AppListItemType & {
   balance: number;
@@ -83,6 +84,7 @@ export default function AccountPickerModal({
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
   const { height, width } = useWindowDimensions();
   const accountSections = useMemo<AccountPickerSection[]>(() => {
     const sections = new Map<string, AccountPickerSection>();
@@ -229,7 +231,7 @@ export default function AccountPickerModal({
                   right={() => (
                     <View style={styles.accountBalanceContainer}>
                       <View style={styles.accountValue}>
-                        {item.currencyCode && (
+                        {item.currencyCode && !isSingleCurrency && (
                           <Text
                             variant="labelSmall"
                             style={{
@@ -249,6 +251,7 @@ export default function AccountPickerModal({
                             item.currencyCode ?? DEFAULT_CURRENCY_CODE,
                             locale,
                             areAmountsVisible,
+                            !isSingleCurrency,
                           )}
                         </Text>
                       </View>

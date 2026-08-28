@@ -9,6 +9,7 @@ import {
 import { BUDGET_REMAINING_COLOR } from "../../../constants/colors";
 import { DASHBOARD_SUMMARY_CARD_HEIGHT } from "../../../constants/size";
 import useDailyTransactionChart from "../../../hook/dashboard/useDailyTransactionChart";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import type { ChartPoint } from "../../../hook/dashboard/useDailyTransactionChart";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
@@ -271,6 +272,7 @@ function TooltipValue({
   locale: string;
 }) {
   const { t } = useTranslation();
+  const isSingleCurrency = useSingleCurrencyMode();
   return (
     <View style={styles.tooltipRow}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -286,6 +288,7 @@ function TooltipValue({
           currencyCode,
           locale,
           areAmountsVisible,
+          !isSingleCurrency,
         )}
       </Text>
     </View>

@@ -10,7 +10,7 @@ import { getCategoryPeriodSummaryList } from "../../sql/service/categoryMgmtServ
 import { formatDateValue, getCurrentMonthDateRange } from "../../utils/date";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
-import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
+import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
 
 export type CategoryHomeTabRoute = Route & {
   key: "expense" | "income";
@@ -31,7 +31,12 @@ export default function useCategoriesList() {
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(
     getCurrentMonthDateRange,
   );
-  const { enabledCurrencyCodes } = useCurrencyPreferenceOptions();
+  const startDate = formatDateValue(dateRange.startDate);
+  const endDate = formatDateValue(dateRange.endDate);
+  const { currencyCodes: enabledCurrencyCodes } = usePeriodCurrencyCodes(
+    startDate,
+    endDate,
+  );
   const currencyOptions = useMemo<SelectOptionType[]>(
     () => [
       {
@@ -56,14 +61,14 @@ export default function useCategoriesList() {
     currencyCodes: enabledCurrencyCodes,
     currencyOptions,
     dateRange,
-    endDate: formatDateValue(dateRange.endDate),
+    endDate,
     index,
     routes: CATEGORY_HOME_TAB_ROUTES,
     setDateRange,
     setIndex,
     setSelectedCurrencyCode,
     selectedCurrencyCode,
-    startDate: formatDateValue(dateRange.startDate),
+    startDate,
   };
 }
 

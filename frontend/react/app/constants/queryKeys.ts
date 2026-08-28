@@ -97,6 +97,16 @@ export const transactionManagementQueryKeys = {
       "dateRangeTotals",
       params,
     ] as const,
+  periodCurrencyCodes: (params: {
+    startDate: string;
+    endDate: string;
+    categoryId?: string;
+  }) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "periodCurrencyCodes",
+      params,
+    ] as const,
   dailyTotals: (params: {
     startDate: string;
     endDate: string;

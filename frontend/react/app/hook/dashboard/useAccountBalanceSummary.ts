@@ -11,6 +11,7 @@ import { DEBUG_TAG } from "../../utils/debugLog";
 import useBudgetDailyRemaining from "./useBudgetDailyRemaining";
 import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 import { getCurrencyPreferences } from "../../sql/service/currencyManagementService";
+import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
 
 export default function useAccountBalanceSummary(
   startDate: string,
@@ -42,13 +43,27 @@ export default function useAccountBalanceSummary(
   });
   const budgetQuery = useBudgetDailyRemaining(startDate, endDate, currencyCode);
 
-  const currencyCodes = preferencesQuery.data?.enabledCurrencyCodes ?? [];
+  const { currencyCodes, isFetched: arePeriodCurrenciesFetched } =
+    usePeriodCurrencyCodes(startDate, endDate, {
+      pendingCurrencyCode: currencyCode,
+    });
   const currencyIndex = currencyCodes.indexOf(currencyCode);
 
   useEffect(() => {
-    if (!preferencesQuery.data || currencyCodes.includes(currencyCode)) return;
+    if (
+      !preferencesQuery.data ||
+      !arePeriodCurrenciesFetched ||
+      currencyCodes.includes(currencyCode)
+    )
+      return;
     void setCurrencyCode(preferencesQuery.data.defaultCurrencyCode);
-  }, [currencyCode, currencyCodes, preferencesQuery.data, setCurrencyCode]);
+  }, [
+    arePeriodCurrenciesFetched,
+    currencyCode,
+    currencyCodes,
+    preferencesQuery.data,
+    setCurrencyCode,
+  ]);
 
   useEffect(() => {
     if (!balanceQuery.error) return;

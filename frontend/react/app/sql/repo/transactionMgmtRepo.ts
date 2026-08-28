@@ -518,6 +518,40 @@ export const getTransactionDateRangeTotalsFromDB = async (
   }
 };
 
+export const getTransactionPeriodCurrencyCodesFromDB = async (
+  startDate: string,
+  endDate: string,
+  categoryId?: string,
+): Promise<string[]> => {
+  try {
+    const db = await getDB();
+    const rows = await db.getAllAsync<{ currency_code: string }>(
+      `SELECT DISTINCT account_currency_code AS currency_code
+       FROM transactions
+       WHERE transaction_date >= ?
+         AND transaction_date <= ?
+         ${categoryId ? "AND category_id = ?" : ""}
+         AND deleted_at IS NULL
+       ORDER BY account_currency_code ASC;`,
+      [startDate, endDate, ...(categoryId ? [categoryId] : [])],
+    );
+
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded transaction period currencies",
+      { startDate, endDate, categoryId, count: rows.length },
+    );
+    return rows.map(({ currency_code }) => currency_code);
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when loading transaction period currencies",
+      e,
+    );
+    throw e;
+  }
+};
+
 const getBalanceTransaction = (
   data: TransactionMgmtCreateReqType,
 ): BalanceTransaction => ({

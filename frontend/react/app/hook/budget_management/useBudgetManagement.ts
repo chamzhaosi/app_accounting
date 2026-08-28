@@ -39,6 +39,7 @@ import {
 import { getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
+import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
 
 export default function useBudgetManagement() {
   const { id: planId } = useLocalSearchParams<{ id?: string }>();
@@ -47,6 +48,7 @@ export default function useBudgetManagement() {
   const reportingCurrencyCode = useReportingCurrencyStore(
     (state) => state.currencyCode,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
   const [allocations, setAllocations] = useState<Record<string, string>>({});
   const [isCategoryPickerVisible, setIsCategoryPickerVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -246,7 +248,7 @@ export default function useBudgetManagement() {
         invalidateQuery(queryClient, budgetQueryKeys.planList()),
       ]);
       AppToast.success({ message: "Budget saved successfully" });
-      router.replace(BUDGET_MANAGEMENT_LIST_URL as Href);
+      router.dismissTo(BUDGET_MANAGEMENT_LIST_URL as Href);
     } catch (error) {
       console.error(DEBUG_TAG.BUDGET, "Error when saving budget", error);
       AppToast.error({ message: "Unable to save budget" });
@@ -287,6 +289,6 @@ export default function useBudgetManagement() {
     onSubmit,
     rspErrorMsg,
     selectedCategories,
-    showCurrencyField: true,
+    showCurrencyField: !isSingleCurrency,
   };
 }

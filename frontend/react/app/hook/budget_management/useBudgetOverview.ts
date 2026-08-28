@@ -14,7 +14,7 @@ import {
   getAmountRatio,
   subtractAmounts,
 } from "../../utils/amount";
-import { getMonthKey } from "../../utils/date";
+import { getMonthEndKey, getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import {
   BUDGET_PIE_COLORS,
@@ -25,6 +25,7 @@ import {
   sortCategoriesBySpent,
 } from "./budgetOverview.utils";
 import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
+import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
 
 type BudgetProgressTheme = {
   primary: string;
@@ -59,10 +60,15 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
         left.currency_code.localeCompare(right.currency_code),
     );
   }, [plansQuery.data, preferencesQuery.data?.defaultCurrencyCode]);
+  const {
+    currencyCodes: periodCurrencyCodes,
+    isFetched: arePeriodCurrenciesFetched,
+  } = usePeriodCurrencyCodes(month, getMonthEndKey(month), {
+    pendingCurrencyCode: selectedCurrencyCode,
+  });
 
   const currencyCodes = useMemo(() => {
-    const enabled = preferencesQuery.data?.enabledCurrencyCodes ?? [];
-    const codes = new Set(enabled);
+    const codes = new Set(periodCurrencyCodes);
     plans.forEach((plan) => codes.add(plan.currency_code));
     const defaultCode = preferencesQuery.data?.defaultCurrencyCode;
     return Array.from(codes).sort(
@@ -70,15 +76,20 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
         Number(right === defaultCode) - Number(left === defaultCode) ||
         left.localeCompare(right),
     );
-  }, [plans, preferencesQuery.data]);
+  }, [periodCurrencyCodes, plans, preferencesQuery.data]);
 
   useEffect(() => {
-    if (!preferencesQuery.data || currencyCodes.includes(selectedCurrencyCode))
+    if (
+      !preferencesQuery.data ||
+      !arePeriodCurrenciesFetched ||
+      currencyCodes.includes(selectedCurrencyCode)
+    )
       return;
     void setSelectedCurrencyCode(
       preferencesQuery.data.defaultCurrencyCode ?? currencyCodes[0],
     );
   }, [
+    arePeriodCurrenciesFetched,
     currencyCodes,
     preferencesQuery.data,
     selectedCurrencyCode,
@@ -159,7 +170,6 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
       selectedCurrencyIndex >= 0 &&
       selectedCurrencyIndex < currencyCodes.length - 1,
     canSelectPreviousCurrency: selectedCurrencyIndex > 0,
-    currencyCount: currencyCodes.length,
     isCurrentMonth: month === currentMonth,
     isError: query.isError || plansQuery.isError || preferencesQuery.isError,
     isLoading:

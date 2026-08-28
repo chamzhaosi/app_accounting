@@ -15,6 +15,7 @@ import {
   getCategoryDailyTotalsFromDB,
   getTransactionDailyTotalsFromDB,
   getTransactionDateRangeTotalsFromDB,
+  getTransactionPeriodCurrencyCodesFromDB,
   getTransactionMgmtByIdFromDB,
   getTransactionOperationByIdFromDB,
   getTransactionMgmtListFromDB,
@@ -108,6 +109,13 @@ export const getTransactionDateRangeTotals = async (
     accountId,
   );
 
+export const getTransactionPeriodCurrencyCodes = async (
+  startDate: string,
+  endDate: string,
+  categoryId?: string,
+): Promise<string[]> =>
+  getTransactionPeriodCurrencyCodesFromDB(startDate, endDate, categoryId);
+
 const CATEGORY_TYPE_IDS = {
   [TXN_TYPE_ENUM.INCOME]: 1,
   [TXN_TYPE_ENUM.EXPENSE]: 2,
@@ -151,6 +159,7 @@ export const getTransactionOperationById = async (
 
 const validateTransactionMgmt = async (
   data: TransactionMgmtCreateReqType,
+  current?: TransactionMgmtRspType,
 ): Promise<string | void> => {
   if (
     !isValidAmount(data.amount, data.currencyCode) ||
@@ -168,9 +177,12 @@ const validateTransactionMgmt = async (
   )
     return "Select valid transaction currencies.";
   const currencyPreferences = await getCurrencyPreferences();
+  const enabledCurrencyCodes = currencyPreferences?.enabledCurrencyCodes ?? [];
   if (
-    !currencyPreferences?.enabledCurrencyCodes.includes(data.currencyCode) ||
-    !currencyPreferences.enabledCurrencyCodes.includes(data.accountCurrencyCode)
+    (!enabledCurrencyCodes.includes(data.currencyCode) &&
+      data.currencyCode !== current?.currency_code) ||
+    (!enabledCurrencyCodes.includes(data.accountCurrencyCode) &&
+      data.accountCurrencyCode !== current?.account_currency_code)
   )
     return "Transaction currencies must be enabled.";
   if (
@@ -204,7 +216,14 @@ const validateTransactionMgmt = async (
       getAccMgmtByIdFromDB(fee.accountId),
       getCategoryMgmtByIdFromDB(fee.categoryId),
     ]);
-    if (!feeAccount?.is_active || !feeAccount.is_currency_enabled)
+    const isSavedAccount =
+      feeAccount?.id === current?.account_id ||
+      feeAccount?.id === current?.from_account_id ||
+      feeAccount?.id === current?.to_account_id;
+    if (
+      !feeAccount?.is_active ||
+      (!feeAccount.is_currency_enabled && !isSavedAccount)
+    )
       return "A fee account is unavailable.";
     if (!feeCategory?.is_active || feeCategory.type_id !== 2)
       return "Select a valid expense category for every fee.";
@@ -219,9 +238,17 @@ const validateTransactionMgmt = async (
       getAccMgmtByIdFromDB(data.toAccountId),
     ]);
 
-    if (!fromAccount?.is_active || !fromAccount.is_currency_enabled)
+    if (
+      !fromAccount?.is_active ||
+      (!fromAccount.is_currency_enabled &&
+        fromAccount.id !== current?.from_account_id)
+    )
       return "From Account is unavailable because its currency is disabled.";
-    if (!toAccount?.is_active || !toAccount.is_currency_enabled)
+    if (
+      !toAccount?.is_active ||
+      (!toAccount.is_currency_enabled &&
+        toAccount.id !== current?.to_account_id)
+    )
       return "To Account is unavailable because its currency is disabled.";
     if (
       data.currencyCode !== fromAccount.currency_code ||
@@ -236,7 +263,10 @@ const validateTransactionMgmt = async (
     getCategoryMgmtByIdFromDB(data.categoryId),
   ]);
 
-  if (!account?.is_active || !account.is_currency_enabled)
+  if (
+    !account?.is_active ||
+    (!account.is_currency_enabled && account.id !== current?.account_id)
+  )
     return "Selected account is unavailable because its currency is disabled.";
   if (data.accountCurrencyCode !== account.currency_code)
     return "Account currency does not match the selected account.";
@@ -272,7 +302,7 @@ export const updateTransactionMgmt = async (
   const current = await getTransactionMgmtByIdFromDB(data.id);
   if (!current) return "Transaction not found.";
 
-  const errorMessage = await validateTransactionMgmt(data);
+  const errorMessage = await validateTransactionMgmt(data, current);
   if (errorMessage) return errorMessage;
 
   await updateTransactionMgmtToDB(data);

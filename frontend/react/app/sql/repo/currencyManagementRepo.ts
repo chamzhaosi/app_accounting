@@ -30,8 +30,44 @@ export const getCurrencyPreferencesFromDB = async () => {
   }
 };
 
+export const getUsedCurrencyCodesFromDB = async (): Promise<string[]> => {
+  try {
+    const db = await getDB();
+    const rows = await db.getAllAsync<{ code: string }>(
+      `SELECT currency_code AS code
+       FROM accounts
+       WHERE deleted_at IS NULL
+       UNION
+       SELECT currency_code AS code
+       FROM transactions
+       WHERE deleted_at IS NULL
+       UNION
+       SELECT account_currency_code AS code
+       FROM transactions
+       WHERE deleted_at IS NULL
+       UNION
+       SELECT currency_code AS code
+       FROM budget_plans
+       WHERE deleted_at IS NULL
+       ORDER BY code ASC;`,
+    );
+
+    debugLog(DEBUG_TAG.CURRENCY_MANAGEMENT_DB, "Loaded used currencies", {
+      count: rows.length,
+    });
+    return rows.map(({ code }) => code);
+  } catch (error) {
+    console.error(
+      DEBUG_TAG.CURRENCY_MANAGEMENT_DB,
+      "Error when loading used currencies",
+      error,
+    );
+    throw error;
+  }
+};
+
 export const saveCurrencyPreferencesToDB = async (
-  data: CurrencyPreferences,
+  data: Omit<CurrencyPreferences, "isSingleCurrency">,
   disabledCurrencyCodes: string[] = [],
 ) => {
   try {

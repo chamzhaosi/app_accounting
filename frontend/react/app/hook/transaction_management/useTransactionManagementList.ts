@@ -10,6 +10,8 @@ import { capitalizeFirst } from "../../utils/text";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../category_management/categoryManagementList.utils";
+import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
+import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 
 export type TransactionManagementListProps = {
   startDate: string;
@@ -27,9 +29,7 @@ export type TransactionListItem = {
   title: string;
   subtitle: string;
   fromAccountLabel?: string;
-  fromAccountCurrencyCode?: string;
   toAccountLabel?: string;
-  toAccountCurrencyCode?: string;
   accountId?: string;
   primaryAmount: number;
   primaryCurrencyCode: string;
@@ -55,6 +55,7 @@ export default function useTransactionManagementList({
   currencyCode,
 }: TransactionManagementListProps) {
   const { t } = useTranslation();
+  const isSingleCurrency = useSingleCurrencyMode();
   const {
     data,
     error,
@@ -142,19 +143,24 @@ export default function useTransactionManagementList({
             : t("Balance Adjustment");
       const subtitle =
         isIncome || isExpense
-          ? `${transaction.account_currency_code} - ${transaction.account_label ?? t("Account")}`
+          ? getTransactionAccountDisplayLabel(
+              transaction.account_label ?? t("Account"),
+              transaction.account_currency_code,
+              isSingleCurrency,
+            )
           : isTransfer
             ? `${transaction.from_account_label ?? "Account"} → ${transaction.to_account_label ?? "Account"}`
-            : `${transaction.account_currency_code} - ${transaction.account_label ?? t("Account")} · ${t(
-                "Balance {{direction}}",
-                {
-                  direction: t(
-                    compareAmounts(transaction.amount, 0) > 0
-                      ? "increased"
-                      : "decreased",
-                  ),
-                },
-              )}`;
+            : `${getTransactionAccountDisplayLabel(
+                transaction.account_label ?? t("Account"),
+                transaction.account_currency_code,
+                isSingleCurrency,
+              )} · ${t("Balance {{direction}}", {
+                direction: t(
+                  compareAmounts(transaction.amount, 0) > 0
+                    ? "increased"
+                    : "decreased",
+                ),
+              })}`;
       const item: TransactionListItem = {
         description: transaction.descriptions?.trim() || undefined,
         id: transaction.id,
@@ -165,16 +171,18 @@ export default function useTransactionManagementList({
         title,
         subtitle,
         fromAccountLabel: isTransfer
-          ? (transaction.from_account_label ?? t("Account"))
-          : undefined,
-        fromAccountCurrencyCode: isTransfer
-          ? transaction.currency_code
+          ? getTransactionAccountDisplayLabel(
+              transaction.from_account_label ?? t("Account"),
+              transaction.currency_code,
+              isSingleCurrency,
+            )
           : undefined,
         toAccountLabel: isTransfer
-          ? (transaction.to_account_label ?? t("Account"))
-          : undefined,
-        toAccountCurrencyCode: isTransfer
-          ? transaction.account_currency_code
+          ? getTransactionAccountDisplayLabel(
+              transaction.to_account_label ?? t("Account"),
+              transaction.account_currency_code,
+              isSingleCurrency,
+            )
           : undefined,
         accountId: transaction.account_id ?? undefined,
         primaryAmount,
@@ -209,7 +217,7 @@ export default function useTransactionManagementList({
         data: items,
       };
     });
-  }, [accountId, data, t]);
+  }, [accountId, data, isSingleCurrency, t]);
 
   useEffect(() => {
     if (!error) return;

@@ -8,6 +8,7 @@ import AppIcon from "../../components/AppIcon";
 import AppView from "../../components/AppView";
 import { BUDGET_MANAGEMENT_CREATE_URL } from "../../constants/urls";
 import useBudgetPlanList from "../../hook/budget_management/useBudgetPlanList";
+import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurrencyMode";
 import { useTranslation } from "../../i18n/helper";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { useThemeStore } from "../../stores/useThemeStore";
@@ -23,6 +24,7 @@ export default function BudgetPlanList() {
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
 
   if (logic.isLoading) {
     return (
@@ -119,12 +121,13 @@ export default function BudgetPlanList() {
                 item.currency_code,
                 locale,
                 areAmountsVisible,
+                !isSingleCurrency,
               )}
               description={t(
                 "{{count}} categories · {{currency}} {{amount}} allocated",
                 {
                   count: item.allocation_count,
-                  currency: item.currency_code,
+                  currency: isSingleCurrency ? "" : item.currency_code,
                   amount: formatPrivateLocalizedAmount(
                     item.allocated_amount,
                     item.currency_code,
@@ -132,7 +135,7 @@ export default function BudgetPlanList() {
                     areAmountsVisible,
                   ),
                 },
-              )}
+              ).replace(/\s+/g, " ")}
               onPress={() => logic.onPressPlan(item)}
               style={[styles.item, { backgroundColor: THEME.surfaceContainer }]}
               left={() => (
@@ -180,7 +183,12 @@ const styles = StyleSheet.create({
   dialogButtonLabel: { fontSize: 14, marginHorizontal: 10 },
   listContent: { flexGrow: 1, paddingBottom: 96 },
   item: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 8 },
-  itemIcon: { alignItems: "center", justifyContent: "center", marginLeft: 8 },
+  itemIcon: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+    paddingLeft: 8,
+  },
   itemRight: { alignItems: "center", flexDirection: "row", gap: 6 },
   statusDot: { borderRadius: 5, height: 10, width: 10 },
   notice: {

@@ -16,6 +16,7 @@ import {
   ACCOUNT_MANAGEMENT_CREATE_URL,
 } from "../../constants/urls";
 import useAccountManagementList from "../../hook/account_management/useAccountManagementList";
+import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurrencyMode";
 import { useTranslation } from "../../i18n/helper";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { useThemeStore } from "../../stores/useThemeStore";
@@ -28,6 +29,7 @@ export default function AccountManagementList() {
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
 
   if (logic.isLoading) {
     return (
@@ -116,23 +118,26 @@ export default function AccountManagementList() {
             right={() => (
               <View style={styles.accountValueContainer}>
                 <View style={styles.accountValue}>
-                  <Text
-                    variant="labelSmall"
-                    style={{
-                      color:
-                        account.is_currency_enabled === false
-                          ? THEME.error
-                          : THEME.onSurfaceVariant,
-                    }}
-                  >
-                    {account.currency_code}
-                  </Text>
+                  {!isSingleCurrency && (
+                    <Text
+                      variant="labelSmall"
+                      style={{
+                        color:
+                          account.is_currency_enabled === false
+                            ? THEME.error
+                            : THEME.onSurfaceVariant,
+                      }}
+                    >
+                      {account.currency_code}
+                    </Text>
+                  )}
                   <Text style={styles.accountBalance}>
                     {formatPrivateCurrencyAmount(
                       account.current_balance,
                       account.currency_code,
                       locale,
                       areAmountsVisible,
+                      !isSingleCurrency,
                     )}
                   </Text>
                 </View>

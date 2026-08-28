@@ -6,4 +6,5 @@ export type CurrencyPreferenceRow = {
 export type CurrencyPreferences = {
   defaultCurrencyCode: string;
   enabledCurrencyCodes: string[];
+  isSingleCurrency: boolean;
 };

@@ -8,6 +8,7 @@ import AppView from "../../../components/AppView";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
 import { ACCOUNT_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import useAccountDetail from "../../../hook/account_management/useAccountDetail";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import TransactionManagementList from "../../transaction_management/list";
@@ -40,13 +41,22 @@ export default function AccountDetail() {
     startDate,
   } = useAccountDetail();
   const currencyCode = account?.currency_code ?? DEFAULT_CURRENCY_CODE;
-  const displayAmount = (value: number, isShowCurrencyCode?: boolean) => {
-    const formatFunction = isShowCurrencyCode
-      ? formatPrivateCurrencyAmount
-      : formatPrivateLocalizedAmount;
-
-    return formatFunction(value, currencyCode, locale, areAmountsVisible);
-  };
+  const isSingleCurrency = useSingleCurrencyMode();
+  const displayAmount = (value: number, showCurrencyCode?: boolean) =>
+    showCurrencyCode
+      ? formatPrivateCurrencyAmount(
+          value,
+          currencyCode,
+          locale,
+          areAmountsVisible,
+          !isSingleCurrency,
+        )
+      : formatPrivateLocalizedAmount(
+          value,
+          currencyCode,
+          locale,
+          areAmountsVisible,
+        );
 
   if (isLoading) {
     return (

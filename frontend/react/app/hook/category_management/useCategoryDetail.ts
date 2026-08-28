@@ -19,7 +19,7 @@ import {
 import { DEBUG_TAG } from "../../utils/debugLog";
 import { compareAmounts } from "../../utils/amount";
 import { useTranslation } from "../../i18n/helper";
-import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
+import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
 
 const getInitialDateRange = (
   startDate?: string,
@@ -50,8 +50,20 @@ export default function useCategoryDetail() {
     initialCurrencyCode ?? ALL_CURRENCIES_VALUE,
   );
   const [isCurrencyTotalsVisible, setIsCurrencyTotalsVisible] = useState(false);
-  const { enabledCurrencyCodes } =
-    useCurrencyPreferenceOptions(initialCurrencyCode);
+  const currencyCode =
+    selectedCurrencyCode === ALL_CURRENCIES_VALUE
+      ? undefined
+      : selectedCurrencyCode;
+  const [dateRange, setDateRange] = useState<AppDateRangeValue>(() =>
+    getInitialDateRange(initialStartDate, initialEndDate),
+  );
+  const startDate = formatDateValue(dateRange.startDate);
+  const endDate = formatDateValue(dateRange.endDate);
+  const { currencyCodes: enabledCurrencyCodes } = usePeriodCurrencyCodes(
+    startDate,
+    endDate,
+    { categoryId: id, pendingCurrencyCode: initialCurrencyCode },
+  );
   const currencyOptions = useMemo<SelectOptionType[]>(
     () => [
       {
@@ -67,15 +79,6 @@ export default function useCategoryDetail() {
     ],
     [enabledCurrencyCodes, t],
   );
-  const currencyCode =
-    selectedCurrencyCode === ALL_CURRENCIES_VALUE
-      ? undefined
-      : selectedCurrencyCode;
-  const [dateRange, setDateRange] = useState<AppDateRangeValue>(() =>
-    getInitialDateRange(initialStartDate, initialEndDate),
-  );
-  const startDate = formatDateValue(dateRange.startDate);
-  const endDate = formatDateValue(dateRange.endDate);
 
   const categoryQuery = useQuery({
     queryKey: categoryManagementQueryKeys.detail(id),

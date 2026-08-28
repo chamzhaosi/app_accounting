@@ -58,6 +58,8 @@ import {
   getCategoryDisplayLabel,
 } from "../category_management/categoryManagementList.utils";
 import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
+import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
+import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 
 const TRANSACTION_CATEGORY_PAGE_SIZE = 1000;
 
@@ -77,8 +79,6 @@ export default function useTransactionManagementDetail() {
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
   const isSubmitting = isDeleting || isSaving;
-  const currencyPreferences = useCurrencyPreferenceOptions();
-
   const {
     data: operation,
     error: transactionError,
@@ -89,6 +89,10 @@ export default function useTransactionManagementDetail() {
     enabled: Boolean(id),
   });
   const transaction = operation?.main;
+  const isSingleCurrency = useSingleCurrencyMode();
+  const currencyPreferences = useCurrencyPreferenceOptions(
+    transaction?.currency_code,
+  );
 
   const {
     clearErrors,
@@ -232,7 +236,11 @@ export default function useTransactionManagementDetail() {
             label: account.label,
             balance: account.current_balance,
             currencyCode: account.currency_code,
-            inputLabel: `${account.currency_code} - ${account.label}`,
+            inputLabel: getTransactionAccountDisplayLabel(
+              account.label,
+              account.currency_code,
+              isSingleCurrency,
+            ),
             descriptions: account.descriptions ?? undefined,
             typeId: account.type_id,
             typeLabel: account.type_label,
@@ -275,7 +283,7 @@ export default function useTransactionManagementDetail() {
       });
     }
     return items;
-  }, [accounts, t, transaction]);
+  }, [accounts, isSingleCurrency, t, transaction]);
 
   const feeCategoryOptions = useMemo<SelectOptionType[]>(() => {
     const options = feeCategories.map((category) => ({
@@ -724,7 +732,7 @@ export default function useTransactionManagementDetail() {
     setFocus,
     setShowDeleteDialog,
     setValue,
-    showCurrencyField: currencyPreferences.showCurrencyField,
+    showCurrencyField: true,
     showDeleteDialog,
     transactionType,
     usesExchangeRate,

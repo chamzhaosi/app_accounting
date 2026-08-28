@@ -31,6 +31,7 @@ import type { BudgetOverviewType } from "../../sql/types/budgetType";
 import { BUDGET_PIE_COLORS } from "../../hook/budget_management/budgetOverview.utils";
 import useBudgetExpenseDonutChart from "../../hook/budget_management/useBudgetExpenseDonutChart";
 import useBudgetOverview from "../../hook/budget_management/useBudgetOverview";
+import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { absoluteAmount, compareAmounts } from "../../utils/amount";
@@ -50,6 +51,7 @@ export default function Budget() {
     (state) => state.areAmountsVisible,
   );
   const logic = useBudgetOverview(THEME);
+  const isSingleCurrency = useSingleCurrencyMode();
   const displayAmount = (value: number) =>
     formatPrivateLocalizedAmount(
       value,
@@ -65,51 +67,55 @@ export default function Budget() {
         : BUDGET_MANAGEMENT_CREATE_URL) as Href,
     );
 
-  const currencyNavigator = logic.selectedCurrencyCode ? (
-    <Surface
-      elevation={0}
-      style={[
-        styles.currencyCard,
-        { backgroundColor: THEME.surfaceContainerHighest },
-      ]}
-    >
-      <View style={styles.currencyNavigator}>
-        <AppIconButton
-          iconName="ChevronLeft"
-          accessibilityLabel={t("Previous currency")}
-          disabled={!logic.canSelectPreviousCurrency}
-          onPress={logic.previousCurrency}
-          style={{
-            ...styles.currencyButton,
-            backgroundColor: THEME.surfaceContainerHighest,
-          }}
-        />
-        <View style={styles.currencyLabel}>
-          <Text variant="labelSmall" style={{ color: THEME.onSurfaceVariant }}>
-            {t("Currency")}
-          </Text>
-          <Text variant="titleMedium" style={styles.currencyCode}>
-            {logic.selectedCurrencyCode}
-          </Text>
-          {!logic.selectedCurrencyEnabled ? (
-            <Text variant="labelSmall" style={{ color: THEME.error }}>
-              {t("Currency disabled")}
+  const currencyNavigator =
+    logic.selectedCurrencyCode && !isSingleCurrency ? (
+      <Surface
+        elevation={0}
+        style={[
+          styles.currencyCard,
+          { backgroundColor: THEME.surfaceContainerHighest },
+        ]}
+      >
+        <View style={styles.currencyNavigator}>
+          <AppIconButton
+            iconName="ChevronLeft"
+            accessibilityLabel={t("Previous currency")}
+            disabled={!logic.canSelectPreviousCurrency}
+            onPress={logic.previousCurrency}
+            style={{
+              ...styles.currencyButton,
+              backgroundColor: THEME.surfaceContainerHighest,
+            }}
+          />
+          <View style={styles.currencyLabel}>
+            <Text
+              variant="labelSmall"
+              style={{ color: THEME.onSurfaceVariant }}
+            >
+              {t("Currency")}
             </Text>
-          ) : null}
+            <Text variant="titleMedium" style={styles.currencyCode}>
+              {logic.selectedCurrencyCode}
+            </Text>
+            {!logic.selectedCurrencyEnabled ? (
+              <Text variant="labelSmall" style={{ color: THEME.error }}>
+                {t("Currency disabled")}
+              </Text>
+            ) : null}
+          </View>
+          <AppIconButton
+            iconName="ChevronRight"
+            accessibilityLabel={t("Next currency")}
+            disabled={!logic.canSelectNextCurrency}
+            onPress={logic.nextCurrency}
+            style={{
+              ...styles.currencyButton,
+              backgroundColor: THEME.surfaceContainerHighest,
+            }}
+          />
         </View>
-        <AppIconButton
-          iconName="ChevronRight"
-          accessibilityLabel={t("Next currency")}
-          disabled={!logic.canSelectNextCurrency}
-          onPress={logic.nextCurrency}
-          style={{
-            ...styles.currencyButton,
-            backgroundColor: THEME.surfaceContainerHighest,
-          }}
-        />
-      </View>
-    </Surface>
-  ) : null;
+      </Surface>
+    ) : null;
 
   if (logic.isLoading) {
     return (
@@ -199,11 +205,16 @@ export default function Budget() {
               maximumMonth={getMonthKey()}
               onChange={logic.setMonth}
             />
-            <AppIcon
-              name="HandCoins"
-              size={72}
-              color={THEME.onSurfaceVariant}
-            />
+            <View style={styles.emptyCurrencyRow}>
+              <View style={styles.emptyIconContainer}>
+                <AppIcon
+                  name="HandCoins"
+                  size={72}
+                  color={THEME.onSurfaceVariant}
+                />
+              </View>
+              {currencyNavigator}
+            </View>
             <Text variant="headlineSmall" style={styles.emptyTitle}>
               {t("No budget for this month")}
             </Text>
@@ -220,6 +231,7 @@ export default function Budget() {
             {logic.isCurrentMonth && (
               <AppButton
                 {...SUBMIT_BTN_CONTENT_STYLE}
+                disabled={!logic.selectedCurrencyEnabled}
                 onPress={openManagement}
                 style={styles.emptyButton}
               >
@@ -452,7 +464,9 @@ export default function Budget() {
                                 locale,
                                 true,
                               )}`
-                          : `${logic.selectedCurrencyCode} ${MASKED_AMOUNT}`}
+                          : isSingleCurrency
+                            ? MASKED_AMOUNT
+                            : `${logic.selectedCurrencyCode} ${MASKED_AMOUNT}`}
                       </Text>
                     </View>
                     <ProgressBar
@@ -670,12 +684,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emptyButton: { borderRadius: 8, marginTop: 20, width: "100%" },
+  emptyCurrencyRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  emptyIconContainer: { alignItems: "flex-end", flex: 1, paddingRight: 12 },
   emptyCard: {
     alignItems: "center",
     borderRadius: 16,
     margin: 12,
-    marginTop: 12,
-    padding: 28,
+    paddingHorizontal: 28,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
   emptyText: { marginTop: 8, textAlign: "center" },
   emptyTitle: { marginTop: 16 },

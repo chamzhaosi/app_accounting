@@ -10,6 +10,7 @@ import AppView from "../../../components/AppView";
 import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
 import { CATEGORY_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import useCategoryDetail from "../../../hook/category_management/useCategoryDetail";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import TransactionManagementList from "../../transaction_management/list";
@@ -25,6 +26,7 @@ export default function CategoryDetail() {
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
   const {
     category,
     currencyCode,
@@ -111,12 +113,14 @@ export default function CategoryDetail() {
                 </Text>
               )}
             </View>
-            <CategoryCurrencyNavigator
-              value={selectedCurrencyCode}
-              options={currencyOptions}
-              onChange={setSelectedCurrencyCode}
-              style={styles.currencyNavigator}
-            />
+            {!isSingleCurrency && (
+              <CategoryCurrencyNavigator
+                value={selectedCurrencyCode}
+                options={currencyOptions}
+                onChange={setSelectedCurrencyCode}
+                style={styles.currencyNavigator}
+              />
+            )}
           </View>
 
           <AppDateRangePicker
@@ -151,7 +155,7 @@ export default function CategoryDetail() {
                         },
                       ]}
                     >
-                      {`${total.currency_code} ${formatPrivateLocalizedAmount(
+                      {`${isSingleCurrency ? "" : `${total.currency_code} `}${formatPrivateLocalizedAmount(
                         total.total_amount,
                         total.currency_code,
                         locale,
@@ -162,7 +166,7 @@ export default function CategoryDetail() {
                 ) : (
                   <Text style={styles.summaryAmount}>
                     {currencyCode
-                      ? `${currencyCode} ${formatPrivateLocalizedAmount(
+                      ? `${isSingleCurrency ? "" : `${currencyCode} `}${formatPrivateLocalizedAmount(
                           periodTotal,
                           currencyCode,
                           locale,
@@ -294,9 +298,6 @@ const styles = StyleSheet.create({
   },
   currencyTotals: {
     alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
     justifyContent: "center",
   },
   moreTotalsButton: {

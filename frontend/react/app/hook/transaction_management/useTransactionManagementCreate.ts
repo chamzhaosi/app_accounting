@@ -59,6 +59,8 @@ import {
   getCategoryDisplayLabel,
 } from "../category_management/categoryManagementList.utils";
 import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
+import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
+import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 
 const TRANSACTION_CATEGORY_PAGE_SIZE = 1000;
 
@@ -87,6 +89,7 @@ export default function useTransactionManagementCreate() {
   const isSubmitting = isSaving || isSavingAndNew;
   const today = dayjs().format("YYYY-MM-DD");
   const currencyPreferences = useCurrencyPreferenceOptions();
+  const isSingleCurrency = useSingleCurrencyMode();
 
   const {
     clearErrors,
@@ -245,7 +248,11 @@ export default function useTransactionManagementCreate() {
             label: account.label,
             balance: account.current_balance,
             currencyCode: account.currency_code,
-            inputLabel: `${account.currency_code} - ${account.label}`,
+            inputLabel: getTransactionAccountDisplayLabel(
+              account.label,
+              account.currency_code,
+              isSingleCurrency,
+            ),
             descriptions: account.descriptions ?? undefined,
             typeId: account.type_id,
             typeLabel: account.type_label,
@@ -254,7 +261,7 @@ export default function useTransactionManagementCreate() {
         );
         return result;
       }, []) ?? [],
-    [accounts],
+    [accounts, isSingleCurrency],
   );
 
   const feeCategoryOptions = useMemo<SelectOptionType[]>(

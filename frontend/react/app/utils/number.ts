@@ -69,68 +69,117 @@ const getCurrencyFormatter = (
   });
 };
 
+export const formatLocalizedAmount = (
+  amount: AmountValue,
+  currencyCode: string,
+  locale: string,
+  compact = false,
+): string => {
+  const decimalDigits = getCurrencyDecimalDigits(currencyCode);
+  return new Intl.NumberFormat(locale, {
+    ...(compact
+      ? { notation: "compact", maximumFractionDigits: 1 }
+      : {
+          minimumFractionDigits: decimalDigits,
+          maximumFractionDigits: decimalDigits,
+        }),
+  }).format(toAmountNumber(amount));
+};
+
 export const formatCurrencyAmount = (
   amount: AmountValue,
   currencyCode: string,
   locale: string,
+  showCurrencyCode = true,
 ): string =>
-  getCurrencyFormatter(locale, currencyCode).format(toAmountNumber(amount));
+  showCurrencyCode
+    ? getCurrencyFormatter(locale, currencyCode).format(toAmountNumber(amount))
+    : formatLocalizedAmount(amount, currencyCode, locale);
 
 export const formatAbsoluteCurrencyAmount = (
   amount: AmountValue,
   currencyCode: string,
   locale: string,
+  showCurrencyCode = true,
 ): string =>
-  formatCurrencyAmount(toBigAmount(amount).abs(), currencyCode, locale);
+  formatCurrencyAmount(
+    toBigAmount(amount).abs(),
+    currencyCode,
+    locale,
+    showCurrencyCode,
+  );
 
 export const formatSignedCurrencyAmount = (
   amount: AmountValue,
   currencyCode: string,
   locale: string,
+  showCurrencyCode = true,
 ): string => {
   const comparison = toBigAmount(amount).cmp(0);
   const prefix = comparison > 0 ? "+" : comparison < 0 ? "-" : "";
-  return `${prefix}${formatAbsoluteCurrencyAmount(amount, currencyCode, locale)}`;
+  return `${prefix}${formatAbsoluteCurrencyAmount(
+    amount,
+    currencyCode,
+    locale,
+    showCurrencyCode,
+  )}`;
 };
 
 export const formatCompactCurrencyAmount = (
   amount: AmountValue,
   currencyCode: string,
   locale: string,
+  showCurrencyCode = true,
 ): string =>
-  getCurrencyFormatter(locale, currencyCode, true).format(
-    toAmountNumber(amount),
-  );
+  showCurrencyCode
+    ? getCurrencyFormatter(locale, currencyCode, true).format(
+        toAmountNumber(amount),
+      )
+    : formatLocalizedAmount(amount, currencyCode, locale, true);
 
 export const formatPrivateCurrencyAmount = (
   amount: AmountValue,
   currencyCode: string,
   locale: string,
   areAmountsVisible: boolean,
+  showCurrencyCode = true,
 ): string =>
   areAmountsVisible
-    ? formatCurrencyAmount(amount, currencyCode, locale)
-    : `${currencyCode} ${MASKED_AMOUNT}`;
+    ? formatCurrencyAmount(amount, currencyCode, locale, showCurrencyCode)
+    : showCurrencyCode
+      ? `${currencyCode} ${MASKED_AMOUNT}`
+      : MASKED_AMOUNT;
 
 export const formatPrivateSignedCurrencyAmount = (
   amount: AmountValue,
   currencyCode: string,
   locale: string,
   areAmountsVisible: boolean,
+  showCurrencyCode = true,
 ): string =>
   areAmountsVisible
-    ? formatSignedCurrencyAmount(amount, currencyCode, locale)
-    : `${currencyCode} ${MASKED_AMOUNT}`;
+    ? formatSignedCurrencyAmount(amount, currencyCode, locale, showCurrencyCode)
+    : showCurrencyCode
+      ? `${currencyCode} ${MASKED_AMOUNT}`
+      : MASKED_AMOUNT;
 
 export const formatPrivateCompactCurrencyAmount = (
   amount: AmountValue,
   currencyCode: string,
   locale: string,
   areAmountsVisible: boolean,
+  showCurrencyCode = true,
 ): string =>
   areAmountsVisible
-    ? formatCompactCurrencyAmount(amount, currencyCode, locale)
-    : `${currencyCode} ${MASKED_AMOUNT}`;
+    ? formatCompactCurrencyAmount(
+        amount,
+        currencyCode,
+        locale,
+        showCurrencyCode,
+      )
+    : showCurrencyCode
+      ? `${currencyCode} ${MASKED_AMOUNT}`
+      : MASKED_AMOUNT;
 
 export const formatPrivateLocalizedAmount = (
   amount: AmountValue,
@@ -139,9 +188,5 @@ export const formatPrivateLocalizedAmount = (
   areAmountsVisible: boolean,
 ): string => {
   if (!areAmountsVisible) return MASKED_AMOUNT;
-  const decimalDigits = getCurrencyDecimalDigits(currencyCode);
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: decimalDigits,
-    maximumFractionDigits: decimalDigits,
-  }).format(toAmountNumber(amount));
+  return formatLocalizedAmount(amount, currencyCode, locale);
 };

@@ -11,6 +11,7 @@ import {
   LIST_ITEM_TITLE_FONTSIZE,
 } from "../../../constants/size";
 import useAccountsList from "../../../hook/account_management/useAccountsList";
+import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
 import { formatPrivateCurrencyAmount } from "../../../utils/number";
@@ -23,6 +24,7 @@ export default function AccountsList() {
     (state) => state.areAmountsVisible,
   );
   const logic = useAccountsList();
+  const isSingleCurrency = useSingleCurrencyMode();
 
   if (logic.isLoading) {
     return (
@@ -93,6 +95,7 @@ export default function AccountsList() {
                     account.currency_code,
                     locale,
                     areAmountsVisible,
+                    !isSingleCurrency,
                   )}
                 </Text>
                 <ChevronRight color={THEME.onSurfaceVariant} size={22} />

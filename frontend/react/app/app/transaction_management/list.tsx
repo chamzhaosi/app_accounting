@@ -16,6 +16,7 @@ import {
   TRANSACTION_MANAGEMENT_BASE_URL,
 } from "../../constants/urls";
 import useTransactionManagementList from "../../hook/transaction_management/useTransactionManagementList";
+import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurrencyMode";
 import type { TransactionManagementListProps } from "../../hook/transaction_management/useTransactionManagementList";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
@@ -43,6 +44,7 @@ export default function TransactionManagementList(
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
   const currencyOrder = new Map(
     (currencyCodes ?? []).map((code, index) => [code, index]),
   );
@@ -194,6 +196,7 @@ export default function TransactionManagementList(
                       primaryNet.currencyCode,
                       locale,
                       areAmountsVisible,
+                      !isSingleCurrency,
                     )}
                   </Text>
                   {sortedCurrencyNets.length > 1 ? (
@@ -233,6 +236,7 @@ export default function TransactionManagementList(
             item.primaryCurrencyCode,
             locale,
             areAmountsVisible,
+            !isSingleCurrency,
           );
           const secondaryAmount = item.secondaryCurrencyCode
             ? formatPrivateCurrencyAmount(
@@ -240,6 +244,7 @@ export default function TransactionManagementList(
                 item.secondaryCurrencyCode,
                 locale,
                 areAmountsVisible,
+                !isSingleCurrency,
               )
             : undefined;
           return (
@@ -297,7 +302,7 @@ export default function TransactionManagementList(
                           { color: THEME.onSurfaceVariant },
                         ]}
                       >
-                        {`${item.fromAccountCurrencyCode} - ${item.fromAccountLabel}`}
+                        {item.fromAccountLabel}
                       </Text>
                       <View style={styles.transferArrow}>
                         <AppIcon
@@ -314,7 +319,7 @@ export default function TransactionManagementList(
                           { color: THEME.onSurfaceVariant },
                         ]}
                       >
-                        {`${item.toAccountCurrencyCode} - ${item.toAccountLabel}`}
+                        {item.toAccountLabel}
                       </Text>
                     </View>
                   ) : (

@@ -13,6 +13,7 @@ import AppSelect from "../../components/AppSelect";
 import AppText, { TextTypEnum } from "../../components/AppText";
 import AppView from "../../components/AppView";
 import useBudgetManagement from "../../hook/budget_management/useBudgetManagement";
+import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { absoluteAmount } from "../../utils/amount";
@@ -331,6 +332,7 @@ function SummaryValue({
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
+  const isSingleCurrency = useSingleCurrencyMode();
   return (
     <View style={styles.summaryValue}>
       <Text variant="labelLarge">{t(label)}</Text>
@@ -340,6 +342,7 @@ function SummaryValue({
           currencyCode,
           locale,
           areAmountsVisible,
+          !isSingleCurrency,
         )}
       </Text>
     </View>
