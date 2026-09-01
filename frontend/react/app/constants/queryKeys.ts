@@ -50,14 +50,16 @@ export const accountTypeQueryKeys = {
 export const accountManagementQueryKeys = {
   all: [QueryKeyModule.ACCOUNT_MANAGEMENT] as const,
   lists: () => [...accountManagementQueryKeys.all, "list"] as const,
-  mainBalances: () =>
-    [...accountManagementQueryKeys.lists(), "mainBalance"] as const,
-  mainBalance: (currencyCode?: string) =>
+  assetBalances: () =>
+    [...accountManagementQueryKeys.lists(), "assetBalance"] as const,
+  assetBalance: (currencyCode?: string) =>
     currencyCode
-      ? ([...accountManagementQueryKeys.mainBalances(), currencyCode] as const)
-      : accountManagementQueryKeys.mainBalances(),
-  list: (params: { pageSize: number }) =>
+      ? ([...accountManagementQueryKeys.assetBalances(), currencyCode] as const)
+      : accountManagementQueryKeys.assetBalances(),
+  list: (params: { pageSize: number; includeInactive?: boolean }) =>
     [...accountManagementQueryKeys.lists(), params] as const,
+  typeBalanceTotals: () =>
+    [...accountManagementQueryKeys.lists(), "typeBalanceTotals"] as const,
   selectableList: (params: { pageSize: number }) =>
     [...accountManagementQueryKeys.lists(), "selectable", params] as const,
   details: () => [...accountManagementQueryKeys.all, "detail"] as const,

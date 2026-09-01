@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
 import { SectionList, StyleSheet, View } from "react-native";
-import { ActivityIndicator, List, Text } from "react-native-paper";
+import { ActivityIndicator, List, Text, Tooltip } from "react-native-paper";
 import AppEmpty from "../../components/AppEmpty";
 import AppFloatingButton from "../../components/AppFloatingButton";
 import AppIcon from "../../components/AppIcon";
@@ -92,7 +92,7 @@ export default function AccountManagementList() {
                 variant="labelMedium"
                 style={{ color: THEME.onSurfaceVariant }}
               >
-                {section.data.length}
+                {section.accountCount}
               </Text>
             </View>
           </View>
@@ -100,14 +100,41 @@ export default function AccountManagementList() {
         renderItem={({ item: account }) => (
           <List.Item
             centered
-            title={account.label}
+            title={
+              <View style={styles.accountTitleRow}>
+                <Text
+                  style={[
+                    styles.accountLabel,
+                    !account.is_active && { color: THEME.outline },
+                  ]}
+                >
+                  {account.label}
+                </Text>
+                {!account.is_asset && (
+                  <Tooltip title={t("Excluded from assets")}>
+                    <View accessibilityLabel={t("Excluded from assets")}>
+                      <AppIcon
+                        name="BotOff"
+                        color={THEME.onSurfaceVariant}
+                        size={16}
+                      />
+                    </View>
+                  </Tooltip>
+                )}
+              </View>
+            }
             titleStyle={styles.accountLabel}
             description={account.descriptions ?? undefined}
-            descriptionStyle={styles.accountDescription}
+            descriptionStyle={[
+              styles.accountDescription,
+              !account.is_active && { color: THEME.outline },
+            ]}
             style={[
               styles.accountItem,
               {
-                backgroundColor: THEME.surfaceContainer,
+                backgroundColor: account.is_active
+                  ? THEME.surfaceContainer
+                  : THEME.surfaceContainerHighest,
                 borderBottomColor: THEME.outlineVariant,
               },
             ]}
@@ -118,20 +145,12 @@ export default function AccountManagementList() {
             right={() => (
               <View style={styles.accountValueContainer}>
                 <View style={styles.accountValue}>
-                  {!isSingleCurrency && (
-                    <Text
-                      variant="labelSmall"
-                      style={{
-                        color:
-                          account.is_currency_enabled === false
-                            ? THEME.error
-                            : THEME.onSurfaceVariant,
-                      }}
-                    >
-                      {account.currency_code}
-                    </Text>
-                  )}
-                  <Text style={styles.accountBalance}>
+                  <Text
+                    style={[
+                      styles.accountBalance,
+                      !account.is_active && { color: THEME.outline },
+                    ]}
+                  >
                     {formatPrivateCurrencyAmount(
                       account.current_balance,
                       account.currency_code,
@@ -141,7 +160,12 @@ export default function AccountManagementList() {
                     )}
                   </Text>
                 </View>
-                <ChevronRight color={THEME.onSurfaceVariant} size={22} />
+                <ChevronRight
+                  color={
+                    account.is_active ? THEME.onSurfaceVariant : THEME.outline
+                  }
+                  size={22}
+                />
               </View>
             )}
           />
@@ -170,6 +194,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.ROBOTO,
     fontSize: LIST_ITEM_TITLE_FONTSIZE,
   },
+  accountTitleRow: { alignItems: "center", flexDirection: "row", gap: 6 },
   accountValue: { alignItems: "flex-end", marginRight: 8 },
   accountValueContainer: { alignItems: "center", flexDirection: "row" },
   contentContainer: { paddingBottom: 96 },

@@ -164,7 +164,21 @@ export const ms: Record<keyof typeof zhHans, string> = {
   Descriptions: "Penerangan",
   Description: "Penerangan",
   "Current Balance": "Baki Semasa",
-  "Main Account": "Akaun Utama",
+  "Active account": "Akaun aktif",
+  "Can be selected when recording new transactions.":
+    "Boleh dipilih semasa merekod transaksi baharu.",
+  "Include in total balance": "Sertakan dalam jumlah baki",
+  "Include this account when calculating balances and assets.":
+    "Sertakan akaun ini semasa mengira baki dan aset.",
+  "Show inactive accounts": "Tunjukkan akaun tidak aktif",
+  "Inactive account": "Akaun tidak aktif",
+  "Excluded from assets": "Dikecualikan daripada aset",
+  "Deactivate account?": "Nyahaktifkan akaun?",
+  "This account will not be available for new transactions. Existing transactions and the account balance will not be affected.":
+    "Akaun ini tidak akan tersedia untuk transaksi baharu. Transaksi sedia ada dan baki akaun tidak akan terjejas.",
+  Deactivate: "Nyahaktifkan",
+  "Inactive or unavailable account": "Akaun tidak aktif atau tidak tersedia",
+  "Balance by currency": "Baki mengikut mata wang",
   "Transaction Type": "Jenis Transaksi",
   "Transaction Date": "Tarikh Transaksi",
   Amount: "Jumlah",

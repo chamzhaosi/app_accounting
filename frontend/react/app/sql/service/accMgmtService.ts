@@ -8,10 +8,11 @@ import {
 import {
   createNewAccMgmtToDB,
   deleteAccMgmtFromDB,
+  getAccountTypeBalanceTotalsFromDB,
   getAccMgmtByIdFromDB,
   getAccMgmtByTypeCurrencyAndLabelFromDB,
   getAccMgmtListFromDB,
-  getMainAccountBalanceFromDB,
+  getAssetBalanceFromDB,
   updateAccMgmtToDB,
 } from "../repo/accMgmtRepo";
 import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
@@ -19,6 +20,7 @@ import {
   AccMgmtCreateReqType,
   AccMgmtRspType,
   AccMgmtUpdateReqType,
+  AccountTypeBalanceTotalType,
 } from "../types/accMgmtType";
 import { getCurrencyPreferences } from "./currencyManagementService";
 
@@ -28,13 +30,17 @@ const isEnabledCurrency = async (currencyCode: string) => {
   return preferences?.enabledCurrencyCodes.includes(currencyCode) ?? false;
 };
 
-export const getMainAccountBalance = async (
-  currencyCode: string,
-): Promise<number> => getMainAccountBalanceFromDB(currencyCode);
+export const getAssetBalance = async (currencyCode: string): Promise<number> =>
+  getAssetBalanceFromDB(currencyCode);
+
+export const getAccountTypeBalanceTotals = async (): Promise<
+  AccountTypeBalanceTotalType[]
+> => getAccountTypeBalanceTotalsFromDB();
 
 export const getAccMgmtList = async (
   curPage: number,
   pageSize: number,
+  includeInactive = true,
 ): Promise<AccMgmtRspType[]> => {
   return await getAccMgmtListFromDB({
     orderBy: {
@@ -43,6 +49,7 @@ export const getAccMgmtList = async (
     },
     curPage,
     pageSize,
+    includeInactive,
   });
 };
 

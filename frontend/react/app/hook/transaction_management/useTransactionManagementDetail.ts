@@ -273,7 +273,7 @@ export default function useTransactionManagementDetail() {
         icon: "WalletCards",
         label: saved.label ?? t("Selected Account"),
         inputLabel: saved.label ?? t("Selected Account"),
-        descriptions: t("Currency disabled"),
+        descriptions: t("Inactive or unavailable account"),
         balance: 0,
         currencyCode: saved.currencyCode,
         typeId: "unavailable",

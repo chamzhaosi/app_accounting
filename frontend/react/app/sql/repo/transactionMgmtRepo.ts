@@ -638,6 +638,7 @@ const applyBalanceAdjustments = async (
   db: Awaited<ReturnType<typeof getDB>>,
   adjustments: BalanceAdjustment[],
   requireActiveAccount: boolean,
+  allowedInactiveAccountIds = new Set<string>(),
 ) => {
   const adjustmentsByAccount = new Map<string, number>();
   adjustments.forEach((adjustment) => {
@@ -651,11 +652,14 @@ const applyBalanceAdjustments = async (
   });
 
   for (const [accountId, adjustmentAmount] of adjustmentsByAccount) {
+    const mustBeActive =
+      requireActiveAccount && !allowedInactiveAccountIds.has(accountId);
     const account = await db.getFirstAsync<{ current_balance: number }>(
       `SELECT current_balance
        FROM accounts
        WHERE id = ?
-         ${requireActiveAccount ? "AND is_active = 1 AND deleted_at IS NULL" : ""};`,
+         ${mustBeActive ? "AND is_active = 1" : ""}
+         AND deleted_at IS NULL;`,
       [accountId],
     );
     if (!account) {
@@ -673,7 +677,8 @@ const applyBalanceAdjustments = async (
           sync_status = ?,
           updated_at = datetime('now')
         WHERE id = ?
-          ${requireActiveAccount ? "AND is_active = 1 AND deleted_at IS NULL" : ""};
+          ${mustBeActive ? "AND is_active = 1" : ""}
+          AND deleted_at IS NULL;
       `,
       [nextBalance, DB_SYNC_STATUS.PENDING, accountId],
     );
@@ -1034,8 +1039,16 @@ export const updateTransactionMgmtToDB = async (
       reversedBalanceAdjustments = currentRows.flatMap((row) =>
         getBalanceAdjustments(getStoredBalanceTransaction(row), -1),
       );
+      const savedAccountIds = new Set(
+        reversedBalanceAdjustments.map(({ accountId }) => accountId),
+      );
       await applyBalanceAdjustments(db, reversedBalanceAdjustments, false);
-      await applyBalanceAdjustments(db, newBalanceAdjustments, true);
+      await applyBalanceAdjustments(
+        db,
+        newBalanceAdjustments,
+        true,
+        savedAccountIds,
+      );
 
       const result = await db.runAsync(
         `
@@ -1101,13 +1114,19 @@ export const updateTransactionMgmtToDB = async (
 
       for (const fee of data.fees) {
         const feeId = randomUUID();
-        const feeAccount = await db.getFirstAsync<{ currency_code: string }>(
-          `SELECT currency_code
+        const feeAccount = await db.getFirstAsync<{
+          currency_code: string;
+          is_active: boolean;
+        }>(
+          `SELECT currency_code, is_active
            FROM accounts
-           WHERE id = ? AND is_active = 1 AND deleted_at IS NULL;`,
+           WHERE id = ? AND deleted_at IS NULL;`,
           [fee.accountId],
         );
-        if (!feeAccount) {
+        if (
+          !feeAccount ||
+          (!feeAccount.is_active && !savedAccountIds.has(fee.accountId))
+        ) {
           throw new Error(`Fee account is unavailable: ${fee.accountId}`);
         }
         await db.runAsync(

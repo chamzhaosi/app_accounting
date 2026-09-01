@@ -94,9 +94,8 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
             ABS(current_balance) <= ${AMOUNT_MAX_VALUE}
             AND current_balance = ROUND(current_balance, 3)
           ),
-        is_main_account BOOLEAN NOT NULL DEFAULT 0,
-
         is_active BOOLEAN NOT NULL DEFAULT 1,
+        is_asset BOOLEAN NOT NULL DEFAULT 1,
 
         sync_status VARCHAR(20) NOT NULL DEFAULT ${DB_SYNC_STATUS.PENDING},
         synced_at DATETIME DEFAULT NULL,

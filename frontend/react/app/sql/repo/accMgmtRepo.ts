@@ -16,11 +16,12 @@ import {
   AccMgmtCreateReqType,
   AccMgmtRspType,
   AccMgmtUpdateReqType,
+  AccountTypeBalanceTotalType,
 } from "../types/accMgmtType";
 import { SQLQueryOptions } from "../types/common";
 import { randomUUID } from "expo-crypto";
 
-export const getMainAccountBalanceFromDB = async (
+export const getAssetBalanceFromDB = async (
   currencyCode: string,
 ): Promise<number> => {
   try {
@@ -29,8 +30,7 @@ export const getMainAccountBalanceFromDB = async (
       `
         SELECT ROUND(COALESCE(SUM(current_balance), 0), 3) AS balance
         FROM accounts
-        WHERE is_main_account = 1
-          AND is_active = 1
+        WHERE is_asset = 1
           AND currency_code = ?
           AND deleted_at IS NULL;
       `,
@@ -38,7 +38,7 @@ export const getMainAccountBalanceFromDB = async (
     );
 
     const balance = result?.balance ?? 0;
-    debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Loaded main account balance", {
+    debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Loaded asset balance", {
       balance,
       currencyCode,
     });
@@ -47,7 +47,7 @@ export const getMainAccountBalanceFromDB = async (
   } catch (e) {
     console.error(
       DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
-      "Error when getting main account balance from db",
+      "Error when getting asset balance from db",
       e,
     );
     throw e;
@@ -59,7 +59,11 @@ export const getAccMgmtListFromDB = async ({
   pageSize = DEFAULT_PAGE_SIZE,
   curPage = DEFAULT_CURRENT_PAGE,
   enabledCurrenciesOnly = false,
-}: SQLQueryOptions & { enabledCurrenciesOnly?: boolean }) => {
+  includeInactive = true,
+}: SQLQueryOptions & {
+  enabledCurrenciesOnly?: boolean;
+  includeInactive?: boolean;
+}) => {
   try {
     const offset = (curPage - 1) * pageSize;
     const db = await getDB();
@@ -75,6 +79,7 @@ export const getAccMgmtListFromDB = async ({
       LEFT JOIN currency_preferences
         ON currency_preferences.code = accounts.currency_code
       WHERE accounts.deleted_at IS NULL
+      ${includeInactive ? "" : "AND accounts.is_active = 1"}
       ${
         enabledCurrenciesOnly
           ? "AND currency_preferences.code IS NOT NULL AND accounts.is_active = 1"
@@ -99,6 +104,48 @@ export const getAccMgmtListFromDB = async ({
     console.error(
       DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
       "Error when getting account list from db",
+      e,
+    );
+    throw e;
+  }
+};
+
+export const getAccountTypeBalanceTotalsFromDB = async (): Promise<
+  AccountTypeBalanceTotalType[]
+> => {
+  try {
+    const db = await getDB();
+    const result = await db.getAllAsync<AccountTypeBalanceTotalType>(
+      `WITH currency_totals AS (
+         SELECT
+           type_id,
+           currency_code,
+           COUNT(*) AS currency_account_count,
+           ROUND(COALESCE(SUM(
+             CASE WHEN is_asset = 1 THEN current_balance ELSE 0 END
+           ), 0), 3) AS balance
+         FROM accounts
+         WHERE deleted_at IS NULL
+         GROUP BY type_id, currency_code
+       )
+       SELECT
+         type_id,
+         currency_code,
+         balance,
+         SUM(currency_account_count) OVER (PARTITION BY type_id) AS account_count
+       FROM currency_totals
+       ORDER BY currency_code ASC;`,
+    );
+    debugLog(
+      DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
+      "Loaded account type balance totals",
+      { count: result.length },
+    );
+    return result;
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
+      "Error when getting account type balance totals from db",
       e,
     );
     throw e;
@@ -208,8 +255,9 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
           label,
           descriptions,
           current_balance,
-          is_main_account
-        ) VALUES (?, ?, ?, ?, ?, ?, ?);
+          is_active,
+          is_asset
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
       `,
       [
         id,
@@ -218,7 +266,8 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
         data.label,
         data.descriptions || null,
         currentBalance,
-        data.isMainAccount ? 1 : 0,
+        data.isActive ? 1 : 0,
+        data.isAsset ? 1 : 0,
       ],
     );
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Created account", {
@@ -269,7 +318,8 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
             label = ?,
             descriptions = ?,
             current_balance = ROUND(?, 3),
-            is_main_account = ?,
+            is_active = ?,
+            is_asset = ?,
             sync_status = ?,
             updated_at = datetime('now')
           WHERE id = ?
@@ -281,7 +331,8 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           data.label,
           data.descriptions || null,
           currentBalance,
-          data.isMainAccount ? 1 : 0,
+          data.isActive ? 1 : 0,
+          data.isAsset ? 1 : 0,
           DB_SYNC_STATUS.PENDING,
           data.id,
         ],

@@ -7,9 +7,16 @@ export type AccMgmtRspType = {
   label: string;
   descriptions?: string | null;
   current_balance: number;
-  is_main_account: boolean;
   is_active: boolean;
+  is_asset: boolean;
   is_currency_enabled?: boolean;
+};
+
+export type AccountTypeBalanceTotalType = {
+  type_id: string;
+  currency_code: string;
+  balance: number;
+  account_count: number;
 };
 
 export type AccMgmtCreateReqType = {
@@ -18,7 +25,8 @@ export type AccMgmtCreateReqType = {
   label: string;
   descriptions?: string;
   currentBalance?: string;
-  isMainAccount: boolean;
+  isActive: boolean;
+  isAsset: boolean;
 };
 
 export type BalanceChangeKind = "expense" | "income" | "correction";

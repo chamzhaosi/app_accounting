@@ -159,7 +159,21 @@ export const zhHans: Record<string, string> = {
   Descriptions: "说明",
   Description: "说明",
   "Current Balance": "当前余额",
-  "Main Account": "主账户",
+  "Active account": "启用账户",
+  "Can be selected when recording new transactions.":
+    "记录新交易时可以选择此账户。",
+  "Include in total balance": "计入总余额",
+  "Include this account when calculating balances and assets.":
+    "计算余额和资产时计入此账户。",
+  "Show inactive accounts": "显示未启用账户",
+  "Inactive account": "未启用账户",
+  "Excluded from assets": "不计入资产",
+  "Deactivate account?": "停用账户？",
+  "This account will not be available for new transactions. Existing transactions and the account balance will not be affected.":
+    "此账户将无法用于新交易。现有交易和账户余额不会受到影响。",
+  Deactivate: "停用",
+  "Inactive or unavailable account": "未启用或不可用的账户",
+  "Balance by currency": "按货币显示余额",
   "Transaction Type": "交易类型",
   "Transaction Date": "交易日期",
   Amount: "金额",

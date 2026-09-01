@@ -220,8 +220,9 @@ const validateTransactionMgmt = async (
       feeAccount?.id === current?.account_id ||
       feeAccount?.id === current?.from_account_id ||
       feeAccount?.id === current?.to_account_id;
+    if (!feeAccount) return "A fee account is unavailable.";
     if (
-      !feeAccount?.is_active ||
+      (!feeAccount.is_active && !isSavedAccount) ||
       (!feeAccount.is_currency_enabled && !isSavedAccount)
     )
       return "A fee account is unavailable.";
@@ -238,18 +239,21 @@ const validateTransactionMgmt = async (
       getAccMgmtByIdFromDB(data.toAccountId),
     ]);
 
+    if (!fromAccount) return "From Account is unavailable.";
+    if (!toAccount) return "To Account is unavailable.";
+
     if (
-      !fromAccount?.is_active ||
+      (!fromAccount.is_active && fromAccount.id !== current?.from_account_id) ||
       (!fromAccount.is_currency_enabled &&
         fromAccount.id !== current?.from_account_id)
     )
-      return "From Account is unavailable because its currency is disabled.";
+      return "From Account is unavailable.";
     if (
-      !toAccount?.is_active ||
+      (!toAccount.is_active && toAccount.id !== current?.to_account_id) ||
       (!toAccount.is_currency_enabled &&
         toAccount.id !== current?.to_account_id)
     )
-      return "To Account is unavailable because its currency is disabled.";
+      return "To Account is unavailable.";
     if (
       data.currencyCode !== fromAccount.currency_code ||
       data.accountCurrencyCode !== toAccount.currency_code
@@ -263,11 +267,13 @@ const validateTransactionMgmt = async (
     getCategoryMgmtByIdFromDB(data.categoryId),
   ]);
 
+  if (!account) return "Selected account is unavailable.";
+
   if (
-    !account?.is_active ||
+    (!account.is_active && account.id !== current?.account_id) ||
     (!account.is_currency_enabled && account.id !== current?.account_id)
   )
-    return "Selected account is unavailable because its currency is disabled.";
+    return "Selected account is unavailable.";
   if (data.accountCurrencyCode !== account.currency_code)
     return "Account currency does not match the selected account.";
   if (!category?.is_active) return "Selected category is unavailable.";

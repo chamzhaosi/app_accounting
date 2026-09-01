@@ -92,7 +92,7 @@ export default function useAccountManagementCreate() {
 
       await Promise.all([
         invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
-        invalidateQuery(queryClient, accountManagementQueryKeys.mainBalance()),
+        invalidateQuery(queryClient, accountManagementQueryKeys.assetBalance()),
       ]);
       debugLog(
         DEBUG_TAG.ACCOUNT_MANAGEMENT,

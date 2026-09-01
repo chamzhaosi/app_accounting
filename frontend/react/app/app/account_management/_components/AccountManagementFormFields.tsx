@@ -167,11 +167,26 @@ export default function AccountManagementFormFields({
       />
       <Controller
         control={control}
-        name="isMainAccount"
+        name="isActive"
         render={({ field: { value, onChange, ref } }) => (
           <AppSwitch
             ref={ref}
-            label="Main Account"
+            label="Active account"
+            description="Can be selected when recording new transactions."
+            disabled={isSubmitting}
+            value={value}
+            onValueChange={onChange}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name="isAsset"
+        render={({ field: { value, onChange, ref } }) => (
+          <AppSwitch
+            ref={ref}
+            label="Include in total balance"
+            description="Include this account when calculating balances and assets."
             disabled={isSubmitting}
             value={value}
             onValueChange={onChange}
