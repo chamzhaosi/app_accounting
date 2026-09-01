@@ -605,4 +605,38 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "No {{currency}} budget configured":
     "Tiada bajet {{currency}} dikonfigurasikan",
   "Open all daily currency totals": "Buka semua jumlah mata wang harian",
+  Feedback: "Maklum Balas",
+  "Rate Finora": "Nilaikan Finora",
+  "Report a Problem": "Laporkan Masalah",
+  "Suggest an Idea": "Cadangkan Idea",
+  "Share your experience on Google Play":
+    "Kongsi pengalaman anda di Google Play",
+  "Tell us what went wrong": "Beritahu kami masalah yang berlaku",
+  "Share an idea for Finora": "Kongsi idea untuk Finora",
+  "Hi Finora team,": "Hai pasukan Finora,",
+  "What happened?": "Apakah yang berlaku?",
+  "[Describe the problem]": "[Terangkan masalah]",
+  "What did you expect to happen?": "Apakah yang anda jangkakan akan berlaku?",
+  "[Describe the expected result]": "[Terangkan hasil yang dijangkakan]",
+  "Steps to reproduce:": "Langkah untuk menghasilkan semula masalah:",
+  "Additional details:": "Butiran tambahan:",
+  "[Add screenshots or anything else that may help]":
+    "[Tambahkan tangkapan skrin atau maklumat lain yang boleh membantu]",
+  "I would like to suggest the following idea:":
+    "Saya ingin mencadangkan idea berikut:",
+  "[Describe your idea]": "[Terangkan idea anda]",
+  "Why would this be useful?": "Mengapakah idea ini berguna?",
+  "[Describe the benefit or problem it would solve]":
+    "[Terangkan manfaat atau masalah yang akan diselesaikannya]",
+  "Anything else?": "Ada apa-apa lagi?",
+  "[Add examples or other details]": "[Tambahkan contoh atau butiran lain]",
+  "Bug report": "Laporan pepijat",
+  "Feature suggestion": "Cadangan ciri",
+  "Invalid feedback type": "Jenis maklum balas tidak sah",
+  "Please return and try again.": "Sila kembali dan cuba lagi.",
+  "Email unavailable": "E-mel tidak tersedia",
+  "Please email your feedback to {{email}}.":
+    "Sila e-mel maklum balas anda kepada {{email}}.",
+  OK: "OK",
+  "Opening your email app...": "Membuka aplikasi e-mel anda...",
 };

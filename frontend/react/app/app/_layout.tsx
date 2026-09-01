@@ -177,6 +177,7 @@ export default function StackLayout() {
               name="transaction_management"
               options={{ headerShown: false }}
             />
+            <Stack.Screen name="feedback" options={{ headerShown: false }} />
           </AppStack>
           <Toast
             config={toastConfig(THEME, insets)}

@@ -9,6 +9,7 @@ import {
   BUDGET_MANAGEMENT_URL,
   CURRENCY_MANAGEMENT_URL,
   LOCAL_AUTHENTICATE_URL,
+  FEEDBACK_URL,
 } from "../../constants/urls";
 import { useTranslation } from "../../i18n/helper";
 
@@ -30,25 +31,25 @@ export default function Setting() {
       onPress: () => router.push(CURRENCY_MANAGEMENT_URL as Href),
     },
     {
-      id: 1,
+      id: "account-type",
       label: t("Account Type"),
       icon: "Wallet",
       onPress: () => router.push(ACCOUNT_TYPE_LIST_URL),
     },
     {
-      id: 2,
+      id: "account-management",
       label: t("Account Management"),
       icon: "Vault",
       onPress: () => router.push(ACCOUNT_MANAGEMENT_LIST_URL),
     },
     {
-      id: 3,
+      id: "category-management",
       label: t("Category Management"),
       icon: "BookOpenCheck",
       onPress: () => router.push(CATEGORY_MANAGEMENT_LIST_URL),
     },
     {
-      id: 4,
+      id: "budget-managment",
       label: t("Budget Management"),
       icon: "HandCoins",
       onPress: () => router.push(BUDGET_MANAGEMENT_URL as Href),
@@ -60,10 +61,16 @@ export default function Setting() {
     //   onPress: () => router.push("/reset_password"),
     // },
     {
-      id: 5,
+      id: "security",
       label: t("Security"),
       icon: "Lock",
       onPress: () => router.push(LOCAL_AUTHENTICATE_URL),
+    },
+    {
+      id: "feedback",
+      label: t("Feedback"),
+      icon: "MessageCircleHeart",
+      onPress: () => router.push(FEEDBACK_URL),
     },
   ];
 
