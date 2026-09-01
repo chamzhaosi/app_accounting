@@ -28,7 +28,7 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ],
-      "package": "com.anonymous.app"
+      "package": "com.cham.finora"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -46,7 +46,8 @@
           "useSQLCipher": true
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-mail-composer"
     ]
   }
 }
