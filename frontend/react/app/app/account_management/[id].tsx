@@ -34,13 +34,13 @@ export default function AccountManagementDetail() {
           title="Delete"
           description="Are you sure you want to delete this account?
                   Transactions associated with this account will not be affected."
-          showDialog={logic.showDialog}
-          onDismiss={() => logic.setShowDialog(false)}
+          showDialog={logic.showDeleteDialog}
+          onDismiss={() => logic.setShowDeleteDialog(false)}
           actionRender={
             <>
               <AppButton
                 {...DIALOG_COMMON_BTN_PROPS}
-                onPress={() => logic.setShowDialog(false)}
+                onPress={() => logic.setShowDeleteDialog(false)}
               >
                 No
               </AppButton>
@@ -48,11 +48,34 @@ export default function AccountManagementDetail() {
                 {...DIALOG_COMMON_BTN_PROPS}
                 variant={ButtonType.ERROR}
                 onPress={() => {
-                  logic.setShowDialog(false);
+                  logic.setShowDeleteDialog(false);
                   void logic.onDelete();
                 }}
               >
                 Yes
+              </AppButton>
+            </>
+          }
+        />
+        <AppDialog
+          title="Deactivate account?"
+          description="This account will not be available for new transactions. Existing transactions and the account balance will not be affected."
+          showDialog={logic.showDeactivateDialog}
+          onDismiss={() => logic.setShowDeactivateDialog(false)}
+          actionRender={
+            <>
+              <AppButton
+                {...DIALOG_COMMON_BTN_PROPS}
+                variant={ButtonType.SECONDARY}
+                onPress={() => logic.setShowDeactivateDialog(false)}
+              >
+                Cancel
+              </AppButton>
+              <AppButton
+                {...DIALOG_COMMON_BTN_PROPS}
+                onPress={() => void logic.confirmDeactivate()}
+              >
+                Deactivate
               </AppButton>
             </>
           }
@@ -97,7 +120,7 @@ export default function AccountManagementDetail() {
               loading={logic.isDeleting}
               onPress={() => {
                 Keyboard.dismiss();
-                logic.setShowDialog(true);
+                logic.setShowDeleteDialog(true);
               }}
               variant={ButtonType.ERROR}
               style={{ flex: 1, borderRadius: 8 }}

@@ -36,7 +36,8 @@ export const accountManagementFormSchema = z
       )
       .optional(),
     currentBalance: z.string().optional(),
-    isMainAccount: z.boolean(),
+    isActive: z.boolean(),
+    isAsset: z.boolean(),
   })
   .superRefine(({ currencyCode, currentBalance }, context) => {
     if (currentBalance && !isValidAmount(currentBalance, currencyCode)) {
@@ -54,5 +55,6 @@ export const accountManagementFormDefaultValues: AccountManagementFormType = {
   label: "",
   descriptions: "",
   currentBalance: "0",
-  isMainAccount: true,
+  isActive: true,
+  isAsset: true,
 };

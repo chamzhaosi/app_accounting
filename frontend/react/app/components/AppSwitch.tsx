@@ -7,14 +7,20 @@ import { useTranslation } from "../i18n/helper";
 
 type AppSwitchProps = SwitchProps & {
   label: string;
+  description?: string;
 };
 
 const AppSwitch = forwardRef<RNSwitch, AppSwitchProps>(
-  ({ label, ...props }, ref) => {
+  ({ label, description, ...props }, ref) => {
     const { t } = useTranslation();
     return (
       <View className="flex-row items-center mx-1 my-2 justify-between">
-        <AppText style={[defaultStyle.swtichLbl]}>{t(label)}</AppText>
+        <View style={defaultStyle.labelContainer}>
+          <AppText style={[defaultStyle.swtichLbl]}>{t(label)}</AppText>
+          {description && (
+            <AppText style={defaultStyle.description}>{t(description)}</AppText>
+          )}
+        </View>
         <Switch ref={ref} {...props} style={[defaultStyle.swtichBtn]} />
       </View>
     );
@@ -26,6 +32,8 @@ AppSwitch.displayName = "AppSwitch";
 export default AppSwitch;
 
 const defaultStyle = StyleSheet.create({
+  description: { fontSize: 12, opacity: 0.7 },
+  labelContainer: { flex: 1, marginRight: 12 },
   swtichLbl: {
     fontSize: SWITCH_LABEL_FONTSIZE,
   },

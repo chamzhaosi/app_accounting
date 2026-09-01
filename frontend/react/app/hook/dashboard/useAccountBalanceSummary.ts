@@ -5,7 +5,7 @@ import {
   currencyManagementQueryKeys,
   transactionManagementQueryKeys,
 } from "../../constants/queryKeys";
-import { getMainAccountBalance } from "../../sql/service/accMgmtService";
+import { getAssetBalance } from "../../sql/service/accMgmtService";
 import { getTransactionDateRangeTotals } from "../../sql/service/transactionMgmtService";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import useBudgetDailyRemaining from "./useBudgetDailyRemaining";
@@ -26,8 +26,8 @@ export default function useAccountBalanceSummary(
     queryFn: getCurrencyPreferences,
   });
   const balanceQuery = useQuery({
-    queryKey: accountManagementQueryKeys.mainBalance(currencyCode),
-    queryFn: () => getMainAccountBalance(currencyCode),
+    queryKey: accountManagementQueryKeys.assetBalance(currencyCode),
+    queryFn: () => getAssetBalance(currencyCode),
     enabled: Boolean(currencyCode),
   });
   const totalsQuery = useQuery({
@@ -70,7 +70,7 @@ export default function useAccountBalanceSummary(
 
     console.error(
       DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Error when loading main account balance",
+      "Error when loading asset balance",
       balanceQuery.error,
     );
   }, [balanceQuery.error]);

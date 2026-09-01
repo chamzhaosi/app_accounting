@@ -1,9 +1,12 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import type { AppIconProps } from "../../components/AppIcon";
 import { accountManagementQueryKeys } from "../../constants/queryKeys";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
-import { getAccMgmtList } from "../../sql/service/accMgmtService";
+import {
+  getAccountTypeBalanceTotals,
+  getAccMgmtList,
+} from "../../sql/service/accMgmtService";
 import type { AccMgmtRspType } from "../../sql/types/accMgmtType";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 
@@ -12,6 +15,7 @@ export type AccountManagementTypeSection = {
   title: string;
   icon: AppIconProps["name"];
   data: AccMgmtRspType[];
+  accountCount: number;
 };
 
 export default function useAccountManagementList() {
@@ -22,6 +26,10 @@ export default function useAccountManagementList() {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
+  const totalsQuery = useQuery({
+    queryKey: accountManagementQueryKeys.typeBalanceTotals(),
+    queryFn: getAccountTypeBalanceTotals,
+  });
 
   const accountSections = useMemo<AccountManagementTypeSection[]>(() => {
     const sections = new Map<string, AccountManagementTypeSection>();
@@ -29,6 +37,9 @@ export default function useAccountManagementList() {
       const existingSection = sections.get(account.type_id);
       if (existingSection) {
         existingSection.data.push(account);
+        if (!totalsQuery.data) {
+          existingSection.accountCount = existingSection.data.length;
+        }
         return;
       }
       sections.set(account.type_id, {
@@ -36,12 +47,15 @@ export default function useAccountManagementList() {
         title: account.type_label,
         icon: account.type_icon as AppIconProps["name"],
         data: [account],
+        accountCount:
+          totalsQuery.data?.find((total) => total.type_id === account.type_id)
+            ?.account_count ?? 1,
       });
     });
     return Array.from(sections.values()).sort((left, right) =>
       left.title.localeCompare(right.title),
     );
-  }, [query.data]);
+  }, [query.data, totalsQuery.data]);
 
   useEffect(() => {
     if (!query.error) return;
@@ -52,6 +66,15 @@ export default function useAccountManagementList() {
     );
   }, [query.error]);
 
+  useEffect(() => {
+    if (!totalsQuery.error) return;
+    console.error(
+      DEBUG_TAG.ACCOUNT_MANAGEMENT,
+      "Error when getting account type balance totals",
+      totalsQuery.error,
+    );
+  }, [totalsQuery.error]);
+
   const onLoadMore = () => {
     if (query.isFetchingNextPage || !query.hasNextPage) return;
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT, "Fetching next account page");
@@ -60,7 +83,7 @@ export default function useAccountManagementList() {
 
   const onRefresh = async () => {
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT, "Refreshing account list");
-    await query.refetch();
+    await Promise.all([query.refetch(), totalsQuery.refetch()]);
   };
 
   return {

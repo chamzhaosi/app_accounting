@@ -83,12 +83,12 @@ const migrateCurrencyAmountPrecision = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
     INSERT INTO accounts (
       id, type_id, currency_code, label, descriptions, current_balance,
-      is_main_account, is_active, sync_status, synced_at, deleted_at,
+      is_active, sync_status, synced_at, deleted_at,
       created_at, updated_at
     )
     SELECT
       id, type_id, currency_code, label, descriptions, current_balance,
-      is_main_account, is_active, sync_status, synced_at, deleted_at,
+      is_active, sync_status, synced_at, deleted_at,
       created_at, updated_at
     FROM accounts_precision_v12;
 
@@ -511,5 +511,22 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
     } finally {
       await db.execAsync("PRAGMA foreign_keys = ON;");
     }
+  }
+
+  if (currentVersion < 14) {
+    await db.withTransactionAsync(async () => {
+      const columns = await db.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(accounts);",
+      );
+      if (!columns.some(({ name }) => name === "is_asset")) {
+        await db.execAsync(
+          "ALTER TABLE accounts ADD COLUMN is_asset BOOLEAN NOT NULL DEFAULT 1 CHECK (is_asset IN (0, 1));",
+        );
+      }
+      if (columns.some(({ name }) => name === "is_main_account")) {
+        await db.execAsync("ALTER TABLE accounts DROP COLUMN is_main_account;");
+      }
+      await updateDBVersion(db, 14);
+    });
   }
 };

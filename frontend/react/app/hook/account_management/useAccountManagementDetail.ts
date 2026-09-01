@@ -45,7 +45,10 @@ export default function useAccountManagementDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [rspErrorMsg, setRspErrorMsg] = useState("");
-  const [showDialog, setShowDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [pendingUpdate, setPendingUpdate] =
+    useState<AccountManagementFormType | null>(null);
   const [balanceChangeKind, setBalanceChangeKindState] = useState<
     BalanceChangeKind | undefined
   >();
@@ -131,7 +134,7 @@ export default function useAccountManagementDetail() {
     setBalanceChangeDescription("");
   };
 
-  const onSubmit = async (value: AccountManagementFormType) => {
+  const saveAccount = async (value: AccountManagementFormType) => {
     const data = {
       ...value,
       id,
@@ -169,7 +172,7 @@ export default function useAccountManagementDetail() {
       await Promise.all([
         invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
         invalidateQuery(queryClient, accountManagementQueryKeys.detail(id)),
-        invalidateQuery(queryClient, accountManagementQueryKeys.mainBalance()),
+        invalidateQuery(queryClient, accountManagementQueryKeys.assetBalance()),
         invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
         invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
         invalidateQuery(queryClient, budgetQueryKeys.months()),
@@ -192,13 +195,29 @@ export default function useAccountManagementDetail() {
     }
   };
 
+  const onSubmit = async (value: AccountManagementFormType) => {
+    if (accountQuery.data?.is_active && !value.isActive) {
+      setPendingUpdate(value);
+      setShowDeactivateDialog(true);
+      return;
+    }
+    await saveAccount(value);
+  };
+
+  const confirmDeactivate = async () => {
+    const value = pendingUpdate;
+    setShowDeactivateDialog(false);
+    setPendingUpdate(null);
+    if (value) await saveAccount(value);
+  };
+
   const onDelete = async () => {
     try {
       setIsDeleting(true);
       await deleteAccMgmt(id);
       await Promise.all([
         invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
-        invalidateQuery(queryClient, accountManagementQueryKeys.mainBalance()),
+        invalidateQuery(queryClient, accountManagementQueryKeys.assetBalance()),
       ]);
       queryClient.removeQueries({
         queryKey: accountManagementQueryKeys.detail(id),
@@ -238,7 +257,8 @@ export default function useAccountManagementDetail() {
         accountQuery.data.current_balance,
         accountQuery.data.currency_code,
       ),
-      isMainAccount: Boolean(accountQuery.data.is_main_account),
+      isActive: Boolean(accountQuery.data.is_active),
+      isAsset: Boolean(accountQuery.data.is_asset),
     });
   }, [accountQuery.data, reset]);
 
@@ -266,6 +286,7 @@ export default function useAccountManagementDetail() {
     balanceChangeKind,
     balanceDifference,
     control,
+    confirmDeactivate,
     currencyOptions: currencyPreferences.currencyOptions,
     handleSubmit,
     isDeleting,
@@ -282,8 +303,10 @@ export default function useAccountManagementDetail() {
     setBalanceChangeDate,
     setBalanceChangeDescription,
     setBalanceChangeKind,
-    setShowDialog,
+    setShowDeactivateDialog,
+    setShowDeleteDialog,
     showCurrencyField: currencyPreferences.showCurrencyField,
-    showDialog,
+    showDeactivateDialog,
+    showDeleteDialog,
   };
 }
