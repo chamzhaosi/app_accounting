@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import type { ReactNode } from "react";
 import { Controller } from "react-hook-form";
-import { View } from "react-native";
-import { SegmentedButtons, TextInput } from "react-native-paper";
+import { Pressable, ScrollView, View } from "react-native";
+import { SegmentedButtons, Text, TextInput } from "react-native-paper";
 import AppAmtInput from "../../components/AppAmtInput";
 import AppButton, {
   ButtonType,
@@ -41,7 +41,10 @@ type TransactionFormScreenLogic = Omit<
   | "setShowMinimumPaymentDialog"
   | "finishMinimumPaymentPrompt"
   | "cancelMinimumPaymentPrompt"
->;
+  | "recentDescriptions"
+> & {
+  recentDescriptions?: string[];
+};
 
 type TransactionFormScreenProps = {
   footer: ReactNode;
@@ -76,6 +79,7 @@ export function TransactionFormScreen({
     onManageCategories,
     openAccountPicker,
     rateSuggestionLabel,
+    recentDescriptions = [],
     responseError,
     setValue,
     showCurrencyField,
@@ -420,20 +424,119 @@ export function TransactionFormScreen({
             field: { value, onChange, onBlur, ref },
             fieldState: { error },
           }) => (
-            <AppTextInput
-              ref={ref}
-              mode="outlined"
-              label="Description"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              maxLength={DESCRIPTION_MAX_LEN}
-              numberOfLines={3}
-              multiline
-              showClear
-              errorField={error}
-              disabled={isSubmitting}
-            />
+            <>
+              <AppTextInput
+                ref={ref}
+                mode="outlined"
+                label="Description"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                maxLength={DESCRIPTION_MAX_LEN}
+                numberOfLines={3}
+                multiline
+                showClear
+                showCounter={recentDescriptions.length === 0}
+                errorField={error}
+                disabled={isSubmitting}
+                outlineStyle={
+                  recentDescriptions.length > 0
+                    ? {
+                        borderBottomLeftRadius: 0,
+                        borderBottomRightRadius: 0,
+                      }
+                    : undefined
+                }
+              />
+              {recentDescriptions.length > 0 && (
+                <View
+                  style={{
+                    marginTop: -1,
+                    marginBottom: 10,
+                    paddingTop: 6,
+                    paddingBottom: 8,
+                    borderWidth: 1,
+                    borderTopWidth: 0,
+                    borderBottomLeftRadius: 4,
+                    borderBottomRightRadius: 4,
+                    borderColor: THEME.outline,
+                    backgroundColor: THEME.surfaceContainerHigh,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      paddingHorizontal: 10,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <Text
+                      variant="labelSmall"
+                      style={{ color: THEME.onSurfaceVariant }}
+                    >
+                      {t("Frequently used")}
+                    </Text>
+                    <Text
+                      variant="labelSmall"
+                      style={{ color: THEME.onSurfaceVariant }}
+                    >
+                      {value?.length ?? 0}/{DESCRIPTION_MAX_LEN}
+                    </Text>
+                  </View>
+                  <ScrollView
+                    style={{ display: "flex", flexGrow: 0 }}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{
+                      gap: 8,
+                      paddingLeft: 8,
+                      paddingRight: 16,
+                    }}
+                  >
+                    {recentDescriptions.map((description) => {
+                      const isSelected = value === description;
+
+                      return (
+                        <Pressable
+                          key={description}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            disabled: isSubmitting,
+                            selected: isSelected,
+                          }}
+                          disabled={isSubmitting}
+                          style={{
+                            height: 34,
+                            maxWidth: 200,
+                            justifyContent: "center",
+                            paddingHorizontal: 12,
+                            borderRadius: 8,
+                            backgroundColor: isSelected
+                              ? THEME.primaryContainer
+                              : THEME.surfaceContainerHighest,
+                            opacity: isSubmitting ? 0.6 : 1,
+                          }}
+                          onPress={() => onChange(description)}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                            style={{
+                              color: isSelected
+                                ? THEME.onPrimaryContainer
+                                : THEME.onSurface,
+                            }}
+                          >
+                            {description}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+            </>
           )}
         />
 

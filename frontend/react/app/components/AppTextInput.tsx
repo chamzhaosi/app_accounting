@@ -12,6 +12,7 @@ type AppTextInputProps = TextInputProps & {
   isMaskValue?: boolean;
   errorField?: FieldError;
   showClear?: boolean;
+  showCounter?: boolean;
   shouldTranslateText?: boolean;
 };
 
@@ -21,6 +22,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
       isMaskValue = false,
       value,
       showClear = false,
+      showCounter = true,
       errorField,
       maxLength,
       onChangeText,
@@ -108,7 +110,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
               {t(errorField.message)}
             </AppText>
           )}
-          {maxLength && (
+          {maxLength && showCounter && (
             <AppText variant="labelLarge" className="mt-1 ms-auto">
               {value?.length ?? 0}/{maxLength}
             </AppText>

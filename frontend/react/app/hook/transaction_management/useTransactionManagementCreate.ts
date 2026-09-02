@@ -66,6 +66,7 @@ import {
   confirmCreditCardMinimumPayment,
 } from "../../sql/service/creditCardService";
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
+import useFrequentTransactionDescriptions from "./useFrequentTransactionDescriptions";
 
 const TRANSACTION_CATEGORY_PAGE_SIZE = 1000;
 
@@ -200,6 +201,11 @@ export default function useTransactionManagementCreate() {
     queryKey: categoryManagementQueryKeys.feeList(),
     queryFn: () => getCategoryMgmtList(2, 1, 1000),
   });
+
+  const recentDescriptions = useFrequentTransactionDescriptions(
+    categoryId,
+    transactionType,
+  );
 
   const categoryItems = useMemo<AppListCardItemType[]>(() => {
     const items =
@@ -726,6 +732,7 @@ export default function useTransactionManagementCreate() {
     setShowMinimumPaymentDialog,
     showMinimumPaymentDialog,
     rateSuggestionLabel,
+    recentDescriptions,
     removeFee,
     setFocus,
     setValue,

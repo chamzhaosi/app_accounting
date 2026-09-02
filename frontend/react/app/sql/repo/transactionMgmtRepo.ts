@@ -852,6 +852,40 @@ export const getTransactionMgmtListFromDB = async (
   }
 };
 
+export const getFrequentTransactionDescriptionsFromDB = async (
+  categoryId: string,
+): Promise<string[]> => {
+  try {
+    const db = await getDB();
+    const result = await db.getAllAsync<{ description: string }>(
+      `SELECT
+         TRIM(descriptions) AS description
+       FROM transactions
+       WHERE deleted_at IS NULL
+         AND transaction_role = 'main'
+         AND category_id = ?
+         AND TRIM(COALESCE(descriptions, '')) <> ''
+       GROUP BY TRIM(descriptions)
+       ORDER BY COUNT(*) DESC, MAX(created_at) DESC, description ASC
+       LIMIT 8;`,
+      [categoryId],
+    );
+    debugLog(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Loaded frequent transaction descriptions",
+      { categoryId, count: result.length },
+    );
+    return result.map((row) => row.description);
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
+      "Error when loading frequent transaction descriptions",
+      e,
+    );
+    throw e;
+  }
+};
+
 export const getTransactionMgmtByIdFromDB = async (
   id: string,
 ): Promise<TransactionMgmtRspType | null> => {
