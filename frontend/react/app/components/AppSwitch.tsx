@@ -11,17 +11,27 @@ type AppSwitchProps = SwitchProps & {
 };
 
 const AppSwitch = forwardRef<RNSwitch, AppSwitchProps>(
-  ({ label, description, ...props }, ref) => {
+  ({ label, description, disabled, ...props }, ref) => {
     const { t } = useTranslation();
     return (
       <View className="flex-row items-center mx-1 my-2 justify-between">
-        <View style={defaultStyle.labelContainer}>
+        <View
+          style={[
+            defaultStyle.labelContainer,
+            disabled && defaultStyle.disabledLabel,
+          ]}
+        >
           <AppText style={[defaultStyle.swtichLbl]}>{t(label)}</AppText>
           {description && (
             <AppText style={defaultStyle.description}>{t(description)}</AppText>
           )}
         </View>
-        <Switch ref={ref} {...props} style={[defaultStyle.swtichBtn]} />
+        <Switch
+          ref={ref}
+          disabled={disabled}
+          {...props}
+          style={[defaultStyle.swtichBtn]}
+        />
       </View>
     );
   },
@@ -33,6 +43,7 @@ export default AppSwitch;
 
 const defaultStyle = StyleSheet.create({
   description: { fontSize: 12, opacity: 0.7 },
+  disabledLabel: { opacity: 0.38 },
   labelContainer: { flex: 1, marginRight: 12 },
   swtichLbl: {
     fontSize: SWITCH_LABEL_FONTSIZE,

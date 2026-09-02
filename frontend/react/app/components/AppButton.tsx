@@ -44,6 +44,9 @@ export default function AppButton({
       };
       break;
     case ButtonType.SECONDARY:
+      variantStyle = {
+        backgroundColor: THEME.secondary,
+      };
       variantContentStyle = {
         backgroundColor: THEME.secondary,
       };

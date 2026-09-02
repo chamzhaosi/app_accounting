@@ -30,6 +30,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
       label,
       placeholder,
       shouldTranslateText = true,
+      disabled,
       ...props
     },
     ref,
@@ -63,6 +64,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
               <TextInput.Icon
                 color={THEME.onSurface}
                 icon={showValue ? "eye-off" : "eye"}
+                disabled={disabled}
                 onPressIn={() => setShowValue(true)}
                 onPressOut={() => setShowValue(false)}
                 forceTextInputFocus={false}
@@ -72,6 +74,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
               value?.length && (
                 <TextInput.Icon
                   icon="close"
+                  disabled={disabled}
                   onPress={() => onChangeText?.("")}
                 />
               )
@@ -86,6 +89,7 @@ const AppTextInput = forwardRef<RNTextInput, AppTextInputProps>(
               : (placeholder ?? "Please enter")
           }
           value={value}
+          disabled={disabled}
           error={!!errorField?.message}
           maxLength={maxLength}
           onChangeText={onChangeText}

@@ -748,6 +748,7 @@ export const getTransactionMgmtListFromDB = async (
   accountId?: string,
   categoryId?: string,
   currencyCode?: string,
+  creditCardStatementDate?: string,
 ): Promise<TransactionMgmtRspType[]> => {
   try {
     const db = await getDB();
@@ -783,6 +784,33 @@ export const getTransactionMgmtListFromDB = async (
       filterParams.push(currencyCode);
     }
 
+    if (creditCardStatementDate && accountId) {
+      filters.push(`
+        (
+          transactions.transaction_date < ?
+          OR (
+            transactions.transaction_type = 'income'
+            AND transactions.account_id = ?
+          )
+          OR (
+            transactions.transaction_type = 'adjustment'
+            AND transactions.account_id = ?
+            AND transactions.converted_amount > 0
+          )
+          OR (
+            transactions.transaction_type = 'transfer'
+            AND transactions.to_account_id = ?
+          )
+        )
+      `);
+      filterParams.push(
+        creditCardStatementDate,
+        accountId,
+        accountId,
+        accountId,
+      );
+    }
+
     const transactionFilter = filters.length
       ? `
           AND ${filters.join(" AND ")}
@@ -809,6 +837,7 @@ export const getTransactionMgmtListFromDB = async (
       accountId,
       categoryId,
       currencyCode,
+      creditCardStatementDate,
       count: result.length,
     });
 

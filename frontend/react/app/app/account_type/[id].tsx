@@ -26,6 +26,7 @@ export default function AccountTypeDetail() {
     isLoading,
     isSaving,
     isSubmitting,
+    isSystem,
     onDelete,
     onSubmit,
     rspErrorMsg,
@@ -90,7 +91,7 @@ export default function AccountTypeDetail() {
                   ref={ref}
                   mode="outlined"
                   label="Label"
-                  editable={!isSubmitting}
+                  editable={!isSubmitting && !isSystem}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   value={value}
@@ -106,7 +107,7 @@ export default function AccountTypeDetail() {
         <View className="m-4 mt-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
           <View className="flex-row items-center justify-center gap-4 mt-4">
             <AppButton
-              disabled={isSubmitting}
+              disabled={isSubmitting || isSystem}
               loading={isDeleting}
               onPress={() => {
                 Keyboard.dismiss();
@@ -119,7 +120,7 @@ export default function AccountTypeDetail() {
               Delete
             </AppButton>
             <AppButton
-              disabled={isSubmitting}
+              disabled={isSubmitting || isSystem}
               loading={isSaving}
               onPress={() => {
                 Keyboard.dismiss();
@@ -142,6 +143,11 @@ export default function AccountTypeDetail() {
           setSelectedItem={setSelectedItem}
           selectedItem={selectedItem}
         />
+        {isSystem && (
+          <AppText className="mx-4 mt-2">
+            System account types cannot be edited or deleted.
+          </AppText>
+        )}
       </AppView>
     </TouchableWithoutFeedback>
   );

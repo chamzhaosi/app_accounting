@@ -1,10 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import type { AppDateRangeValue } from "../../components/AppDateRangePicker";
 import {
   accountManagementQueryKeys,
   transactionManagementQueryKeys,
+  creditCardQueryKeys,
+  invalidateQuery,
 } from "../../constants/queryKeys";
 import { getAccMgmtById } from "../../sql/service/accMgmtService";
 import {
@@ -13,13 +16,20 @@ import {
 } from "../../sql/service/transactionMgmtService";
 import { addAmounts, subtractAmounts } from "../../utils/amount";
 import { formatDateValue, getCurrentMonthDateRange } from "../../utils/date";
-import { DEBUG_TAG } from "../../utils/debugLog";
+import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import {
+  getCurrentCreditCardCycle,
+  setCreditCardCycleSkipped,
+} from "../../sql/service/creditCardService";
+import { getCreditCardNotificationPermission } from "../../local/creditCardNotifications";
 
 export default function useAccountDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(
     getCurrentMonthDateRange,
   );
+  const [notificationsAvailable, setNotificationsAvailable] = useState(true);
   const startDate = formatDateValue(dateRange.startDate);
   const endDate = formatDateValue(dateRange.endDate);
 
@@ -28,6 +38,58 @@ export default function useAccountDetail() {
     queryFn: () => getAccMgmtById(id),
     enabled: Boolean(id),
   });
+  const isCreditCard = accountQuery.data?.type_label === "Credit Card";
+  const remindersEnabled = Boolean(
+    isCreditCard && accountQuery.data?.credit_card_reminder_enabled,
+  );
+  useEffect(() => {
+    if (!remindersEnabled) {
+      setNotificationsAvailable(true);
+      return;
+    }
+
+    let isMounted = true;
+    const refreshNotificationPermission = async () => {
+      try {
+        const permission = await getCreditCardNotificationPermission(true);
+        debugLog(
+          DEBUG_TAG.CREDIT_CARD,
+          "Notification permission status",
+          permission,
+        );
+        if (isMounted) setNotificationsAvailable(permission.granted);
+      } catch (error) {
+        console.error(
+          DEBUG_TAG.CREDIT_CARD,
+          "Error when checking notification permission",
+          error,
+        );
+      }
+    };
+
+    void refreshNotificationPermission();
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") void refreshNotificationPermission();
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, [remindersEnabled]);
+  const cycleQuery = useQuery({
+    queryKey: creditCardQueryKeys.currentCycle(id),
+    queryFn: () => getCurrentCreditCardCycle(id),
+    enabled: Boolean(
+      id && isCreditCard && accountQuery.data?.credit_card_reminder_enabled,
+    ),
+  });
+  const toggleCycleSkipped = async () => {
+    const cycle = cycleQuery.data;
+    if (!cycle) return;
+    await setCreditCardCycleSkipped(id, cycle.id, !cycle.is_skipped);
+    await invalidateQuery(queryClient, creditCardQueryKeys.currentCycle(id));
+  };
   const flowTotalsQuery = useQuery({
     queryKey: transactionManagementQueryKeys.accountFlowTotals({
       accountId: id,
@@ -85,6 +147,8 @@ export default function useAccountDetail() {
 
   return {
     account: accountQuery.data,
+    creditCardCycle: cycleQuery.data,
+    isCreditCard,
     dateRange,
     endDate,
     forwardBalance,
@@ -93,8 +157,10 @@ export default function useAccountDetail() {
     isLoading: accountQuery.isLoading,
     moneyIn,
     moneyOut,
+    notificationsAvailable,
     periodEndBalance,
     setDateRange,
+    toggleCycleSkipped,
     startDate,
   };
 }

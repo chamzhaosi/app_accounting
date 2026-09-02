@@ -38,6 +38,7 @@ type AccountIdFieldProps = {
   fieldName?: AccountFieldName;
   label?: string;
   showQueryError?: boolean;
+  disabled?: boolean;
 };
 
 export default function AccountIdField({
@@ -57,6 +58,7 @@ export default function AccountIdField({
   fieldName = "accountId",
   label = "Account",
   showQueryError = true,
+  disabled = false,
 }: AccountIdFieldProps) {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
@@ -92,7 +94,7 @@ export default function AccountIdField({
                   onBlur();
                   onDismissPicker();
                 }}
-                visible={isPickerVisible}
+                visible={isPickerVisible && !disabled}
                 selectedItem={selectedAccount}
                 title={t("Select {{label}}", { label: t(label) })}
               />
@@ -109,6 +111,7 @@ export default function AccountIdField({
                   selection={{ start: 0, end: 0 }}
                   textAlign="left"
                   error={!!error?.message}
+                  disabled={disabled}
                   onPress={() => {
                     Keyboard.dismiss();
                     onOpenPicker();
@@ -122,6 +125,7 @@ export default function AccountIdField({
                     value ? (
                       <TextInput.Icon
                         icon="close"
+                        disabled={disabled}
                         forceTextInputFocus={false}
                         onPress={() => {
                           onChange("");
@@ -132,6 +136,7 @@ export default function AccountIdField({
                     ) : (
                       <TextInput.Icon
                         icon="menu-up"
+                        disabled={disabled}
                         forceTextInputFocus={false}
                         onPress={() => {
                           Keyboard.dismiss();

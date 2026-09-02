@@ -117,6 +117,53 @@ export const createAccMgmtTable = async (db: SQLite.SQLiteDatabase) => {
   `);
 };
 
+export const createCreditCardTables = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS credit_card_settings (
+      account_id TEXT PRIMARY KEY,
+      reminder_enabled BOOLEAN NOT NULL DEFAULT 0 CHECK (reminder_enabled IN (0, 1)),
+      statement_day INTEGER NOT NULL CHECK (statement_day BETWEEN 1 AND 31),
+      due_day INTEGER NOT NULL CHECK (due_day BETWEEN 1 AND 31),
+      reminder_lead_days INTEGER NOT NULL CHECK (reminder_lead_days BETWEEN 1 AND 10),
+      reminder_time CHAR(5) NOT NULL CHECK (reminder_time GLOB '[0-2][0-9]:[0-5][0-9]'),
+      stop_condition VARCHAR(10) NOT NULL CHECK (stop_condition IN ('full', 'minimum')),
+      first_cycle_mode VARCHAR(10) NOT NULL DEFAULT 'next'
+        CHECK (first_cycle_mode IN ('current', 'next')),
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (account_id) REFERENCES accounts(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS credit_card_cycles (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL,
+      period_start DATE NOT NULL,
+      statement_date DATE NOT NULL,
+      due_date DATE NOT NULL,
+      statement_amount REAL NOT NULL DEFAULT 0,
+      credited_amount REAL NOT NULL DEFAULT 0,
+      remaining_due REAL NOT NULL DEFAULT 0,
+      minimum_payment_confirmed BOOLEAN NOT NULL DEFAULT 0 CHECK (minimum_payment_confirmed IN (0, 1)),
+      minimum_payment_transaction_id TEXT,
+      minimum_payment_amount REAL,
+      is_skipped BOOLEAN NOT NULL DEFAULT 0 CHECK (is_skipped IN (0, 1)),
+      status VARCHAR(20) NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'paid', 'minimum_paid', 'skipped', 'overdue')),
+      notification_ids TEXT,
+      is_manual_initial BOOLEAN NOT NULL DEFAULT 0 CHECK (is_manual_initial IN (0, 1)),
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (account_id) REFERENCES accounts(id),
+      FOREIGN KEY (minimum_payment_transaction_id) REFERENCES transactions(id)
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_credit_card_cycles_account_statement
+      ON credit_card_cycles(account_id, statement_date);
+    CREATE INDEX IF NOT EXISTS idx_credit_card_cycles_account_due
+      ON credit_card_cycles(account_id, due_date);
+  `);
+};
+
 export const createCategoryMgmtTable = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
       CREATE TABLE IF NOT EXISTS categories (

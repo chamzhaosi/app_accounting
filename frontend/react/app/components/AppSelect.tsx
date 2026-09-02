@@ -50,6 +50,7 @@ export default function AppSelect({
   showClear = false,
   containerStyle,
   shouldTranslateText = true,
+  disabled,
   ...textInputProps
 }: AppSelectProps) {
   const { THEME } = useThemeStore();
@@ -78,19 +79,24 @@ export default function AppSelect({
 
   const rightIcon =
     selectedLabel && showClear ? (
-      <TextInput.Icon icon={"close"} onPress={() => onChange(null)} />
+      <TextInput.Icon
+        icon={"close"}
+        disabled={disabled}
+        onPress={() => !disabled && onChange(null)}
+      />
     ) : (
       <TextInput.Icon
         icon={showOptions ? "menu-down" : "menu-up"}
+        disabled={disabled}
         rippleColor="transparent"
-        onPress={() => setShowOptions(true)}
+        onPress={() => !disabled && setShowOptions(true)}
       />
     );
 
   return (
     <View style={containerStyle}>
       <Menu
-        visible={showOptions}
+        visible={showOptions && !disabled}
         elevation={4}
         anchorPosition="bottom"
         onDismiss={() => {
@@ -120,9 +126,10 @@ export default function AppSelect({
           >
             <TextInput
               ref={textInputRef}
+              disabled={disabled}
               label={shouldTranslateText ? t(label) : label}
               value={selectedLabel}
-              onPress={() => setShowOptions(true)}
+              onPress={() => !disabled && setShowOptions(true)}
               placeholder={
                 shouldTranslateText ? t("Please select") : "Please select"
               }

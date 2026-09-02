@@ -1,6 +1,8 @@
-import { router } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
+import { TabBar, TabBarProps, TabView } from "react-native-tab-view";
 import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import AppSwipePager from "../../../components/AppSwipePager";
@@ -19,8 +21,27 @@ import {
 import { DEFAULT_CURRENCY_CODE } from "../../../constants/currencies";
 import AccountBalanceHistoryChart from "./_components/AccountBalanceHistoryChart";
 import { useTranslation } from "../../../i18n/helper";
+import CreditCardCycleCard from "./_components/CreditCardCycleCard";
+import AppDialog from "../../../components/AppDialog";
+import AppButton, { ButtonType } from "../../../components/AppButton";
+import { DIALOG_COMMON_BTN_PROPS } from "../../../constants/size";
+import { formatDateValue } from "../../../utils/date";
+
+type AccountDetailTabRoute = {
+  key: "summary" | "statement";
+  title: string;
+};
+
+const ACCOUNT_DETAIL_TAB_ROUTES: AccountDetailTabRoute[] = [
+  { key: "summary", title: "Summary" },
+  { key: "statement", title: "Statement" },
+];
 
 export default function AccountDetail() {
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const [showSkipDialog, setShowSkipDialog] = useState(false);
+  const [tabIndex, setTabIndex] = useState(tab === "statement" ? 1 : 0);
+  const layout = useWindowDimensions();
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
@@ -28,20 +49,30 @@ export default function AccountDetail() {
   );
   const {
     account,
+    creditCardCycle,
     dateRange,
     endDate,
     forwardBalance,
     id,
     isForwardBalanceLoading,
+    isCreditCard,
     isLoading,
     moneyIn,
     moneyOut,
+    notificationsAvailable,
     periodEndBalance,
     setDateRange,
+    toggleCycleSkipped,
     startDate,
   } = useAccountDetail();
   const currencyCode = account?.currency_code ?? DEFAULT_CURRENCY_CODE;
   const isSingleCurrency = useSingleCurrencyMode();
+  const today = formatDateValue(new Date());
+
+  useEffect(() => {
+    if (tab === "statement") setTabIndex(1);
+    if (tab === "summary") setTabIndex(0);
+  }, [tab]);
   const displayAmount = (value: number, showCurrencyCode?: boolean) =>
     showCurrencyCode
       ? formatPrivateCurrencyAmount(
@@ -66,8 +97,18 @@ export default function AccountDetail() {
     );
   }
 
-  return (
-    <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+  const renderTabBar = (props: TabBarProps<AccountDetailTabRoute>) => (
+    <TabBar
+      {...props}
+      activeColor={THEME.primary}
+      inactiveColor={THEME.onSurfaceVariant}
+      indicatorStyle={[styles.tabIndicator, { backgroundColor: THEME.primary }]}
+      style={{ backgroundColor: THEME.surfaceContainerHigh }}
+    />
+  );
+
+  const renderSummaryTab = () => (
+    <View style={styles.scene}>
       <AppSwipePager>
         <Surface
           elevation={1}
@@ -164,6 +205,86 @@ export default function AccountDetail() {
           accountId={id}
         />
       )}
+    </View>
+  );
+
+  const renderStatementTab = () => (
+    <View style={styles.scene}>
+      {account && creditCardCycle && (
+        <>
+          <CreditCardCycleCard
+            cycle={creditCardCycle}
+            currencyCode={currencyCode}
+            reminderLeadDays={account.reminder_lead_days ?? 3}
+            reminderTime={account.reminder_time ?? "09:00"}
+            onToggleSkipped={() =>
+              creditCardCycle.is_skipped
+                ? void toggleCycleSkipped()
+                : setShowSkipDialog(true)
+            }
+            notificationsAvailable={notificationsAvailable}
+          />
+          <TransactionManagementList
+            startDate={creditCardCycle.period_start}
+            endDate={today}
+            accountId={id}
+            creditCardStatementDate={creditCardCycle.statement_date}
+          />
+        </>
+      )}
+    </View>
+  );
+
+  return (
+    <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <AppDialog
+        title="Skip this cycle?"
+        description="This will not mark the statement as paid. Reminders resume automatically for the next cycle."
+        showDialog={showSkipDialog}
+        onDismiss={() => setShowSkipDialog(false)}
+        actionRender={
+          <>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.SECONDARY}
+              shouldTranslateText={false}
+              onPress={() => setShowSkipDialog(false)}
+            >
+              {t("Cancel")}
+            </AppButton>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              shouldTranslateText={false}
+              onPress={() => {
+                setShowSkipDialog(false);
+                void toggleCycleSkipped();
+              }}
+            >
+              {t("Skip")}
+            </AppButton>
+          </>
+        }
+      />
+      {account && isCreditCard && creditCardCycle ? (
+        <TabView
+          style={styles.tabView}
+          renderTabBar={renderTabBar}
+          navigationState={{
+            index: tabIndex,
+            routes: ACCOUNT_DETAIL_TAB_ROUTES.map((route) => ({
+              ...route,
+              title: t(route.title),
+            })),
+          }}
+          renderScene={({ route }) =>
+            route.key === "summary" ? renderSummaryTab() : renderStatementTab()
+          }
+          onIndexChange={setTabIndex}
+          initialLayout={{ width: layout.width }}
+        />
+      ) : (
+        renderSummaryTab()
+      )}
 
       {account && (
         <AppFloatingButton
@@ -184,6 +305,9 @@ export default function AccountDetail() {
 }
 
 const styles = StyleSheet.create({
+  scene: { flex: 1 },
+  tabView: { flex: 1 },
+  tabIndicator: { height: 3 },
   summary: {
     borderRadius: 20,
     height: ACCOUNT_DETAIL_CARD_HEIGHT,

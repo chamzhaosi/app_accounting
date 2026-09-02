@@ -25,6 +25,7 @@ import {
   categoryManagementQueryKeys,
   invalidateQuery,
   transactionManagementQueryKeys,
+  creditCardQueryKeys,
 } from "../../constants/queryKeys";
 import {
   ACCOUNT_MANAGEMENT_LIST_URL,
@@ -60,6 +61,10 @@ import {
 } from "../category_management/categoryManagementList.utils";
 import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
 import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
+import {
+  canConfirmCreditCardMinimumPayment,
+  confirmCreditCardMinimumPayment,
+} from "../../sql/service/creditCardService";
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 
 const TRANSACTION_CATEGORY_PAGE_SIZE = 1000;
@@ -84,6 +89,13 @@ export default function useTransactionManagementCreate() {
   const [isLoadingRateSuggestion, setIsLoadingRateSuggestion] = useState(false);
   const [rateSuggestionLabel, setRateSuggestionLabel] = useState("");
   const [responseError, setResponseError] = useState("");
+  const [showMinimumPaymentDialog, setShowMinimumPaymentDialog] =
+    useState(false);
+  const [pendingCompletion, setPendingCompletion] = useState<{
+    accountId: string;
+    transactionId: string;
+    saveAnother: boolean;
+  } | null>(null);
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
   const isSubmitting = isSaving || isSavingAndNew;
@@ -551,7 +563,7 @@ export default function useTransactionManagementCreate() {
     try {
       setResponseError("");
       setLoading(true);
-      const errorMessage = await createNewTransactionMgmt({
+      const result = await createNewTransactionMgmt({
         ...value,
         description: value.description?.trim(),
         fees: value.fees.map((fee) => ({
@@ -563,8 +575,8 @@ export default function useTransactionManagementCreate() {
         })),
       });
 
-      if (errorMessage) {
-        setResponseError(errorMessage);
+      if (result.errorMessage) {
+        setResponseError(result.errorMessage);
         return;
       }
 
@@ -573,16 +585,35 @@ export default function useTransactionManagementCreate() {
         invalidateQuery(queryClient, accountManagementQueryKeys.all),
         invalidateQuery(queryClient, categoryManagementQueryKeys.lists()),
         invalidateQuery(queryClient, budgetQueryKeys.months()),
+        invalidateQuery(queryClient, creditCardQueryKeys.cycles()),
       ]);
       AppToast.success({ message: "Transaction created successfully" });
-      reset({
-        ...getTransactionManagementFormDefaultValues(today),
-        accountId: initialAccountId ?? "",
-        categoryId: initialCategoryId ?? "",
-        transactionType: initialTransactionType ?? TXN_TYPE_ENUM.EXPENSE,
-      });
-
-      if (!saveAnotherTransaction) router.back();
+      const completeSave = () => {
+        reset({
+          ...getTransactionManagementFormDefaultValues(today),
+          accountId: initialAccountId ?? "",
+          categoryId: initialCategoryId ?? "",
+          transactionType: initialTransactionType ?? TXN_TYPE_ENUM.EXPENSE,
+        });
+        if (!saveAnotherTransaction) router.back();
+      };
+      if (
+        value.transactionType === TXN_TYPE_ENUM.TRANSFER &&
+        selectedToAccount?.typeLabel === "Credit Card" &&
+        (await canConfirmCreditCardMinimumPayment(
+          value.toAccountId,
+          value.transactionDate,
+        ))
+      ) {
+        setPendingCompletion({
+          accountId: value.toAccountId,
+          transactionId: result.id ?? "",
+          saveAnother: saveAnotherTransaction,
+        });
+        setShowMinimumPaymentDialog(true);
+      } else {
+        completeSave();
+      }
     } catch (e) {
       console.error(
         DEBUG_TAG.TRANSACTION_MANAGEMENT,
@@ -593,6 +624,31 @@ export default function useTransactionManagementCreate() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const finishMinimumPaymentPrompt = async (confirmed: boolean) => {
+    const pending = pendingCompletion;
+    setShowMinimumPaymentDialog(false);
+    setPendingCompletion(null);
+    if (!pending) return;
+    if (confirmed)
+      await confirmCreditCardMinimumPayment(
+        pending.accountId,
+        pending.transactionId,
+      );
+    await invalidateQuery(queryClient, creditCardQueryKeys.cycles());
+    reset({
+      ...getTransactionManagementFormDefaultValues(today),
+      accountId: initialAccountId ?? "",
+      categoryId: initialCategoryId ?? "",
+      transactionType: initialTransactionType ?? TXN_TYPE_ENUM.EXPENSE,
+    });
+    if (!pending.saveAnother) router.back();
+  };
+
+  const cancelMinimumPaymentPrompt = () => {
+    setShowMinimumPaymentDialog(false);
+    setPendingCompletion(null);
   };
 
   useEffect(() => {
@@ -634,6 +690,7 @@ export default function useTransactionManagementCreate() {
     amount,
     categoryError,
     categoryItems,
+    cancelMinimumPaymentPrompt,
     clearErrors,
     control,
     currencyCode,
@@ -644,6 +701,7 @@ export default function useTransactionManagementCreate() {
     exchangeRate,
     feeCategoryOptions,
     feeFields,
+    finishMinimumPaymentPrompt,
     handleSubmit,
     isAccountPickerVisible,
     isFetchingNextCategoryPage,
@@ -665,6 +723,8 @@ export default function useTransactionManagementCreate() {
     onUsePreviousRate,
     openAccountPicker,
     responseError,
+    setShowMinimumPaymentDialog,
+    showMinimumPaymentDialog,
     rateSuggestionLabel,
     removeFee,
     setFocus,

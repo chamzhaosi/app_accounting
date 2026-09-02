@@ -62,6 +62,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
       selection,
       label,
       placeholder,
+      disabled,
       ...props
     },
     ref,
@@ -80,6 +81,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
             style,
           ]}
           right={
+            !disabled &&
             showClear &&
             value?.length &&
             (!fixedDecimalInput || isNonZeroAmount(value)) && (
@@ -96,6 +98,7 @@ const AppAmtInput = forwardRef<RNTextInput, AppTextInputProps>(
           label={typeof label === "string" ? t(label) : label}
           placeholder={t(placeholder ?? "Please enter")}
           value={value}
+          disabled={disabled}
           error={!!errorField?.message}
           maxLength={maxLength}
           onBlur={(e) => {

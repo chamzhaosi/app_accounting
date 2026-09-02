@@ -11,6 +11,7 @@ export default function AppScrollView({
   className,
   contentContainerStyle,
   extraScrollHeight,
+  enableOnAndroid = false,
   ...props
 }: AppScrollViewProps) {
   const insets = useSafeAreaInsets();
@@ -21,7 +22,7 @@ export default function AppScrollView({
         "flex-1 bg-LIGHT-surfaceContainerLow border-2 border-LIGHT-outlineVariant dark:bg-DARK-surfaceContainerLow dark:border-DARK-outlineVariant",
         className,
       )}
-      enableOnAndroid
+      enableOnAndroid={enableOnAndroid}
       extraScrollHeight={
         40 + insets.top + insets.bottom + (extraScrollHeight ?? 0)
       }

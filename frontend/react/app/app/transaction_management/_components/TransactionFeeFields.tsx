@@ -23,6 +23,7 @@ type TransactionFeeFieldsProps = {
   onAdd: () => void;
   onRemove: UseFieldArrayRemove;
   onManageCategories: () => void;
+  disabled?: boolean;
 };
 
 export default function TransactionFeeFields({
@@ -33,6 +34,7 @@ export default function TransactionFeeFields({
   onAdd,
   onRemove,
   onManageCategories,
+  disabled = false,
 }: TransactionFeeFieldsProps) {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
@@ -63,6 +65,7 @@ export default function TransactionFeeFields({
               iconName="Trash2"
               iconSize={20}
               accessibilityLabel={t("Remove Fee")}
+              disabled={disabled}
               onPress={() => onRemove(index)}
             />
           </View>
@@ -73,6 +76,7 @@ export default function TransactionFeeFields({
             render={({ field: categoryField, fieldState: { error } }) => (
               <CategoryCardPicker
                 label="Fee Category"
+                disabled={disabled}
                 categoryItems={categoryItems}
                 value={categoryField.value}
                 errorMessage={error?.message}
@@ -112,6 +116,7 @@ export default function TransactionFeeFields({
                     fixedDecimalPlaces={getCurrencyDecimalDigits(currencyCode)}
                     showClear
                     errorField={error}
+                    disabled={disabled}
                   />
                 </View>
               )}
@@ -124,6 +129,7 @@ export default function TransactionFeeFields({
         icon="plus"
         compact
         variant={ButtonType.SECONDARY}
+        disabled={disabled}
         onPress={onAdd}
         contentStyle={styles.addButtonContent}
         labelStyle={styles.addButtonLabel}
