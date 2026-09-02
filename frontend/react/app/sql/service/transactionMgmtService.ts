@@ -20,6 +20,7 @@ import {
   getTransactionOperationByIdFromDB,
   getTransactionMgmtListFromDB,
   getExchangeRateSuggestionFromDB,
+  getFrequentTransactionDescriptionsFromDB,
   updateTransactionMgmtToDB,
 } from "../repo/transactionMgmtRepo";
 import { reconcileAllCreditCards } from "./creditCardService";
@@ -154,6 +155,10 @@ export const getTransactionMgmtList = async (
 export const getTransactionMgmtById = async (
   id: string,
 ): Promise<TransactionMgmtRspType | null> => getTransactionMgmtByIdFromDB(id);
+
+export const getFrequentTransactionDescriptions = async (
+  categoryId: string,
+): Promise<string[]> => getFrequentTransactionDescriptionsFromDB(categoryId);
 
 export const getTransactionOperationById = async (
   id: string,

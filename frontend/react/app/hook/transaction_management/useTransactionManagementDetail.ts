@@ -61,6 +61,7 @@ import {
 import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
 import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
+import useFrequentTransactionDescriptions from "./useFrequentTransactionDescriptions";
 import {
   canConfirmCreditCardMinimumPayment,
   confirmCreditCardMinimumPayment,
@@ -127,6 +128,7 @@ export default function useTransactionManagementDetail() {
   } = useFieldArray({ control, name: "fees" });
 
   const transactionType = watch("transactionType");
+  const categoryId = watch("categoryId");
   const accountId = watch("accountId");
   const fromAccountId = watch("fromAccountId");
   const toAccountId = watch("toAccountId");
@@ -188,6 +190,11 @@ export default function useTransactionManagementDetail() {
     queryKey: categoryManagementQueryKeys.feeList(),
     queryFn: () => getCategoryMgmtList(2, 1, 1000),
   });
+
+  const recentDescriptions = useFrequentTransactionDescriptions(
+    categoryId,
+    transactionType,
+  );
 
   const categoryItems = useMemo<AppListCardItemType[]>(() => {
     const items =
@@ -767,6 +774,7 @@ export default function useTransactionManagementDetail() {
     openAccountPicker,
     responseError,
     rateSuggestionLabel,
+    recentDescriptions,
     removeFee,
     setFocus,
     setShowDeleteDialog,

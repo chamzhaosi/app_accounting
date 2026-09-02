@@ -99,6 +99,12 @@ export const categoryManagementQueryKeys = {
 export const transactionManagementQueryKeys = {
   all: [QueryKeyModule.TRANSACTION_MANAGEMENT] as const,
   lists: () => [...transactionManagementQueryKeys.all, "list"] as const,
+  frequentDescriptions: (categoryId: string) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "frequentDescriptions",
+      categoryId,
+    ] as const,
   dateRangeTotals: (params: {
     startDate: string;
     endDate: string;
