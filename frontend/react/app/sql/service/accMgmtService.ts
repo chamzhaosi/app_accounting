@@ -23,6 +23,7 @@ import {
   AccountTypeBalanceTotalType,
 } from "../types/accMgmtType";
 import { getCurrencyPreferences } from "./currencyManagementService";
+import { cancelCreditCardAccountNotifications } from "./creditCardService";
 
 const isEnabledCurrency = async (currencyCode: string) => {
   if (!CURRENCY_CODES.has(currencyCode)) return false;
@@ -41,6 +42,7 @@ export const getAccMgmtList = async (
   curPage: number,
   pageSize: number,
   includeInactive = true,
+  currencyCode?: string | null,
 ): Promise<AccMgmtRspType[]> => {
   return await getAccMgmtListFromDB({
     orderBy: {
@@ -50,6 +52,7 @@ export const getAccMgmtList = async (
     curPage,
     pageSize,
     includeInactive,
+    currencyCode: currencyCode ?? undefined,
   });
 };
 
@@ -70,7 +73,12 @@ export const createNewAccMgmt = async (
   if (!(await isEnabledCurrency(data.currencyCode)))
     return "Selected currency is not enabled.";
 
-  if (!isValidAmount(data.currentBalance || "0", data.currencyCode))
+  if (
+    !isValidAmount(
+      (data.currentBalance || "0").replace(/^-/, ""),
+      data.currencyCode,
+    )
+  )
     return "Enter a balance using the currency's decimal precision.";
 
   const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
@@ -104,7 +112,12 @@ export const getAccMgmtById = async (
 export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
   if (!CURRENCY_CODES.has(data.currencyCode)) return "Please select a currency";
 
-  if (!isValidAmount(data.currentBalance || "0", data.currencyCode))
+  if (
+    !isValidAmount(
+      (data.currentBalance || "0").replace(/^-/, ""),
+      data.currencyCode,
+    )
+  )
     return "Enter a balance using the currency's decimal precision.";
 
   const existData = await getAccMgmtByTypeCurrencyAndLabelFromDB(
@@ -174,5 +187,6 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
 };
 
 export const deleteAccMgmt = async (id: string) => {
+  await cancelCreditCardAccountNotifications(id);
   await deleteAccMgmtFromDB(id);
 };

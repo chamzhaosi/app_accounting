@@ -20,6 +20,7 @@ export type TransactionManagementListProps = {
   categoryId?: string;
   currencyCode?: string;
   currencyCodes?: string[];
+  creditCardStatementDate?: string;
 };
 
 export type TransactionListItem = {
@@ -45,6 +46,7 @@ export type TransactionDateSection = {
   transactionDate: string;
   currencyNets: Array<{ currencyCode: string; netTotal: number }>;
   data: TransactionListItem[];
+  groupTitle?: "Payments & credits" | "Statement activity";
 };
 
 export default function useTransactionManagementList({
@@ -53,6 +55,7 @@ export default function useTransactionManagementList({
   accountId,
   categoryId,
   currencyCode,
+  creditCardStatementDate,
 }: TransactionManagementListProps) {
   const { t } = useTranslation();
   const isSingleCurrency = useSingleCurrencyMode();
@@ -73,6 +76,7 @@ export default function useTransactionManagementList({
       accountId,
       categoryId,
       currencyCode,
+      creditCardStatementDate,
     }),
     queryFn: ({ pageParam }) =>
       getTransactionMgmtList(
@@ -83,6 +87,7 @@ export default function useTransactionManagementList({
         accountId,
         categoryId,
         currencyCode,
+        creditCardStatementDate,
       ),
     enabled: Boolean(startDate && endDate),
     initialPageParam: 1,
@@ -199,25 +204,42 @@ export default function useTransactionManagementList({
       groups.set(item.transactionDate, items);
     });
 
-    return Array.from(groups, ([transactionDate, items]) => {
-      const totals = new Map<string, number[]>();
-      items.forEach((item) => {
-        if (!accountId && item.transactionType === TXN_TYPE_ENUM.TRANSFER)
-          return;
-        const values = totals.get(item.primaryCurrencyCode) ?? [];
-        values.push(item.dailyNetEffect);
-        totals.set(item.primaryCurrencyCode, values);
+    const sections: TransactionDateSection[] = Array.from(
+      groups,
+      ([transactionDate, items]) => {
+        const totals = new Map<string, number[]>();
+        items.forEach((item) => {
+          if (!accountId && item.transactionType === TXN_TYPE_ENUM.TRANSFER)
+            return;
+          const values = totals.get(item.primaryCurrencyCode) ?? [];
+          values.push(item.dailyNetEffect);
+          totals.set(item.primaryCurrencyCode, values);
+        });
+        return {
+          transactionDate,
+          currencyNets: Array.from(totals, ([currencyCode, values]) => ({
+            currencyCode,
+            netTotal: sumAmounts(values),
+          })),
+          data: items,
+        };
+      },
+    );
+
+    if (creditCardStatementDate) {
+      let previousGroup: TransactionDateSection["groupTitle"];
+      sections.forEach((section) => {
+        const groupTitle =
+          section.transactionDate >= creditCardStatementDate
+            ? "Payments & credits"
+            : "Statement activity";
+        if (groupTitle !== previousGroup) section.groupTitle = groupTitle;
+        previousGroup = groupTitle;
       });
-      return {
-        transactionDate,
-        currencyNets: Array.from(totals, ([currencyCode, values]) => ({
-          currencyCode,
-          netTotal: sumAmounts(values),
-        })),
-        data: items,
-      };
-    });
-  }, [accountId, data, isSingleCurrency, t]);
+    }
+
+    return sections;
+  }, [accountId, creditCardStatementDate, data, isSingleCurrency, t]);
 
   useEffect(() => {
     if (!error) return;

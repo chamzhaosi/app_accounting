@@ -20,14 +20,18 @@ export type AccountTypeSection = {
   accountCount: number;
 };
 
-export default function useAccountsList() {
+export default function useAccountsList(currencyCode: string | null = null) {
   const [selectedTotals, setSelectedTotals] = useState<{
     title: string;
     totals: AppCurrencyTotal[];
   } | null>(null);
   const query = useInfiniteQuery({
-    queryKey: accountManagementQueryKeys.list({ pageSize: DEFAULT_PAGE_SIZE }),
-    queryFn: ({ pageParam }) => getAccMgmtList(pageParam, DEFAULT_PAGE_SIZE),
+    queryKey: accountManagementQueryKeys.list({
+      pageSize: DEFAULT_PAGE_SIZE,
+      currencyCode: currencyCode ?? undefined,
+    }),
+    queryFn: ({ pageParam }) =>
+      getAccMgmtList(pageParam, DEFAULT_PAGE_SIZE, true, currencyCode),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === DEFAULT_PAGE_SIZE ? allPages.length + 1 : undefined,
@@ -49,17 +53,28 @@ export default function useAccountsList() {
         return;
       }
 
+      const matchingTotal = totalsQuery.data?.find(
+        (total) =>
+          total.type_id === account.type_id &&
+          (!currencyCode || total.currency_code === currencyCode),
+      );
+
       sections.set(account.type_id, {
         typeId: account.type_id,
         title: account.type_label,
         icon: account.type_icon as AppIconProps["name"],
         data: [account],
         accountCount:
-          totalsQuery.data?.find((total) => total.type_id === account.type_id)
-            ?.account_count ?? 1,
+          (currencyCode
+            ? matchingTotal?.currency_account_count
+            : matchingTotal?.account_count) ?? 1,
         totals:
           totalsQuery.data
-            ?.filter((total) => total.type_id === account.type_id)
+            ?.filter(
+              (total) =>
+                total.type_id === account.type_id &&
+                (!currencyCode || total.currency_code === currencyCode),
+            )
             .map((total) => ({
               amount: total.balance,
               currencyCode: total.currency_code,
@@ -70,7 +85,7 @@ export default function useAccountsList() {
     return Array.from(sections.values()).sort((first, second) =>
       first.title.localeCompare(second.title),
     );
-  }, [query.data, totalsQuery.data]);
+  }, [currencyCode, query.data, totalsQuery.data]);
 
   useEffect(() => {
     if (!query.error) return;

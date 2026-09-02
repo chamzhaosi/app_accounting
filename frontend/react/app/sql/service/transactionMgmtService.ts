@@ -22,6 +22,7 @@ import {
   getExchangeRateSuggestionFromDB,
   updateTransactionMgmtToDB,
 } from "../repo/transactionMgmtRepo";
+import { reconcileAllCreditCards } from "./creditCardService";
 import {
   AccountDailyBalanceChangeType,
   AccountDateRangeFlowTotalsType,
@@ -131,6 +132,7 @@ export const getTransactionMgmtList = async (
   accountId?: string,
   categoryId?: string,
   currencyCode?: string,
+  creditCardStatementDate?: string,
 ): Promise<TransactionMgmtRspType[]> =>
   getTransactionMgmtListFromDB(
     {
@@ -146,6 +148,7 @@ export const getTransactionMgmtList = async (
     accountId,
     categoryId,
     currencyCode,
+    creditCardStatementDate,
   );
 
 export const getTransactionMgmtById = async (
@@ -295,11 +298,13 @@ const validateTransactionMgmt = async (
 
 export const createNewTransactionMgmt = async (
   data: TransactionMgmtCreateReqType,
-): Promise<string | void> => {
+): Promise<{ id?: string; errorMessage?: string }> => {
   const errorMessage = await validateTransactionMgmt(data);
-  if (errorMessage) return errorMessage;
+  if (errorMessage) return { errorMessage };
 
-  await createNewTransactionMgmtToDB(data);
+  const id = await createNewTransactionMgmtToDB(data);
+  await reconcileAllCreditCards();
+  return { id };
 };
 
 export const updateTransactionMgmt = async (
@@ -312,6 +317,7 @@ export const updateTransactionMgmt = async (
   if (errorMessage) return errorMessage;
 
   await updateTransactionMgmtToDB(data);
+  await reconcileAllCreditCards();
 };
 
 export const deleteTransactionMgmt = async (
@@ -321,4 +327,5 @@ export const deleteTransactionMgmt = async (
   if (!current) return "Transaction not found.";
 
   await deleteTransactionMgmtFromDB(id);
+  await reconcileAllCreditCards();
 };

@@ -48,6 +48,36 @@ export default function TransactionManagementDetail() {
           </>
         }
       />
+      <AppDialog
+        title="Minimum payment"
+        description="Does this payment satisfy the minimum payment required for this credit-card statement?"
+        showDialog={logic.showMinimumPaymentDialog}
+        onDismiss={logic.cancelMinimumPaymentPrompt}
+        actionRender={
+          <>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.SECONDARY}
+              onPress={logic.cancelMinimumPaymentPrompt}
+            >
+              Cancel
+            </AppButton>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.SECONDARY}
+              onPress={() => void logic.finishMinimumPaymentPrompt(false)}
+            >
+              No
+            </AppButton>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              onPress={() => void logic.finishMinimumPaymentPrompt(true)}
+            >
+              Yes
+            </AppButton>
+          </>
+        }
+      />
 
       <TransactionFormScreen
         logic={logic}

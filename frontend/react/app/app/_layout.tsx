@@ -1,5 +1,10 @@
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
+import {
+  addNotificationResponseReceivedListener,
+  getLastNotificationResponseAsync,
+} from "expo-notifications/build/NotificationsEmitter";
+import type { NotificationResponse } from "expo-notifications/build/Notifications.types";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as SystemUI from "expo-system-ui";
@@ -27,6 +32,7 @@ import { AppStack } from "../components/AppStack";
 import { queryClient } from "../config/queryClient";
 import { DARK, LIGHT } from "../constants/colors";
 import { initDB } from "../sql/db/database";
+import { reconcileAllCreditCards } from "../sql/service/creditCardService";
 import { useToastStore } from "../stores/useToastStore";
 import { useLanguageStore } from "../stores/useLanguageStore";
 import { useReportingCurrencyStore } from "../stores/useReportingCurrencyStore";
@@ -81,6 +87,13 @@ export default function StackLayout() {
     void initDB()
       .then(() => {
         if (isMounted) setIsDatabaseReady(true);
+        void reconcileAllCreditCards().catch((error) =>
+          console.error(
+            DEBUG_TAG.CREDIT_CARD,
+            "Unable to reconcile reminders",
+            error,
+          ),
+        );
       })
       .catch((error) => {
         console.error(
@@ -93,6 +106,17 @@ export default function StackLayout() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const openNotificationUrl = (response: NotificationResponse | null) => {
+      const url = response?.notification.request.content.data?.url;
+      if (typeof url === "string") router.push(url as never);
+    };
+    void getLastNotificationResponseAsync().then(openNotificationUrl);
+    const subscription =
+      addNotificationResponseReceivedListener(openNotificationUrl);
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {

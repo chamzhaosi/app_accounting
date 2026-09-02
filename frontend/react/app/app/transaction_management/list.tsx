@@ -138,78 +138,105 @@ export default function TransactionManagementList(
                 : THEME.surfaceContainerHighest;
 
           return (
-            <View
-              style={[
-                styles.sectionHeader,
-                {
-                  backgroundColor: THEME.surfaceContainerHigh,
-                  borderLeftColor: THEME.primary,
-                },
-              ]}
-            >
-              <View style={styles.sectionHeading}>
-                <Text
-                  variant="labelSmall"
+            <>
+              {section.groupTitle ? (
+                <View
                   style={[
-                    styles.dailySummaryLabel,
-                    { color: THEME.onSurfaceVariant },
+                    styles.groupHeader,
+                    { backgroundColor: THEME.surfaceContainerLow },
                   ]}
                 >
-                  {t("Daily summary")}
-                </Text>
-                <Text
-                  variant="titleMedium"
-                  style={[styles.sectionDate, { color: THEME.onSurface }]}
-                >
-                  {formatSectionDate(section.transactionDate, locale, t)}
-                </Text>
-              </View>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("Open all daily currency totals")}
-                disabled={sortedCurrencyNets.length <= 1}
-                onPress={() =>
-                  setSummarySection({
-                    ...section,
-                    currencyNets: sortedCurrencyNets,
-                  })
-                }
-                style={[
-                  styles.netBadge,
-                  { backgroundColor: netBackgroundColor },
-                ]}
-              >
-                <Text variant="labelSmall" style={{ color: netColor }}>
-                  {t("Net")}
-                </Text>
-                <View style={styles.netAmountRow}>
                   <Text
-                    variant="titleLarge"
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                    numberOfLines={2}
-                    style={[styles.sectionNet, { color: netColor }]}
+                    variant="titleMedium"
+                    style={[styles.groupTitle, { color: THEME.onSurface }]}
                   >
-                    {formatPrivateSignedCurrencyAmount(
-                      primaryNet.netTotal,
-                      primaryNet.currencyCode,
-                      locale,
-                      areAmountsVisible,
-                      !isSingleCurrency,
+                    {t(section.groupTitle)}
+                  </Text>
+                  <Text
+                    variant="bodySmall"
+                    style={{ color: THEME.onSurfaceVariant }}
+                  >
+                    {t(
+                      section.groupTitle === "Payments & credits"
+                        ? "Applied after the statement closed"
+                        : "Included in this statement period",
                     )}
                   </Text>
-                  {sortedCurrencyNets.length > 1 ? (
-                    <Text
-                      variant="labelSmall"
-                      style={{ color: netColor, alignSelf: "flex-end" }}
-                    >
-                      +{sortedCurrencyNets.length - 1}
-                    </Text>
-                  ) : null}
                 </View>
-              </Pressable>
-            </View>
+              ) : null}
+              <View
+                style={[
+                  styles.sectionHeader,
+                  {
+                    backgroundColor: THEME.surfaceContainerHigh,
+                    borderLeftColor: THEME.primary,
+                  },
+                ]}
+              >
+                <View style={styles.sectionHeading}>
+                  <Text
+                    variant="labelSmall"
+                    style={[
+                      styles.dailySummaryLabel,
+                      { color: THEME.onSurfaceVariant },
+                    ]}
+                  >
+                    {t("Daily summary")}
+                  </Text>
+                  <Text
+                    variant="titleMedium"
+                    style={[styles.sectionDate, { color: THEME.onSurface }]}
+                  >
+                    {formatSectionDate(section.transactionDate, locale, t)}
+                  </Text>
+                </View>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("Open all daily currency totals")}
+                  disabled={sortedCurrencyNets.length <= 1}
+                  onPress={() =>
+                    setSummarySection({
+                      ...section,
+                      currencyNets: sortedCurrencyNets,
+                    })
+                  }
+                  style={[
+                    styles.netBadge,
+                    { backgroundColor: netBackgroundColor },
+                  ]}
+                >
+                  <Text variant="labelSmall" style={{ color: netColor }}>
+                    {t("Net")}
+                  </Text>
+                  <View style={styles.netAmountRow}>
+                    <Text
+                      variant="titleLarge"
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.75}
+                      numberOfLines={2}
+                      style={[styles.sectionNet, { color: netColor }]}
+                    >
+                      {formatPrivateSignedCurrencyAmount(
+                        primaryNet.netTotal,
+                        primaryNet.currencyCode,
+                        locale,
+                        areAmountsVisible,
+                        !isSingleCurrency,
+                      )}
+                    </Text>
+                    {sortedCurrencyNets.length > 1 ? (
+                      <Text
+                        variant="labelSmall"
+                        style={{ color: netColor, alignSelf: "flex-end" }}
+                      >
+                        +{sortedCurrencyNets.length - 1}
+                      </Text>
+                    ) : null}
+                  </View>
+                </Pressable>
+              </View>
+            </>
           );
         }}
         renderItem={({ item }) => {
@@ -524,5 +551,14 @@ const styles = StyleSheet.create({
   },
   footerLoader: {
     marginVertical: 16,
+  },
+  groupHeader: {
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  groupTitle: {
+    fontWeight: "700",
+    marginBottom: 2,
   },
 });

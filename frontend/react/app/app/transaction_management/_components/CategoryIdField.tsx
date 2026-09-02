@@ -156,6 +156,7 @@ export function CategoryCardPicker({
               icon="pencil"
               size="small"
               accessibilityLabel={t("Manage Categories")}
+              disabled={disabled}
               onPress={onManageCategories}
               style={styles.manageButton}
             />
@@ -250,6 +251,7 @@ type CategoryIdFieldProps = {
   isLoading: boolean;
   onManageCategories: () => void;
   transactionType: TransactionManagementFormType["transactionType"];
+  disabled?: boolean;
 };
 
 export default function CategoryIdField({
@@ -259,6 +261,7 @@ export default function CategoryIdField({
   isLoading,
   onManageCategories,
   transactionType,
+  disabled = false,
 }: CategoryIdFieldProps) {
   if (transactionType === TXN_TYPE_ENUM.TRANSFER) return null;
 
@@ -269,6 +272,7 @@ export default function CategoryIdField({
       render={({ field, fieldState: { error } }) => (
         <CategoryCardPicker
           categoryItems={categoryItems}
+          disabled={disabled}
           errorMessage={error?.message}
           isLoading={isLoading}
           onChange={(categoryId) => {

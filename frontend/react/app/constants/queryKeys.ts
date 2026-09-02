@@ -8,6 +8,7 @@ export enum QueryKeyModule {
   BUDGET = "budget",
   ACCOUNT_SETTINGS = "accountSettings",
   CURRENCY_MANAGEMENT = "currencyManagement",
+  CREDIT_CARD = "creditCard",
 }
 
 export const currencyManagementQueryKeys = {
@@ -56,8 +57,11 @@ export const accountManagementQueryKeys = {
     currencyCode
       ? ([...accountManagementQueryKeys.assetBalances(), currencyCode] as const)
       : accountManagementQueryKeys.assetBalances(),
-  list: (params: { pageSize: number; includeInactive?: boolean }) =>
-    [...accountManagementQueryKeys.lists(), params] as const,
+  list: (params: {
+    pageSize: number;
+    includeInactive?: boolean;
+    currencyCode?: string;
+  }) => [...accountManagementQueryKeys.lists(), params] as const,
   typeBalanceTotals: () =>
     [...accountManagementQueryKeys.lists(), "typeBalanceTotals"] as const,
   selectableList: (params: { pageSize: number }) =>
@@ -65,6 +69,13 @@ export const accountManagementQueryKeys = {
   details: () => [...accountManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
     [...accountManagementQueryKeys.details(), id] as const,
+};
+
+export const creditCardQueryKeys = {
+  all: [QueryKeyModule.CREDIT_CARD] as const,
+  cycles: () => [...creditCardQueryKeys.all, "cycle"] as const,
+  currentCycle: (accountId: string) =>
+    [...creditCardQueryKeys.cycles(), accountId, "current"] as const,
 };
 
 export const categoryManagementQueryKeys = {
@@ -170,6 +181,7 @@ export const transactionManagementQueryKeys = {
     accountId?: string;
     categoryId?: string;
     currencyCode?: string;
+    creditCardStatementDate?: string;
   }) => [...transactionManagementQueryKeys.lists(), params] as const,
   details: () => [...transactionManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>

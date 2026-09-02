@@ -78,8 +78,20 @@ export default function AppCurrencyTotalsSheet({
                 },
               ]}
             >
-              <Text variant="titleMedium">{item.currencyCode}</Text>
-              <Text variant="titleMedium" style={styles.amount}>
+              <Text
+                variant="titleMedium"
+                numberOfLines={1}
+                style={styles.currencyCode}
+              >
+                {item.currencyCode}
+              </Text>
+              <Text
+                variant="titleMedium"
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+                numberOfLines={1}
+                style={styles.amount}
+              >
                 {formatPrivateLocalizedAmount(
                   item.amount,
                   item.currencyCode,
@@ -96,7 +108,14 @@ export default function AppCurrencyTotalsSheet({
 }
 
 const styles = StyleSheet.create({
-  amount: { fontWeight: "700", textAlign: "right" },
+  amount: {
+    flex: 1,
+    flexShrink: 1,
+    fontWeight: "700",
+    marginLeft: 16,
+    minWidth: 0,
+    textAlign: "right",
+  },
   container: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -122,6 +141,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   headerText: { flex: 1, gap: 2 },
+  currencyCode: { flexShrink: 0, minWidth: 48 },
   list: { paddingHorizontal: 12 },
   totalRow: {
     alignItems: "center",

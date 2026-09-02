@@ -8,6 +8,7 @@ import { AppToast } from "../../components/AppToast";
 import {
   accountManagementQueryKeys,
   accountTypeQueryKeys,
+  creditCardQueryKeys,
   invalidateQuery,
 } from "../../constants/queryKeys";
 import { ACCOUNT_TYPE_PAGE_SIZE } from "../../constants/size";
@@ -21,6 +22,7 @@ import { getAccTypeList } from "../../sql/service/accTypeService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
 import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
+import { reconcileAllCreditCards } from "../../sql/service/creditCardService";
 
 export default function useAccountManagementCreate() {
   const { t } = useTranslation();
@@ -69,13 +71,26 @@ export default function useAccountManagementCreate() {
       })),
     [accountTypes, t],
   );
+  const creditCardTypeId =
+    accountTypes.find(
+      (item) => item.is_system && item.label.toLowerCase() === "credit card",
+    )?.id ?? "";
 
   const onSubmit = async (
     value: AccountManagementFormType,
     saveAnotherAcc: boolean,
   ) => {
     const setLoading = saveAnotherAcc ? setIsSavingAndNewAcc : setIsSaving;
-    const data = { ...value, descriptions: value.descriptions?.trim() };
+    const isCreditCard = value.typeId === creditCardTypeId;
+    const data = {
+      ...value,
+      currentBalance:
+        isCreditCard && value.balancePosition === "debt"
+          ? `-${value.currentBalance || "0"}`
+          : value.currentBalance,
+      reminderEnabled: isCreditCard && value.reminderEnabled,
+      descriptions: value.descriptions?.trim(),
+    };
 
     try {
       setRspErrorMsg("");
@@ -89,10 +104,12 @@ export default function useAccountManagementCreate() {
         setRspErrorMsg(errMsg);
         return;
       }
+      await reconcileAllCreditCards();
 
       await Promise.all([
         invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
         invalidateQuery(queryClient, accountManagementQueryKeys.assetBalance()),
+        invalidateQuery(queryClient, creditCardQueryKeys.cycles()),
       ]);
       debugLog(
         DEBUG_TAG.ACCOUNT_MANAGEMENT,
@@ -122,6 +139,7 @@ export default function useAccountManagementCreate() {
 
   return {
     accountTypeOptions,
+    creditCardTypeId,
     control,
     currencyOptions: currencyPreferences.currencyOptions,
     errors,

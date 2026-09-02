@@ -142,6 +142,7 @@ export default function useAccountTypeDetail() {
   }, [error]);
 
   return {
+    isSystem: Boolean(accountType?.is_system),
     control,
     handleSubmit,
     isDeleting,

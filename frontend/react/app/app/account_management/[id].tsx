@@ -90,6 +90,7 @@ export default function AccountManagementDetail() {
         >
           <AccountManagementFormFields
             accountTypeOptions={logic.accountTypeOptions}
+            creditCardTypeId={logic.creditCardTypeId}
             currencyOptions={logic.currencyOptions}
             control={logic.control}
             isSubmitting={logic.isSubmitting}

@@ -22,7 +22,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "pan",
+      "softwareKeyboardLayoutMode": "resize",
       "backgroundColor": "#121212",
       "permissions": [
         "android.permission.USE_BIOMETRIC",
@@ -47,7 +47,8 @@
         }
       ],
       "expo-localization",
-      "expo-mail-composer"
+      "expo-mail-composer",
+      "expo-notifications"
     ]
   }
 }

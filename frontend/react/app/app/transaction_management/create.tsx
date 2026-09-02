@@ -29,10 +29,18 @@ import { EXCHANGE_RATE_ZERO } from "../../utils/exchangeRate";
 import AccountIdField from "./_components/AccountIdField";
 import CategoryIdField from "./_components/CategoryIdField";
 import TransactionFeeFields from "./_components/TransactionFeeFields";
+import AppDialog from "../../components/AppDialog";
+import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 
 type TransactionFormScreenLogic = Omit<
   ReturnType<typeof useTransactionManagementCreate>,
-  "isSaving" | "isSavingAndNew" | "isSubmitting" | "onSubmit"
+  | "isSaving"
+  | "isSavingAndNew"
+  | "onSubmit"
+  | "showMinimumPaymentDialog"
+  | "setShowMinimumPaymentDialog"
+  | "finishMinimumPaymentPrompt"
+  | "cancelMinimumPaymentPrompt"
 >;
 
 type TransactionFormScreenProps = {
@@ -63,6 +71,7 @@ export function TransactionFormScreen({
     isAccountPickerVisible,
     isLoadingCategories,
     isLoadingRateSuggestion,
+    isSubmitting,
     isSubmitted,
     onManageCategories,
     openAccountPicker,
@@ -90,6 +99,7 @@ export function TransactionFormScreen({
           onChange={(date) => onChange(dayjs(date).format("YYYY-MM-DD"))}
           onBlur={onBlur}
           errorField={error}
+          disabled={isSubmitting}
         />
       )}
     />
@@ -118,6 +128,7 @@ export function TransactionFormScreen({
             errorField={error}
             fixedDecimalInput
             fixedDecimalPlaces={getCurrencyDecimalDigits(currencyCode)}
+            disabled={isSubmitting}
           />
         )}
       />
@@ -150,6 +161,7 @@ export function TransactionFormScreen({
             errorField={isTouched || isSubmitted ? error : undefined}
             fixedDecimalInput
             fixedDecimalPlaces={getCurrencyDecimalDigits(accountCurrencyCode)}
+            disabled={isSubmitting}
           />
         )}
       />
@@ -179,10 +191,11 @@ export function TransactionFormScreen({
             errorField={isTouched || isSubmitted ? error : undefined}
             fixedDecimalInput
             fixedDecimalPlaces={6}
+            disabled={isSubmitting}
             right={
               <TextInput.Icon
                 icon="history"
-                disabled={isLoadingRateSuggestion}
+                disabled={isSubmitting || isLoadingRateSuggestion}
                 onPress={() => void logic.onUsePreviousRate()}
               />
             }
@@ -210,7 +223,7 @@ export function TransactionFormScreen({
             <SegmentedButtons
               value={value}
               onValueChange={(selectedType) => {
-                if (lockTransactionType) return;
+                if (lockTransactionType || isSubmitting) return;
 
                 onChange(selectedType);
                 setValue("categoryId", "");
@@ -234,7 +247,8 @@ export function TransactionFormScreen({
                   label: t("Expense"),
                   icon: "arrow-up",
                   disabled:
-                    lockTransactionType && value !== TXN_TYPE_ENUM.EXPENSE,
+                    isSubmitting ||
+                    (lockTransactionType && value !== TXN_TYPE_ENUM.EXPENSE),
                   style:
                     lockTransactionType && value !== TXN_TYPE_ENUM.EXPENSE
                       ? { backgroundColor: THEME.surfaceDisabled }
@@ -245,7 +259,8 @@ export function TransactionFormScreen({
                   label: t("Income"),
                   icon: "arrow-down",
                   disabled:
-                    lockTransactionType && value !== TXN_TYPE_ENUM.INCOME,
+                    isSubmitting ||
+                    (lockTransactionType && value !== TXN_TYPE_ENUM.INCOME),
                   style:
                     lockTransactionType && value !== TXN_TYPE_ENUM.INCOME
                       ? { backgroundColor: THEME.surfaceDisabled }
@@ -256,7 +271,8 @@ export function TransactionFormScreen({
                   label: t("Transfer"),
                   icon: "swap-horizontal",
                   disabled:
-                    lockTransactionType && value !== TXN_TYPE_ENUM.TRANSFER,
+                    isSubmitting ||
+                    (lockTransactionType && value !== TXN_TYPE_ENUM.TRANSFER),
                   style:
                     lockTransactionType && value !== TXN_TYPE_ENUM.TRANSFER
                       ? { backgroundColor: THEME.surfaceDisabled }
@@ -278,6 +294,7 @@ export function TransactionFormScreen({
           categoryItems={categoryItems}
           error={categoryError}
           isLoading={isLoadingCategories}
+          disabled={isSubmitting}
           onManageCategories={onManageCategories}
         />
 
@@ -297,6 +314,7 @@ export function TransactionFormScreen({
                 onSelectedAccountChange={(account) =>
                   logic.onAccountChange("fromAccountId", account)
                 }
+                disabled={isSubmitting}
               />
               <View
                 className="px-2 pb-2 items-center justify-center"
@@ -316,6 +334,7 @@ export function TransactionFormScreen({
                   logic.onAccountChange("toAccountId", account)
                 }
                 showQueryError={false}
+                disabled={isSubmitting}
               />
             </View>
             <View className={usesExchangeRate ? "flex-row gap-2" : undefined}>
@@ -340,6 +359,7 @@ export function TransactionFormScreen({
                 onSelectedAccountChange={(account) =>
                   logic.onAccountChange("accountId", account)
                 }
+                disabled={isSubmitting}
               />
             </View>
             <View className="flex-row gap-2">
@@ -359,6 +379,7 @@ export function TransactionFormScreen({
                         onBlur={field.onBlur}
                         errorField={error}
                         showClear={false}
+                        disabled={isSubmitting}
                       />
                     )}
                   />
@@ -411,6 +432,7 @@ export function TransactionFormScreen({
               multiline
               showClear
               errorField={error}
+              disabled={isSubmitting}
             />
           )}
         />
@@ -428,6 +450,7 @@ export function TransactionFormScreen({
             onAdd={logic.addFee}
             onRemove={logic.removeFee}
             onManageCategories={onManageCategories}
+            disabled={isSubmitting}
           />
         </View>
 
@@ -444,33 +467,67 @@ export function TransactionFormScreen({
 export default function TransactionManagementCreate() {
   const logic = useTransactionManagementCreate();
   return (
-    <TransactionFormScreen
-      logic={logic}
-      footer={
-        <View className="flex-row items-center justify-center gap-4 mt-2 mb-4">
-          <AppButton
-            disabled={logic.isSubmitting}
-            loading={logic.isSaving}
-            variant={ButtonType.SECONDARY}
-            onPress={logic.handleSubmit((value) =>
-              logic.onSubmit(value, false),
-            )}
-            style={{ flex: 0.4, borderRadius: 4 }}
-            {...SUBMIT_BTN_CONTENT_STYLE}
-          >
-            Save
-          </AppButton>
-          <AppButton
-            disabled={logic.isSubmitting}
-            loading={logic.isSavingAndNew}
-            onPress={logic.handleSubmit((value) => logic.onSubmit(value, true))}
-            style={{ flex: 1, borderRadius: 4 }}
-            {...SUBMIT_BTN_CONTENT_STYLE}
-          >
-            Save & New
-          </AppButton>
-        </View>
-      }
-    />
+    <>
+      <AppDialog
+        title="Minimum payment"
+        description="Does this payment satisfy the minimum payment required for this credit-card statement?"
+        showDialog={logic.showMinimumPaymentDialog}
+        onDismiss={logic.cancelMinimumPaymentPrompt}
+        actionRender={
+          <>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.SECONDARY}
+              onPress={logic.cancelMinimumPaymentPrompt}
+            >
+              Cancel
+            </AppButton>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.SECONDARY}
+              onPress={() => void logic.finishMinimumPaymentPrompt(false)}
+            >
+              No
+            </AppButton>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              onPress={() => void logic.finishMinimumPaymentPrompt(true)}
+            >
+              Yes
+            </AppButton>
+          </>
+        }
+      />
+      <TransactionFormScreen
+        logic={logic}
+        footer={
+          <View className="flex-row items-center justify-center gap-4 mt-2 mb-4">
+            <AppButton
+              disabled={logic.isSubmitting}
+              loading={logic.isSaving}
+              variant={ButtonType.SECONDARY}
+              onPress={logic.handleSubmit((value) =>
+                logic.onSubmit(value, false),
+              )}
+              style={{ flex: 0.4, borderRadius: 4 }}
+              {...SUBMIT_BTN_CONTENT_STYLE}
+            >
+              Save
+            </AppButton>
+            <AppButton
+              disabled={logic.isSubmitting}
+              loading={logic.isSavingAndNew}
+              onPress={logic.handleSubmit((value) =>
+                logic.onSubmit(value, true),
+              )}
+              style={{ flex: 1, borderRadius: 4 }}
+              {...SUBMIT_BTN_CONTENT_STYLE}
+            >
+              Save & New
+            </AppButton>
+          </View>
+        }
+      />
+    </>
   );
 }

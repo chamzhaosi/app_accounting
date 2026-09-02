@@ -10,6 +10,7 @@ import { getCategoryPeriodSummaryList } from "../../sql/service/categoryMgmtServ
 import { formatDateValue, getCurrentMonthDateRange } from "../../utils/date";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
+import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
 
 export type CategoryHomeTabRoute = Route & {
@@ -26,8 +27,12 @@ export const CATEGORY_HOME_TAB_ROUTES: CategoryHomeTabRoute[] = [
 export default function useCategoriesList() {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
-  const [selectedCurrencyCode, setSelectedCurrencyCode] =
-    useState(ALL_CURRENCIES_VALUE);
+  const selectedCurrencyCode = useReportingCurrencyStore(
+    (state) => state.currencySelection,
+  );
+  const setCurrencySelection = useReportingCurrencyStore(
+    (state) => state.setCurrencySelection,
+  );
   const [dateRange, setDateRange] = useState<AppDateRangeValue>(
     getCurrentMonthDateRange,
   );
@@ -49,8 +54,18 @@ export default function useCategoriesList() {
         label: code,
         value: code,
       })),
+      ...(selectedCurrencyCode !== ALL_CURRENCIES_VALUE &&
+      !enabledCurrencyCodes.includes(selectedCurrencyCode)
+        ? [
+            {
+              id: selectedCurrencyCode,
+              label: selectedCurrencyCode,
+              value: selectedCurrencyCode,
+            },
+          ]
+        : []),
     ],
-    [enabledCurrencyCodes, t],
+    [enabledCurrencyCodes, selectedCurrencyCode, t],
   );
 
   return {
@@ -66,7 +81,8 @@ export default function useCategoriesList() {
     routes: CATEGORY_HOME_TAB_ROUTES,
     setDateRange,
     setIndex,
-    setSelectedCurrencyCode,
+    setSelectedCurrencyCode: (currencyCode: string) =>
+      void setCurrencySelection(currencyCode),
     selectedCurrencyCode,
     startDate,
   };

@@ -1,56 +1,69 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { accountManagementQueryKeys } from "../../constants/queryKeys";
-import {
-  getAccountTypeBalanceTotals,
-  getAssetBalance,
-} from "../../sql/service/accMgmtService";
-import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
+import type { AppCurrencyTotal } from "../../components/AppCurrencyTotalsSheet";
+import { getAccountTypeBalanceTotals } from "../../sql/service/accMgmtService";
+import { sumAmounts } from "../../utils/amount";
 import { DEBUG_TAG } from "../../utils/debugLog";
 
-export default function useAccountsBalanceSummary() {
-  const currencyCode = useReportingCurrencyStore((state) => state.currencyCode);
-  const isReportingCurrencyHydrated = useReportingCurrencyStore(
-    (state) => state.isHydrated,
-  );
-  const setCurrencyCode = useReportingCurrencyStore(
-    (state) => state.setCurrencyCode,
-  );
+type UseAccountsBalanceSummaryProps = {
+  selectedCurrencyCode: string | null;
+  onSelectedCurrencyChange: (currencyCode: string | null) => void;
+};
+
+export default function useAccountsBalanceSummary({
+  selectedCurrencyCode,
+  onSelectedCurrencyChange,
+}: UseAccountsBalanceSummaryProps) {
   const totalsQuery = useQuery({
     queryKey: accountManagementQueryKeys.typeBalanceTotals(),
     queryFn: getAccountTypeBalanceTotals,
   });
-  const currencyCodes = useMemo(
+  const currencyTotals = useMemo<AppCurrencyTotal[]>(
     () =>
       Array.from(
-        new Set(totalsQuery.data?.map((total) => total.currency_code) ?? []),
-      ).sort((left, right) => left.localeCompare(right)),
+        (totalsQuery.data ?? []).reduce((totals, total) => {
+          const amounts = totals.get(total.currency_code) ?? [];
+          amounts.push(total.balance);
+          totals.set(total.currency_code, amounts);
+          return totals;
+        }, new Map<string, number[]>()),
+      )
+        .map(([currencyCode, amounts]) => ({
+          currencyCode,
+          amount: sumAmounts(amounts),
+        }))
+        .sort((left, right) =>
+          left.currencyCode.localeCompare(right.currencyCode),
+        ),
     [totalsQuery.data],
   );
+  const currencyCodes = useMemo(
+    () => currencyTotals.map((total) => total.currencyCode),
+    [currencyTotals],
+  );
+  const selectorOptions = useMemo<(string | null)[]>(
+    () => [
+      null,
+      ...currencyCodes,
+      ...(selectedCurrencyCode && !currencyCodes.includes(selectedCurrencyCode)
+        ? [selectedCurrencyCode]
+        : []),
+    ],
+    [currencyCodes, selectedCurrencyCode],
+  );
 
-  useEffect(() => {
-    if (
-      !isReportingCurrencyHydrated ||
-      !totalsQuery.isFetched ||
-      currencyCodes.length === 0 ||
-      currencyCodes.includes(currencyCode)
-    )
-      return;
-    void setCurrencyCode(currencyCodes[0]);
-  }, [
-    currencyCode,
-    currencyCodes,
-    isReportingCurrencyHydrated,
-    setCurrencyCode,
-    totalsQuery.isFetched,
-  ]);
+  const selectedIndex = selectorOptions.indexOf(selectedCurrencyCode);
+  const selectedBalance = selectedCurrencyCode
+    ? (currencyTotals.find(
+        (total) => total.currencyCode === selectedCurrencyCode,
+      )?.amount ?? 0)
+    : 0;
 
-  const currencyIndex = currencyCodes.indexOf(currencyCode);
-  const balanceQuery = useQuery({
-    queryKey: accountManagementQueryKeys.assetBalance(currencyCode),
-    queryFn: () => getAssetBalance(currencyCode),
-    enabled: currencyIndex >= 0,
-  });
+  const selectOption = (option: string | null | undefined) => {
+    if (option === undefined) return;
+    onSelectedCurrencyChange(option);
+  };
 
   useEffect(() => {
     if (!totalsQuery.error) return;
@@ -61,30 +74,20 @@ export default function useAccountsBalanceSummary() {
     );
   }, [totalsQuery.error]);
 
-  useEffect(() => {
-    if (!balanceQuery.error) return;
-    console.error(
-      DEBUG_TAG.ACCOUNT_MANAGEMENT,
-      "Error when loading accounts asset balance",
-      balanceQuery.error,
-    );
-  }, [balanceQuery.error]);
-
   return {
-    balance: balanceQuery.data ?? 0,
-    canSelectNextCurrency:
-      currencyIndex >= 0 && currencyIndex < currencyCodes.length - 1,
-    canSelectPreviousCurrency: currencyIndex > 0,
-    currencyCode,
+    balance: selectedBalance,
+    canSelectNextCurrency: selectedIndex < selectorOptions.length - 1,
+    canSelectPreviousCurrency: selectedIndex > 0,
+    currencyCode: selectedCurrencyCode,
+    currencyTotals,
     hasAccountCurrencies: currencyCodes.length > 0,
-    isLoading: totalsQuery.isLoading || balanceQuery.isLoading,
+    isAllCurrencies: selectedCurrencyCode === null,
+    isLoading: totalsQuery.isLoading,
     nextCurrency: () => {
-      const next = currencyCodes[currencyIndex + 1];
-      if (next) void setCurrencyCode(next);
+      selectOption(selectorOptions[selectedIndex + 1]);
     },
     previousCurrency: () => {
-      const previous = currencyCodes[currencyIndex - 1];
-      if (previous) void setCurrencyCode(previous);
+      selectOption(selectorOptions[selectedIndex - 1]);
     },
   };
 }

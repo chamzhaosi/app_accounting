@@ -62,6 +62,8 @@ export const getAccTypeById = async (
 
 export const updateAccType = async (data: AccTypUpdateReqType) => {
   try {
+    const current = await getAccTypeByIdFromDB(data.id);
+    if (current?.is_system) return "System account types cannot be edited.";
     const existData = await getAccTypeByLabelFromDB(data.label);
     if (existData && existData.id !== data.id) {
       debugLog(DEBUG_TAG.ACCOUNT_TYPE, "Duplicate label found when updating", {
@@ -80,6 +82,8 @@ export const updateAccType = async (data: AccTypUpdateReqType) => {
 
 export const deleteAccType = async (id: string) => {
   try {
+    const current = await getAccTypeByIdFromDB(id);
+    if (current?.is_system) return "System account types cannot be deleted.";
     await deleteAccTypeFromDB(id);
   } catch (e) {
     throw e;

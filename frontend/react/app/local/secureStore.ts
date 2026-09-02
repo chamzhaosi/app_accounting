@@ -10,6 +10,7 @@ export const DB_KEY = "finora-db-key";
 export const AMOUNTS_VISIBLE_KEY = "amounts_visible";
 export const LANGUAGE_KEY = "language";
 export const REPORTING_CURRENCY_KEY = "reporting_currency";
+export const REPORTING_CURRENCY_SELECTION_KEY = "reporting_currency_selection";
 
 export const setStoredItem = async (
   key: string,

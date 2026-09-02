@@ -7,6 +7,7 @@ import {
   createBudgetTables,
   createCategoryMgmtTable,
   createCurrencyPreferencesTable,
+  createCreditCardTables,
   createTransactionMgmtTable,
 } from "./schemas";
 import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
@@ -527,6 +528,48 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
         await db.execAsync("ALTER TABLE accounts DROP COLUMN is_main_account;");
       }
       await updateDBVersion(db, 14);
+    });
+  }
+
+  if (currentVersion < 15) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+        UPDATE account_types
+        SET label = label || ' (Custom)', updated_at = datetime('now')
+        WHERE is_system = 0
+          AND label IN ('Credit Card', 'Debit Card') COLLATE NOCASE
+          AND deleted_at IS NULL;
+
+        UPDATE account_types
+        SET label = 'Credit Card', updated_at = datetime('now')
+        WHERE label = 'Card' COLLATE NOCASE AND is_system = 1 AND deleted_at IS NULL;
+
+        INSERT INTO account_types (id, label, icon, is_system)
+        SELECT lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' ||
+          substr(lower(hex(randomblob(2))), 2) || '-' ||
+          substr('89ab', abs(random()) % 4 + 1, 1) ||
+          substr(lower(hex(randomblob(2))), 2) || '-' || lower(hex(randomblob(6))),
+          'Debit Card', 'BadgeDollarSign', 1
+        WHERE NOT EXISTS (
+          SELECT 1 FROM account_types WHERE label = 'Debit Card' COLLATE NOCASE AND deleted_at IS NULL
+        );
+      `);
+      await createCreditCardTables(db);
+      await updateDBVersion(db, 15);
+    });
+  }
+
+  if (currentVersion < 16) {
+    await db.withTransactionAsync(async () => {
+      const columns = await db.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(credit_card_settings);",
+      );
+      if (!columns.some(({ name }) => name === "first_cycle_mode")) {
+        await db.execAsync(
+          "ALTER TABLE credit_card_settings ADD COLUMN first_cycle_mode VARCHAR(10) NOT NULL DEFAULT 'next' CHECK (first_cycle_mode IN ('current', 'next'));",
+        );
+      }
+      await updateDBVersion(db, 16);
     });
   }
 };

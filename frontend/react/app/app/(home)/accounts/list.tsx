@@ -7,6 +7,7 @@ import AppEmpty from "../../../components/AppEmpty";
 import AppIcon from "../../../components/AppIcon";
 import AppView from "../../../components/AppView";
 import { FONTS } from "../../../constants/fonts";
+import { ALL_CURRENCIES_VALUE } from "../../../constants/currencies";
 import {
   LIST_ITEM_DESCRIPTION_FONTSIZE,
   LIST_ITEM_TITLE_FONTSIZE,
@@ -15,17 +16,26 @@ import useAccountsList from "../../../hook/account_management/useAccountsList";
 import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../../stores/useAmountPrivacyStore";
+import { useReportingCurrencyStore } from "../../../stores/useReportingCurrencyStore";
 import { formatPrivateCurrencyAmount } from "../../../utils/number";
 import { useTranslation } from "../../../i18n/helper";
 import AccountsBalanceSummary from "./_components/AccountsBalanceSummary";
 
 export default function AccountsList() {
+  const currencySelection = useReportingCurrencyStore(
+    (state) => state.currencySelection,
+  );
+  const setCurrencySelection = useReportingCurrencyStore(
+    (state) => state.setCurrencySelection,
+  );
+  const selectedCurrencyCode =
+    currencySelection === ALL_CURRENCIES_VALUE ? null : currencySelection;
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
   );
-  const logic = useAccountsList();
+  const logic = useAccountsList(selectedCurrencyCode);
   const isSingleCurrency = useSingleCurrencyMode();
 
   if (logic.isLoading) {
@@ -45,7 +55,14 @@ export default function AccountsList() {
         visible={Boolean(logic.selectedTotals)}
         onDismiss={logic.closeCurrencyTotals}
       />
+      <AccountsBalanceSummary
+        selectedCurrencyCode={selectedCurrencyCode}
+        onSelectedCurrencyChange={(currencyCode) =>
+          void setCurrencySelection(currencyCode ?? ALL_CURRENCIES_VALUE)
+        }
+      />
       <SectionList
+        style={styles.list}
         sections={logic.accountSections}
         keyExtractor={(account) => account.id}
         stickySectionHeadersEnabled
@@ -58,7 +75,6 @@ export default function AccountsList() {
           logic.accountSections.length === 0 && styles.emptyContentContainer,
         ]}
         ListEmptyComponent={<AppEmpty />}
-        ListHeaderComponent={<AccountsBalanceSummary />}
         renderSectionHeader={({ section }) => (
           <View
             style={[
@@ -217,6 +233,7 @@ export default function AccountsList() {
 }
 
 const styles = StyleSheet.create({
+  list: { flex: 1 },
   contentContainer: {
     paddingBottom: 24,
   },

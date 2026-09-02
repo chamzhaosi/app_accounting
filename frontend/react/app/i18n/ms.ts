@@ -1,6 +1,29 @@
 import { zhHans } from "./zh-Hans";
 
 export const ms: Record<keyof typeof zhHans, string> = {
+  Summary: "Ringkasan",
+  Statement: "Penyata",
+  "Back to accounts": "Kembali ke senarai akaun",
+  "Current statement": "Penyata semasa",
+  "Open settings": "Buka tetapan",
+  "Resume reminder": "Sambung peringatan",
+  "Skip this cycle": "Langkau kitaran ini",
+  "Skip this cycle?": "Langkau kitaran ini?",
+  "This will not mark the statement as paid. Reminders resume automatically for the next cycle.":
+    "Ini tidak akan menandakan penyata sebagai telah dibayar. Peringatan akan disambung secara automatik untuk kitaran seterusnya.",
+  Skip: "Langkau",
+  "Due {{date}}": "Tarikh akhir {{date}}",
+  "Payments & credits": "Bayaran & kredit",
+  "No payment due": "Tiada bayaran perlu dibuat",
+  "Minimum paid": "Bayaran minimum telah dibuat",
+  "Overdue · reminders stopped": "Lewat tempoh · peringatan dihentikan",
+  "Reminder skipped for this cycle": "Peringatan dilangkau untuk kitaran ini",
+  "Daily reminder · {{time}} · {{days}} days before":
+    "Peringatan harian · {{time}} · {{days}} hari sebelumnya",
+  "Notifications unavailable": "Pemberitahuan tidak tersedia",
+  "Statement activity": "Aktiviti penyata",
+  "Applied after the statement closed": "Digunakan selepas penyata ditutup",
+  "Included in this statement period": "Termasuk dalam tempoh penyata ini",
   "Open all currency totals": "Buka semua jumlah mata wang",
   "Personal Accounting App": "Aplikasi Perakaunan Peribadi",
   Dashboard: "Ringkasan",

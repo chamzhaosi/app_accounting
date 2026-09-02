@@ -26,6 +26,7 @@ import {
 } from "./budgetOverview.utils";
 import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
+import { ALL_CURRENCIES_VALUE } from "../../constants/currencies";
 
 type BudgetProgressTheme = {
   primary: string;
@@ -37,11 +38,17 @@ type BudgetProgressTheme = {
 export default function useBudgetOverview(theme: BudgetProgressTheme) {
   const currentMonth = getMonthKey();
   const [month, setMonthState] = useState(currentMonth);
-  const selectedCurrencyCode = useReportingCurrencyStore(
+  const storedCurrencyCode = useReportingCurrencyStore(
     (state) => state.currencyCode,
   );
-  const setSelectedCurrencyCode = useReportingCurrencyStore(
+  const currencySelection = useReportingCurrencyStore(
+    (state) => state.currencySelection,
+  );
+  const setCurrencyCode = useReportingCurrencyStore(
     (state) => state.setCurrencyCode,
+  );
+  const setCurrencySelection = useReportingCurrencyStore(
+    (state) => state.setCurrencySelection,
   );
   const plansQuery = useQuery({
     queryKey: budgetQueryKeys.planList(),
@@ -51,6 +58,10 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
     queryKey: currencyManagementQueryKeys.preferences(),
     queryFn: getCurrencyPreferences,
   });
+  const selectedCurrencyCode =
+    currencySelection === ALL_CURRENCIES_VALUE
+      ? (preferencesQuery.data?.defaultCurrencyCode ?? storedCurrencyCode)
+      : currencySelection;
   const plans = useMemo(() => {
     const defaultCode = preferencesQuery.data?.defaultCurrencyCode;
     return [...(plansQuery.data ?? [])].sort(
@@ -85,15 +96,38 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
       currencyCodes.includes(selectedCurrencyCode)
     )
       return;
-    void setSelectedCurrencyCode(
-      preferencesQuery.data.defaultCurrencyCode ?? currencyCodes[0],
-    );
+    const fallbackCurrencyCode =
+      preferencesQuery.data.defaultCurrencyCode ?? currencyCodes[0];
+    if (!fallbackCurrencyCode) return;
+    if (currencySelection === ALL_CURRENCIES_VALUE) {
+      void setCurrencyCode(fallbackCurrencyCode);
+      return;
+    }
+    void setCurrencySelection(fallbackCurrencyCode);
   }, [
     arePeriodCurrenciesFetched,
     currencyCodes,
+    currencySelection,
     preferencesQuery.data,
     selectedCurrencyCode,
-    setSelectedCurrencyCode,
+    setCurrencyCode,
+    setCurrencySelection,
+  ]);
+
+  useEffect(() => {
+    const defaultCurrencyCode = preferencesQuery.data?.defaultCurrencyCode;
+    if (
+      currencySelection !== ALL_CURRENCIES_VALUE ||
+      !defaultCurrencyCode ||
+      storedCurrencyCode === defaultCurrencyCode
+    )
+      return;
+    void setCurrencyCode(defaultCurrencyCode);
+  }, [
+    currencySelection,
+    preferencesQuery.data?.defaultCurrencyCode,
+    setCurrencyCode,
+    storedCurrencyCode,
   ]);
 
   const query = useQuery({
@@ -161,7 +195,7 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
   const selectCurrencyOffset = (offset: number) => {
     const index = currencyCodes.indexOf(selectedCurrencyCode);
     const next = index >= 0 ? currencyCodes[index + offset] : undefined;
-    if (next) void setSelectedCurrencyCode(next);
+    if (next) void setCurrencySelection(next);
   };
 
   return {
