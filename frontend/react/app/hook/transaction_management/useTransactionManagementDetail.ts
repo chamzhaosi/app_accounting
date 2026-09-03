@@ -62,6 +62,7 @@ import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPref
 import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 import useFrequentTransactionDescriptions from "./useFrequentTransactionDescriptions";
+import useTransactionAttachments from "./useTransactionAttachments";
 import {
   canConfirmCreditCardMinimumPayment,
   confirmCreditCardMinimumPayment,
@@ -87,7 +88,9 @@ export default function useTransactionManagementDetail() {
   const [pendingMinimumAccountId, setPendingMinimumAccountId] = useState("");
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
-  const isSubmitting = isDeleting || isSaving;
+  const attachmentState = useTransactionAttachments(id);
+  const isSubmitting =
+    isDeleting || isSaving || attachmentState.isProcessingAttachment;
   const {
     data: operation,
     error: transactionError,
@@ -137,6 +140,7 @@ export default function useTransactionManagementDetail() {
   const accountCurrencyCode = watch("accountCurrencyCode");
   const exchangeRate = watch("exchangeRate");
   const transactionDate = watch("transactionDate");
+  const description = watch("description");
   const categoryTypeId = TRANSACTION_CATEGORY_TYPE_IDS[transactionType];
 
   const {
@@ -194,6 +198,7 @@ export default function useTransactionManagementDetail() {
   const recentDescriptions = useFrequentTransactionDescriptions(
     categoryId,
     transactionType,
+    description,
   );
 
   const categoryItems = useMemo<AppListCardItemType[]>(() => {
@@ -639,6 +644,8 @@ export default function useTransactionManagementDetail() {
               ? value.fromAccountId
               : value.accountId,
         })),
+        attachments: attachmentState.attachmentInputs,
+        removedAttachmentIds: attachmentState.removedAttachmentIds,
       });
 
       if (errorMessage) {
@@ -655,6 +662,7 @@ export default function useTransactionManagementDetail() {
         invalidateQuery(queryClient, creditCardQueryKeys.cycles()),
       ]);
       AppToast.success({ message: "Transaction updated successfully" });
+      attachmentState.markChangesCommitted(true);
       if (
         value.transactionType === TXN_TYPE_ENUM.TRANSFER &&
         selectedToAccount?.typeLabel === "Credit Card" &&
@@ -699,12 +707,15 @@ export default function useTransactionManagementDetail() {
     try {
       setResponseError("");
       setIsDeleting(true);
+      await attachmentState.cleanupUncommittedFiles();
       const errorMessage = await deleteTransactionMgmt(id);
 
       if (errorMessage) {
         setResponseError(errorMessage);
         return;
       }
+
+      attachmentState.markChangesCommitted(true);
 
       await Promise.all([
         invalidateQuery(queryClient, transactionManagementQueryKeys.lists()),
@@ -732,6 +743,7 @@ export default function useTransactionManagementDetail() {
 
   return {
     accountCurrencyCode,
+    attachmentState,
     accountFieldProps,
     addFee,
     activeAccountField,

@@ -433,6 +433,25 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
             data.balanceChangeDate ?? null,
           ],
         );
+
+        for (const attachment of data.balanceChangeAttachments ?? []) {
+          await db.runAsync(
+            `INSERT INTO transaction_attachments (
+               id, transaction_id, file_path, file_name, mime_type,
+               file_size, width, height
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+            [
+              attachment.id,
+              adjustmentTransactionId,
+              attachment.filePath,
+              attachment.fileName,
+              attachment.mimeType,
+              attachment.fileSize ?? null,
+              attachment.width ?? null,
+              attachment.height ?? null,
+            ],
+          );
+        }
       }
     });
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Updated account", {

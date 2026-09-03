@@ -1,3 +1,5 @@
+import type { TransactionAttachmentInput } from "./transactionAttachmentType";
+
 export type AccMgmtRspType = {
   id: string;
   type_id: string;
@@ -73,4 +75,5 @@ export type AccMgmtUpdateReqType = AccMgmtCreateReqType & {
   balanceChangeCategoryId?: string;
   balanceChangeDate?: string;
   balanceChangeDescription?: string;
+  balanceChangeAttachments?: TransactionAttachmentInput[];
 };

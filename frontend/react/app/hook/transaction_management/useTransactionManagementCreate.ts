@@ -67,6 +67,7 @@ import {
 } from "../../sql/service/creditCardService";
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 import useFrequentTransactionDescriptions from "./useFrequentTransactionDescriptions";
+import useTransactionAttachments from "./useTransactionAttachments";
 
 const TRANSACTION_CATEGORY_PAGE_SIZE = 1000;
 
@@ -99,10 +100,12 @@ export default function useTransactionManagementCreate() {
   } | null>(null);
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
-  const isSubmitting = isSaving || isSavingAndNew;
   const today = dayjs().format("YYYY-MM-DD");
   const currencyPreferences = useCurrencyPreferenceOptions();
   const isSingleCurrency = useSingleCurrencyMode();
+  const attachmentState = useTransactionAttachments();
+  const isSubmitting =
+    isSaving || isSavingAndNew || attachmentState.isProcessingAttachment;
 
   const {
     clearErrors,
@@ -141,6 +144,7 @@ export default function useTransactionManagementCreate() {
   const accountCurrencyCode = watch("accountCurrencyCode");
   const exchangeRate = watch("exchangeRate");
   const transactionDate = watch("transactionDate");
+  const description = watch("description");
   const categoryTypeId = TRANSACTION_CATEGORY_TYPE_IDS[transactionType];
 
   const {
@@ -205,6 +209,7 @@ export default function useTransactionManagementCreate() {
   const recentDescriptions = useFrequentTransactionDescriptions(
     categoryId,
     transactionType,
+    description,
   );
 
   const categoryItems = useMemo<AppListCardItemType[]>(() => {
@@ -579,6 +584,7 @@ export default function useTransactionManagementCreate() {
               ? value.fromAccountId
               : value.accountId,
         })),
+        attachments: attachmentState.attachmentInputs,
       });
 
       if (result.errorMessage) {
@@ -594,6 +600,7 @@ export default function useTransactionManagementCreate() {
         invalidateQuery(queryClient, creditCardQueryKeys.cycles()),
       ]);
       AppToast.success({ message: "Transaction created successfully" });
+      attachmentState.markChangesCommitted(!saveAnotherTransaction);
       const completeSave = () => {
         reset({
           ...getTransactionManagementFormDefaultValues(today),
@@ -690,6 +697,7 @@ export default function useTransactionManagementCreate() {
 
   return {
     accountCurrencyCode,
+    attachmentState,
     accountFieldProps,
     addFee,
     activeAccountField,

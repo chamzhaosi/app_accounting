@@ -24,7 +24,7 @@ export default function TransactionManagementDetail() {
     <View className="flex flex-1">
       <AppDialog
         title="Delete Transaction"
-        description="Are you sure you want to delete this transaction and all linked fees?"
+        description="Are you sure you want to delete this transaction and all linked fees and attachments?"
         showDialog={logic.showDeleteDialog}
         onDismiss={() => logic.setShowDeleteDialog(false)}
         actionRender={

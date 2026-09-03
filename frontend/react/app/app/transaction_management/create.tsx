@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import type { ReactNode } from "react";
 import { Controller } from "react-hook-form";
-import { Pressable, ScrollView, View } from "react-native";
-import { SegmentedButtons, Text, TextInput } from "react-native-paper";
+import { View } from "react-native";
+import { SegmentedButtons, TextInput } from "react-native-paper";
 import AppAmtInput from "../../components/AppAmtInput";
 import AppButton, {
   ButtonType,
@@ -31,6 +31,10 @@ import CategoryIdField from "./_components/CategoryIdField";
 import TransactionFeeFields from "./_components/TransactionFeeFields";
 import AppDialog from "../../components/AppDialog";
 import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
+import TransactionAttachmentButton from "./_components/TransactionAttachmentButton";
+import TransactionAttachmentManager from "./_components/TransactionAttachmentManager";
+import TransactionAttachmentPreview from "./_components/TransactionAttachmentPreview";
+import RecentDescriptionPicker from "./_components/RecentDescriptionPicker";
 
 type TransactionFormScreenLogic = Omit<
   ReturnType<typeof useTransactionManagementCreate>,
@@ -61,6 +65,7 @@ export function TransactionFormScreen({
   const { THEME } = useThemeStore();
   const {
     accountCurrencyCode,
+    attachmentState,
     accountFieldProps,
     activeAccountField,
     categoryError,
@@ -216,6 +221,58 @@ export function TransactionFormScreen({
 
   return (
     <View className="flex flex-1">
+      <TransactionAttachmentButton
+        count={attachmentState.attachmentCount}
+        disabled={isSubmitting || attachmentState.isLoadingAttachments}
+        onPress={attachmentState.onAttachmentPress}
+      />
+      <TransactionAttachmentManager
+        attachments={attachmentState.attachments}
+        isManagerVisible={attachmentState.isManagerVisible}
+        isProcessing={attachmentState.isProcessingAttachment}
+        isSourceMenuVisible={attachmentState.isSourceMenuVisible}
+        maxAttachments={attachmentState.maxAttachments}
+        onAdd={attachmentState.onAddPress}
+        onChooseGallery={attachmentState.onChooseGallery}
+        onCloseManager={attachmentState.onCloseManager}
+        onCloseSourceMenu={attachmentState.onCloseSourceMenu}
+        onPreview={attachmentState.onPreviewAttachment}
+        onRemove={(attachment) =>
+          void attachmentState.removeAttachment(attachment)
+        }
+        onTakePhoto={attachmentState.onTakePhoto}
+      />
+      <TransactionAttachmentPreview
+        attachment={attachmentState.previewAttachment}
+        onDismiss={() => attachmentState.onPreviewAttachment(undefined)}
+        onRemove={(attachment) =>
+          void attachmentState.removeAttachment(attachment)
+        }
+      />
+      <AppDialog
+        title="Discard attachment changes?"
+        description="Your unsaved attachment changes will be lost."
+        showDialog={attachmentState.showDiscardDialog}
+        onDismiss={attachmentState.cancelDiscard}
+        actionRender={
+          <>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.SECONDARY}
+              onPress={attachmentState.cancelDiscard}
+            >
+              Keep editing
+            </AppButton>
+            <AppButton
+              {...DIALOG_COMMON_BTN_PROPS}
+              variant={ButtonType.ERROR}
+              onPress={() => void attachmentState.discardChanges()}
+            >
+              Discard
+            </AppButton>
+          </>
+        }
+      />
       <View className="p-4 pb-3 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
         <AppText variant="titleMedium" className="mb-2">
           {t("Transaction Type")}
@@ -448,94 +505,13 @@ export function TransactionFormScreen({
                     : undefined
                 }
               />
-              {recentDescriptions.length > 0 && (
-                <View
-                  style={{
-                    marginTop: -1,
-                    marginBottom: 10,
-                    paddingTop: 6,
-                    paddingBottom: 8,
-                    borderWidth: 1,
-                    borderTopWidth: 0,
-                    borderBottomLeftRadius: 4,
-                    borderBottomRightRadius: 4,
-                    borderColor: THEME.outline,
-                    backgroundColor: THEME.surfaceContainerHigh,
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      paddingHorizontal: 10,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Text
-                      variant="labelSmall"
-                      style={{ color: THEME.onSurfaceVariant }}
-                    >
-                      {t("Frequently used")}
-                    </Text>
-                    <Text
-                      variant="labelSmall"
-                      style={{ color: THEME.onSurfaceVariant }}
-                    >
-                      {value?.length ?? 0}/{DESCRIPTION_MAX_LEN}
-                    </Text>
-                  </View>
-                  <ScrollView
-                    style={{ display: "flex", flexGrow: 0 }}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{
-                      gap: 8,
-                      paddingLeft: 8,
-                      paddingRight: 16,
-                    }}
-                  >
-                    {recentDescriptions.map((description) => {
-                      const isSelected = value === description;
-
-                      return (
-                        <Pressable
-                          key={description}
-                          accessibilityRole="button"
-                          accessibilityState={{
-                            disabled: isSubmitting,
-                            selected: isSelected,
-                          }}
-                          disabled={isSubmitting}
-                          style={{
-                            height: 34,
-                            maxWidth: 200,
-                            justifyContent: "center",
-                            paddingHorizontal: 12,
-                            borderRadius: 8,
-                            backgroundColor: isSelected
-                              ? THEME.primaryContainer
-                              : THEME.surfaceContainerHighest,
-                            opacity: isSubmitting ? 0.6 : 1,
-                          }}
-                          onPress={() => onChange(description)}
-                        >
-                          <Text
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                            style={{
-                              color: isSelected
-                                ? THEME.onPrimaryContainer
-                                : THEME.onSurface,
-                            }}
-                          >
-                            {description}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              )}
+              <RecentDescriptionPicker
+                descriptions={recentDescriptions}
+                value={value ?? ""}
+                maxLength={DESCRIPTION_MAX_LEN}
+                disabled={isSubmitting}
+                onSelect={onChange}
+              />
             </>
           )}
         />
@@ -558,7 +534,7 @@ export function TransactionFormScreen({
         </View>
 
         {responseError && (
-          <AppText type={TextTypEnum.ERROR}>{responseError}</AppText>
+          <AppText type={TextTypEnum.ERROR}>{t(responseError)}</AppText>
         )}
 
         {footer}

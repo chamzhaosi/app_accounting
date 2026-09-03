@@ -40,6 +40,7 @@ export type TransactionListItem = {
   dailyNetEffect: number;
   transactionType: TXN_TYPE_ENUM;
   transactionDate: string;
+  hasAttachments: boolean;
 };
 
 export type TransactionDateSection = {
@@ -198,6 +199,7 @@ export default function useTransactionManagementList({
         dailyNetEffect,
         transactionType: transaction.transaction_type,
         transactionDate: transaction.transaction_date,
+        hasAttachments: Boolean(transaction.has_attachments),
       };
       const items = groups.get(item.transactionDate) ?? [];
       items.push(item);

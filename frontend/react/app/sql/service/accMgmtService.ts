@@ -24,6 +24,7 @@ import {
 } from "../types/accMgmtType";
 import { getCurrencyPreferences } from "./currencyManagementService";
 import { cancelCreditCardAccountNotifications } from "./creditCardService";
+import { assertAttachmentLimit } from "./transactionAttachmentService";
 
 const isEnabledCurrency = async (currencyCode: string) => {
   if (!CURRENCY_CODES.has(currencyCode)) return false;
@@ -153,6 +154,16 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
     data.currentBalance,
     currentAccount.current_balance,
   );
+  const balanceChangeAttachments = data.balanceChangeAttachments ?? [];
+
+  if (
+    compareAmounts(balanceDifference, 0) === 0 &&
+    balanceChangeAttachments.length > 0
+  )
+    return "Attachments require a balance difference.";
+
+  const attachmentError = assertAttachmentLimit(0, balanceChangeAttachments);
+  if (attachmentError) return attachmentError;
 
   if (compareAmounts(balanceDifference, 0) !== 0) {
     if (!data.balanceChangeKind)

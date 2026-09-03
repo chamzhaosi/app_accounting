@@ -13,6 +13,9 @@ import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 import useAccountManagementDetail from "../../hook/account_management/useAccountManagementDetail";
 import AccountManagementFormFields from "./_components/AccountManagementFormFields";
 import BalanceChangeClassification from "./_components/BalanceChangeClassification";
+import TransactionAttachmentButton from "../transaction_management/_components/TransactionAttachmentButton";
+import TransactionAttachmentManager from "../transaction_management/_components/TransactionAttachmentManager";
+import TransactionAttachmentPreview from "../transaction_management/_components/TransactionAttachmentPreview";
 
 export default function AccountManagementDetail() {
   const logic = useAccountManagementDetail();
@@ -30,6 +33,64 @@ export default function AccountManagementDetail() {
         edges={["bottom", "left", "left"]}
         className="bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer"
       >
+        <TransactionAttachmentButton
+          count={logic.attachmentState.attachmentCount}
+          visible={
+            logic.balanceDifference === 0 &&
+            logic.attachmentState.attachmentCount > 0
+          }
+          disabled={
+            logic.isSubmitting || logic.attachmentState.isLoadingAttachments
+          }
+          onPress={logic.attachmentState.onAttachmentPress}
+        />
+        <TransactionAttachmentManager
+          attachments={logic.attachmentState.attachments}
+          isManagerVisible={logic.attachmentState.isManagerVisible}
+          isProcessing={logic.attachmentState.isProcessingAttachment}
+          isSourceMenuVisible={logic.attachmentState.isSourceMenuVisible}
+          maxAttachments={logic.attachmentState.maxAttachments}
+          onAdd={logic.attachmentState.onAddPress}
+          onChooseGallery={logic.attachmentState.onChooseGallery}
+          onCloseManager={logic.attachmentState.onCloseManager}
+          onCloseSourceMenu={logic.attachmentState.onCloseSourceMenu}
+          onPreview={logic.attachmentState.onPreviewAttachment}
+          onRemove={(attachment) =>
+            void logic.attachmentState.removeAttachment(attachment)
+          }
+          onTakePhoto={logic.attachmentState.onTakePhoto}
+        />
+        <TransactionAttachmentPreview
+          attachment={logic.attachmentState.previewAttachment}
+          onDismiss={() => logic.attachmentState.onPreviewAttachment(undefined)}
+          onRemove={(attachment) =>
+            void logic.attachmentState.removeAttachment(attachment)
+          }
+        />
+        <AppDialog
+          title="Discard attachment changes?"
+          description="Your unsaved attachment changes will be lost."
+          showDialog={logic.attachmentState.showDiscardDialog}
+          onDismiss={logic.attachmentState.cancelDiscard}
+          actionRender={
+            <>
+              <AppButton
+                {...DIALOG_COMMON_BTN_PROPS}
+                variant={ButtonType.SECONDARY}
+                onPress={logic.attachmentState.cancelDiscard}
+              >
+                Keep editing
+              </AppButton>
+              <AppButton
+                {...DIALOG_COMMON_BTN_PROPS}
+                variant={ButtonType.ERROR}
+                onPress={() => void logic.attachmentState.discardChanges()}
+              >
+                Discard
+              </AppButton>
+            </>
+          }
+        />
         <AppDialog
           title="Delete"
           description="Are you sure you want to delete this account?
@@ -81,6 +142,7 @@ export default function AccountManagementDetail() {
           }
         />
         <AppScrollView
+          enableOnAndroid
           className="border-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer"
           contentContainerStyle={{
             justifyContent: "flex-start",
@@ -104,12 +166,18 @@ export default function AccountManagementDetail() {
             categoryId={logic.balanceChangeCategoryId}
             categoryOptions={logic.balanceChangeCategoryOptions}
             description={logic.balanceChangeDescription}
+            recentDescriptions={logic.recentBalanceChangeDescriptions}
+            attachmentCount={logic.attachmentState.attachmentCount}
+            attachmentDisabled={
+              logic.isSubmitting || logic.attachmentState.isLoadingAttachments
+            }
             transactionDate={logic.balanceChangeDate}
             disabled={logic.isSubmitting}
             onKindChange={logic.setBalanceChangeKind}
             onCategoryChange={logic.setBalanceChangeCategoryId}
             onDateChange={logic.setBalanceChangeDate}
             onDescriptionChange={logic.setBalanceChangeDescription}
+            onAttachmentPress={logic.attachmentState.onAttachmentPress}
           />
           <AppDivider />
           {logic.rspErrorMsg && (

@@ -9,6 +9,8 @@ export enum DEBUG_TAG {
   CATEGORY_MANAGEMENT_DB = "[CategoryManagement:DB]",
   TRANSACTION_MANAGEMENT = "[TransactionManagement]",
   TRANSACTION_MANAGEMENT_DB = "[TransactionManagement:DB]",
+  TRANSACTION_ATTACHMENT = "[TransactionAttachment]",
+  TRANSACTION_ATTACHMENT_DB = "[TransactionAttachment:DB]",
   BUDGET = "[Budget]",
   BUDGET_DB = "[Budget:DB]",
   ACCOUNT_SETTINGS = "[AccountSettings]",

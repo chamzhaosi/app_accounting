@@ -1,13 +1,22 @@
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
+import { useLayoutEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Surface, Text } from "react-native-paper";
+import {
+  ActivityIndicator,
+  IconButton,
+  Surface,
+  Text,
+} from "react-native-paper";
 import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppCurrencyTotalsSheet from "../../../components/AppCurrencyTotalsSheet";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
 import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
-import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
+import {
+  CATEGORY_MANAGEMENT_DETAIL_URL,
+  TRANSACTION_MANAGEMENT_CREATE_URL,
+} from "../../../constants/urls";
 import { CATEGORY_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import useCategoryDetail from "../../../hook/category_management/useCategoryDetail";
 import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
@@ -21,6 +30,7 @@ import { getCategoryDisplayLabel } from "../../../hook/category_management/categ
 import CategoryCurrencyNavigator from "./_components/CategoryCurrencyNavigator";
 
 export default function CategoryDetail() {
+  const navigation = useNavigation();
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
   const areAmountsVisible = useAmountPrivacyStore(
@@ -51,6 +61,25 @@ export default function CategoryDetail() {
     transactionType,
     typeLabel,
   } = useCategoryDetail();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <IconButton
+          icon="pencil-outline"
+          iconColor={THEME.primary}
+          accessibilityLabel={t("Edit category")}
+          disabled={!category}
+          onPress={() =>
+            router.push({
+              pathname: CATEGORY_MANAGEMENT_DETAIL_URL,
+              params: { id },
+            })
+          }
+        />
+      ),
+    });
+  }, [THEME.primary, category, id, navigation, t]);
 
   if (isLoading) {
     return (

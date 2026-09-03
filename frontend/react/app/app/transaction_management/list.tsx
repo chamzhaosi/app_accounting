@@ -279,7 +279,7 @@ export default function TransactionManagementList(
               accessibilityRole="button"
               accessibilityLabel={`${item.title}${
                 item.description ? `, ${item.description}` : ""
-              }, ${displayAmount}${
+              }${item.hasAttachments ? `, ${t("Has attachments")}` : ""}, ${displayAmount}${
                 secondaryAmount ? `, ${secondaryAmount}` : ""
               }`}
               accessibilityHint={
@@ -309,16 +309,25 @@ export default function TransactionManagementList(
                 </View>
 
                 <View style={styles.transactionText}>
-                  <Text
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    style={[
-                      styles.transactionTitle,
-                      { color: THEME.onSurface },
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
+                  <View style={styles.transactionTitleRow}>
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={[
+                        styles.transactionTitle,
+                        { color: THEME.onSurface },
+                      ]}
+                    >
+                      {item.title}
+                    </Text>
+                    {item.hasAttachments ? (
+                      <AppIcon
+                        name="Paperclip"
+                        color={THEME.primary}
+                        size={16}
+                      />
+                    ) : null}
+                  </View>
                   {item.transactionType === TXN_TYPE_ENUM.TRANSFER ? (
                     <View style={styles.transferSubtitle}>
                       <Text
@@ -502,9 +511,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   transactionTitle: {
+    flexShrink: 1,
     fontFamily: FONTS.ROBOTO,
     fontSize: LIST_ITEM_TITLE_FONTSIZE,
     fontWeight: "600",
+    minWidth: 0,
+  },
+  transactionTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
+    minWidth: 0,
   },
   transactionSubtitle: {
     fontFamily: FONTS.ROBOTO,
