@@ -31,7 +31,7 @@ import { DEFAULT_CURRENCY_CODE } from "../../../constants/currencies";
 import { useTranslation } from "../../../i18n/helper";
 import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
 
-type AccountPickerModalItem = AppListItemType & {
+export type AccountPickerModalItem = AppListItemType & {
   balance: number;
   currencyCode?: string;
   inputLabel: string;
@@ -56,11 +56,12 @@ type AccountPickerModalProps = {
   isRefreshing: boolean;
   onDismiss: () => void;
   onLoadMore: () => void;
-  onManageAccounts: () => void;
+  onManageAccounts?: () => void;
   onRefresh: () => Promise<unknown>;
   onSelect: (account: AccountPickerModalItem) => void;
   visible: boolean;
   selectedItem?: AccountPickerModalItem;
+  selectedItems?: AccountPickerModalItem[];
   title?: string;
 };
 
@@ -77,6 +78,7 @@ export default function AccountPickerModal({
   onSelect,
   visible,
   selectedItem,
+  selectedItems,
   title = "Select Account",
 }: AccountPickerModalProps) {
   const { THEME } = useThemeStore();
@@ -197,7 +199,9 @@ export default function AccountPickerModal({
               </View>
             )}
             renderItem={({ item }) => {
-              const isSelected = selectedItem?.id === item.id;
+              const isSelected =
+                selectedItem?.id === item.id ||
+                selectedItems?.some((selected) => selected.id === item.id);
               const textColor = isSelected ? THEME.onTertiary : THEME.onSurface;
 
               return (
@@ -267,11 +271,13 @@ export default function AccountPickerModal({
             }}
           />
         )}
-        <AppFloatingButton
-          icon="pencil"
-          onPress={onManageAccounts}
-          style={styles.manageButton}
-        />
+        {onManageAccounts ? (
+          <AppFloatingButton
+            icon="pencil"
+            onPress={onManageAccounts}
+            style={styles.manageButton}
+          />
+        ) : null}
       </Modal>
     </Portal>
   );

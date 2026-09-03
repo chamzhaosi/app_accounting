@@ -42,3 +42,5 @@ export const BUDGET_CATEGORY_DETAIL_URL = "/category_detail/[id]";
 
 export const GOOGLE_PLAY_REVIEW_URL =
   "https://play.google.com/store/apps/details?id=com.cham.finora&showAllReviews=true";
+
+export const TRANSACTION_SEARCH_URL = "/transaction_search/list";

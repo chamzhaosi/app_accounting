@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
@@ -12,8 +13,9 @@ import AppIconButton from "../../../components/AppIconButton";
 import AppPinVerificationDialog from "../../../components/AppPinVerificationDialog";
 import { BUDGET_REMAINING_COLOR } from "../../../constants/colors";
 import { DASHBOARD_SUMMARY_CARD_HEIGHT } from "../../../constants/size";
-import useAccountBalanceSummary from "../../../hook/dashboard/useAccountBalanceSummary";
+import { TRANSACTION_SEARCH_URL } from "../../../constants/urls";
 import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
+import useAccountBalanceSummary from "../../../hook/dashboard/useAccountBalanceSummary";
 import useAmountPrivacyToggle from "../../../hook/security/useAmountPrivacyToggle";
 import { useTranslation } from "../../../i18n/helper";
 import { useThemeStore } from "../../../stores/useThemeStore";
@@ -94,6 +96,25 @@ export default function AccountBalanceSummary({
                 maxRangeDays={90}
                 value={dateRange}
                 onChange={onDateRangeChange}
+              />
+            </View>
+            <View
+              style={[
+                styles.searchAction,
+                { borderLeftColor: THEME.surfaceDim },
+              ]}
+            >
+              <AppIconButton
+                iconName="Search"
+                iconSize={22}
+                accessibilityRole="button"
+                accessibilityLabel={t("Global Search")}
+                onPress={() => router.push(TRANSACTION_SEARCH_URL)}
+                hitSlop={8}
+                style={{
+                  ...styles.searchButton,
+                  backgroundColor: THEME.surfaceContainerHigh,
+                }}
               />
             </View>
           </View>
@@ -306,11 +327,26 @@ const styles = StyleSheet.create({
   },
   dateRangeContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingTop: 12,
   },
-  dateRangeRow: { flexDirection: "column" },
-  dateRangePicker: { width: "100%" },
+  dateRangeRow: { alignItems: "flex-start", flexDirection: "row" },
+  dateRangePicker: { flex: 1, minWidth: 0 },
+  searchAction: {
+    alignItems: "center",
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    justifyContent: "center",
+    marginBottom: 16,
+    marginLeft: 4,
+    paddingLeft: 6,
+    paddingRight: 4,
+  },
+  searchButton: {
+    alignItems: "center",
+    height: 25,
+    justifyContent: "center",
+    width: 25,
+  },
   currencyNavigator: {
     alignItems: "center",
     borderRadius: 16,
