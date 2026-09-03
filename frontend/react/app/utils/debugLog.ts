@@ -11,6 +11,8 @@ export enum DEBUG_TAG {
   TRANSACTION_MANAGEMENT_DB = "[TransactionManagement:DB]",
   TRANSACTION_ATTACHMENT = "[TransactionAttachment]",
   TRANSACTION_ATTACHMENT_DB = "[TransactionAttachment:DB]",
+  TRANSACTION_SEARCH = "[TransactionSearch]",
+  TRANSACTION_SEARCH_DB = "[TransactionSearch:DB]",
   BUDGET = "[Budget]",
   BUDGET_DB = "[Budget:DB]",
   ACCOUNT_SETTINGS = "[AccountSettings]",

@@ -202,6 +202,10 @@ export default function StackLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen name="feedback" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="transaction_search"
+              options={{ headerShown: false }}
+            />
           </AppStack>
           <Toast
             config={toastConfig(THEME, insets)}

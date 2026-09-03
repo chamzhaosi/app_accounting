@@ -9,7 +9,20 @@ export enum QueryKeyModule {
   ACCOUNT_SETTINGS = "accountSettings",
   CURRENCY_MANAGEMENT = "currencyManagement",
   CREDIT_CARD = "creditCard",
+  TRANSACTION_SEARCH = "transactionSearch",
 }
+
+export const transactionSearchQueryKeys = {
+  all: [QueryKeyModule.TRANSACTION_SEARCH] as const,
+  results: () => [...transactionSearchQueryKeys.all, "result"] as const,
+  result: (params: {
+    keyword: string;
+    filters: Record<string, string | string[] | undefined>;
+    pageSize: number;
+  }) => [...transactionSearchQueryKeys.results(), params] as const,
+  filterOptions: () =>
+    [...transactionSearchQueryKeys.all, "filterOptions"] as const,
+};
 
 export const currencyManagementQueryKeys = {
   all: [QueryKeyModule.CURRENCY_MANAGEMENT] as const,

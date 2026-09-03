@@ -23,6 +23,7 @@ import AppText, { TextTypEnum } from "./AppText";
 import { useTranslation } from "../i18n/helper";
 
 export type SelectOptionType = {
+  groupLabel?: string;
   id: number | string;
   icon?: AppIconProps["name"];
   label: string;
@@ -68,7 +69,11 @@ export default function AppSelect({
     options.find((o) => o.id.toString() === value)?.label ?? "";
 
   const isEmptyOptions = options.length === 0;
-  const totalOptionsHeight = options.length * SELECT_OPTIONS_ITEM_HEIGHT;
+  const optionGroupCount = new Set(
+    options.map(({ groupLabel }) => groupLabel).filter(Boolean),
+  ).size;
+  const totalOptionsHeight =
+    options.length * SELECT_OPTIONS_ITEM_HEIGHT + optionGroupCount * 36;
   const ACTUAL_OPTIONS_CONTAINER_HEIGHT = isEmptyOptions
     ? SELECT_OPTIONS_CONTAINER_HEIGHT_MIN
     : Math.min(totalOptionsHeight, SELECT_OPTIONS_CONTAINER_HEIGHT_MAX);
@@ -176,8 +181,11 @@ export default function AppSelect({
                 }}
               />
             ) : (
-              options.map((i) => {
+              options.map((i, index) => {
                 const isOptSelected = i.id.toString() === value;
+                const showGroupLabel =
+                  Boolean(i.groupLabel) &&
+                  i.groupLabel !== options[index - 1]?.groupLabel;
                 const itemIcon = i.icon
                   ? () => (
                       <AppIcon
@@ -194,33 +202,45 @@ export default function AppSelect({
                   ) : undefined;
 
                 return (
-                  <Menu.Item
-                    key={i.id}
-                    title={i.label}
-                    onPress={() => {
-                      onChange(i.id);
-                      setShowOptions(false);
-                    }}
-                    leadingIcon={itemIcon}
-                    trailingIcon={selectedIcon}
-                    contentStyle={defaultStyle.menuItemContent}
-                    rippleColor={THEME.surfaceContainerHighest}
-                    dense={false}
-                    style={[
-                      defaultStyle.menuItemContainer,
-                      {
-                        backgroundColor: isOptSelected
-                          ? THEME.primaryContainer
-                          : THEME.surfaceContainer,
-                      },
-                    ]}
-                    titleStyle={{
-                      color: isOptSelected
-                        ? THEME.onPrimaryContainer
-                        : THEME.onSurface,
-                      fontWeight: isOptSelected ? "700" : "400",
-                    }}
-                  />
+                  <View key={i.id}>
+                    {showGroupLabel ? (
+                      <AppText
+                        variant="labelLarge"
+                        style={[
+                          defaultStyle.groupLabel,
+                          { color: THEME.primary },
+                        ]}
+                      >
+                        {i.groupLabel!}
+                      </AppText>
+                    ) : null}
+                    <Menu.Item
+                      title={i.label}
+                      onPress={() => {
+                        onChange(i.id);
+                        setShowOptions(false);
+                      }}
+                      leadingIcon={itemIcon}
+                      trailingIcon={selectedIcon}
+                      contentStyle={defaultStyle.menuItemContent}
+                      rippleColor={THEME.surfaceContainerHighest}
+                      dense={false}
+                      style={[
+                        defaultStyle.menuItemContainer,
+                        {
+                          backgroundColor: isOptSelected
+                            ? THEME.primaryContainer
+                            : THEME.surfaceContainer,
+                        },
+                      ]}
+                      titleStyle={{
+                        color: isOptSelected
+                          ? THEME.onPrimaryContainer
+                          : THEME.onSurface,
+                        fontWeight: isOptSelected ? "700" : "400",
+                      }}
+                    />
+                  </View>
                 );
               })
             )}
@@ -270,5 +290,11 @@ const defaultStyle = StyleSheet.create({
   },
   menuItemContent: {
     flex: 1,
+  },
+  groupLabel: {
+    fontWeight: "700",
+    paddingBottom: 4,
+    paddingHorizontal: 18,
+    paddingTop: 10,
   },
 });
