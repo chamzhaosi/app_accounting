@@ -99,11 +99,12 @@ export const categoryManagementQueryKeys = {
 export const transactionManagementQueryKeys = {
   all: [QueryKeyModule.TRANSACTION_MANAGEMENT] as const,
   lists: () => [...transactionManagementQueryKeys.all, "list"] as const,
-  frequentDescriptions: (categoryId: string) =>
+  frequentDescriptions: (categoryId: string, searchText = "") =>
     [
       ...transactionManagementQueryKeys.lists(),
       "frequentDescriptions",
       categoryId,
+      searchText.trim().toLocaleLowerCase(),
     ] as const,
   dateRangeTotals: (params: {
     startDate: string;
@@ -192,6 +193,8 @@ export const transactionManagementQueryKeys = {
   details: () => [...transactionManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
     [...transactionManagementQueryKeys.details(), id] as const,
+  attachments: (id: string) =>
+    [...transactionManagementQueryKeys.detail(id), "attachments"] as const,
 };
 
 export const invalidateQuery = (queryClient: QueryClient, queryKey: QueryKey) =>

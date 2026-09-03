@@ -298,7 +298,12 @@ const TRANSACTION_DETAIL_SELECT = `
     categories.icon AS category_icon,
     accounts.label AS account_label,
     from_accounts.label AS from_account_label,
-    to_accounts.label AS to_account_label
+    to_accounts.label AS to_account_label,
+    EXISTS (
+      SELECT 1
+      FROM transaction_attachments
+      WHERE transaction_attachments.transaction_id = transactions.id
+    ) AS has_attachments
   FROM transactions
   LEFT JOIN categories
     ON categories.id = transactions.category_id
@@ -854,9 +859,11 @@ export const getTransactionMgmtListFromDB = async (
 
 export const getFrequentTransactionDescriptionsFromDB = async (
   categoryId: string,
+  searchText = "",
 ): Promise<string[]> => {
   try {
     const db = await getDB();
+    const prefix = searchText.trim();
     const result = await db.getAllAsync<{ description: string }>(
       `SELECT
          TRIM(descriptions) AS description
@@ -865,15 +872,16 @@ export const getFrequentTransactionDescriptionsFromDB = async (
          AND transaction_role = 'main'
          AND category_id = ?
          AND TRIM(COALESCE(descriptions, '')) <> ''
-       GROUP BY TRIM(descriptions)
+         AND SUBSTR(TRIM(descriptions), 1, LENGTH(?)) COLLATE NOCASE = ?
+       GROUP BY TRIM(descriptions) COLLATE NOCASE
        ORDER BY COUNT(*) DESC, MAX(created_at) DESC, description ASC
        LIMIT 8;`,
-      [categoryId],
+      [categoryId, prefix, prefix],
     );
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
       "Loaded frequent transaction descriptions",
-      { categoryId, count: result.length },
+      { categoryId, searchText: searchText.trim(), count: result.length },
     );
     return result.map((row) => row.description);
   } catch (e) {
@@ -1054,6 +1062,25 @@ export const createNewTransactionMgmtToDB = async (
         );
       }
 
+      for (const attachment of data.attachments) {
+        await db.runAsync(
+          `INSERT INTO transaction_attachments (
+             id, transaction_id, file_path, file_name, mime_type,
+             file_size, width, height
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            attachment.id,
+            id,
+            attachment.filePath,
+            attachment.fileName,
+            attachment.mimeType,
+            attachment.fileSize ?? null,
+            attachment.width ?? null,
+            attachment.height ?? null,
+          ],
+        );
+      }
+
       await applyBalanceAdjustments(db, balanceAdjustments, true);
     });
     debugLog(
@@ -1215,6 +1242,34 @@ export const updateTransactionMgmtToDB = async (
           ],
         );
       }
+
+      if (data.removedAttachmentIds.length) {
+        const placeholders = data.removedAttachmentIds.map(() => "?").join(",");
+        await db.runAsync(
+          `DELETE FROM transaction_attachments
+           WHERE transaction_id = ? AND id IN (${placeholders});`,
+          [currentMain.id, ...data.removedAttachmentIds],
+        );
+      }
+
+      for (const attachment of data.attachments) {
+        await db.runAsync(
+          `INSERT INTO transaction_attachments (
+             id, transaction_id, file_path, file_name, mime_type,
+             file_size, width, height
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            attachment.id,
+            currentMain.id,
+            attachment.filePath,
+            attachment.fileName,
+            attachment.mimeType,
+            attachment.fileSize ?? null,
+            attachment.width ?? null,
+            attachment.height ?? null,
+          ],
+        );
+      }
     });
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
@@ -1249,6 +1304,15 @@ export const deleteTransactionMgmtFromDB = async (id: string) => {
         getBalanceAdjustments(getStoredBalanceTransaction(row), -1),
       );
       await applyBalanceAdjustments(db, reversedBalanceAdjustments, false);
+
+      const mainTransaction = currentRows.find(
+        (row) => row.transaction_role === "main",
+      );
+      if (!mainTransaction) throw new Error(`Transaction not found: ${id}`);
+      await db.runAsync(
+        "DELETE FROM transaction_attachments WHERE transaction_id = ?;",
+        [mainTransaction.id],
+      );
 
       const result = await db.runAsync(
         `

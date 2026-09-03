@@ -25,6 +25,13 @@ import {
 } from "../repo/transactionMgmtRepo";
 import { reconcileAllCreditCards } from "./creditCardService";
 import {
+  assertAttachmentLimit,
+  finalizeStagedAttachmentFiles,
+  getTransactionAttachments,
+  restoreStagedAttachmentFiles,
+  stageAttachmentFiles,
+} from "./transactionAttachmentService";
+import {
   AccountDailyBalanceChangeType,
   AccountDateRangeFlowTotalsType,
   CategoryDailyTotalType,
@@ -158,7 +165,9 @@ export const getTransactionMgmtById = async (
 
 export const getFrequentTransactionDescriptions = async (
   categoryId: string,
-): Promise<string[]> => getFrequentTransactionDescriptionsFromDB(categoryId);
+  searchText = "",
+): Promise<string[]> =>
+  getFrequentTransactionDescriptionsFromDB(categoryId, searchText);
 
 export const getTransactionOperationById = async (
   id: string,
@@ -306,6 +315,8 @@ export const createNewTransactionMgmt = async (
 ): Promise<{ id?: string; errorMessage?: string }> => {
   const errorMessage = await validateTransactionMgmt(data);
   if (errorMessage) return { errorMessage };
+  const attachmentError = assertAttachmentLimit(0, data.attachments);
+  if (attachmentError) return { errorMessage: attachmentError };
 
   const id = await createNewTransactionMgmtToDB(data);
   await reconcileAllCreditCards();
@@ -321,7 +332,36 @@ export const updateTransactionMgmt = async (
   const errorMessage = await validateTransactionMgmt(data, current);
   if (errorMessage) return errorMessage;
 
-  await updateTransactionMgmtToDB(data);
+  const existingAttachments = await getTransactionAttachments(data.id);
+  const removedIds = new Set(data.removedAttachmentIds);
+  const removedAttachments = existingAttachments.filter((attachment) =>
+    removedIds.has(attachment.id),
+  );
+  if (removedAttachments.length !== removedIds.size) {
+    return "One or more attachments are unavailable.";
+  }
+  const attachmentError = assertAttachmentLimit(
+    existingAttachments.length - removedAttachments.length,
+    data.attachments,
+  );
+  if (attachmentError) return attachmentError;
+
+  const stagedFiles = await stageAttachmentFiles(removedAttachments);
+  try {
+    await updateTransactionMgmtToDB(data);
+  } catch (e) {
+    await restoreStagedAttachmentFiles(stagedFiles);
+    throw e;
+  }
+  try {
+    await finalizeStagedAttachmentFiles(stagedFiles);
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_ATTACHMENT,
+      "Unable to finalize removed attachment files",
+      e,
+    );
+  }
   await reconcileAllCreditCards();
 };
 
@@ -331,6 +371,22 @@ export const deleteTransactionMgmt = async (
   const current = await getTransactionMgmtByIdFromDB(id);
   if (!current) return "Transaction not found.";
 
-  await deleteTransactionMgmtFromDB(id);
+  const attachments = await getTransactionAttachments(id);
+  const stagedFiles = await stageAttachmentFiles(attachments);
+  try {
+    await deleteTransactionMgmtFromDB(id);
+  } catch (e) {
+    await restoreStagedAttachmentFiles(stagedFiles);
+    throw e;
+  }
+  try {
+    await finalizeStagedAttachmentFiles(stagedFiles);
+  } catch (e) {
+    console.error(
+      DEBUG_TAG.TRANSACTION_ATTACHMENT,
+      "Unable to finalize deleted attachment files",
+      e,
+    );
+  }
   await reconcileAllCreditCards();
 };

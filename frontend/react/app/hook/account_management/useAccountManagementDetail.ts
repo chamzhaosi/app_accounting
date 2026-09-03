@@ -15,6 +15,7 @@ import {
   creditCardQueryKeys,
 } from "../../constants/queryKeys";
 import { ACCOUNT_TYPE_PAGE_SIZE } from "../../constants/size";
+import { TXN_TYPE_ENUM } from "../../constants/enum";
 import {
   accountManagementFormDefaultValues,
   accountManagementFormSchema,
@@ -38,6 +39,8 @@ import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../category_management/categoryManagementList.utils";
 import useCurrencyPreferenceOptions from "../currency_management/useCurrencyPreferenceOptions";
+import useFrequentTransactionDescriptions from "../transaction_management/useFrequentTransactionDescriptions";
+import useTransactionAttachments from "../transaction_management/useTransactionAttachments";
 import {
   getCurrentCreditCardCycle,
   reconcileAllCreditCards,
@@ -62,7 +65,9 @@ export default function useAccountManagementDetail() {
   const [balanceChangeDate, setBalanceChangeDate] = useState(() =>
     formatDateValue(new Date()),
   );
-  const isSubmitting = isDeleting || isSaving;
+  const attachmentState = useTransactionAttachments();
+  const isSubmitting =
+    isDeleting || isSaving || attachmentState.isProcessingAttachment;
 
   const accountQuery = useQuery({
     queryKey: accountManagementQueryKeys.detail(id),
@@ -149,10 +154,18 @@ export default function useAccountManagementDetail() {
       })),
     [balanceChangeCategories, t],
   );
-  const isBalanceChangeReady =
-    compareAmounts(balanceDifference, 0) === 0 ||
-    balanceChangeKind === "correction" ||
-    Boolean(balanceChangeKind && balanceChangeCategoryId && balanceChangeDate);
+  const recentBalanceChangeDescriptions = useFrequentTransactionDescriptions(
+    balanceChangeCategoryId,
+    balanceChangeKind === "income"
+      ? TXN_TYPE_ENUM.INCOME
+      : TXN_TYPE_ENUM.EXPENSE,
+    balanceChangeDescription,
+  );
+  const hasBalanceDifference = compareAmounts(balanceDifference, 0) !== 0;
+  const isBalanceChangeReady = hasBalanceDifference
+    ? balanceChangeKind === "correction" ||
+      Boolean(balanceChangeKind && balanceChangeCategoryId && balanceChangeDate)
+    : attachmentState.attachmentCount === 0;
 
   const setBalanceChangeKind = (kind: BalanceChangeKind) => {
     setBalanceChangeKindState(kind);
@@ -187,6 +200,7 @@ export default function useAccountManagementDetail() {
         compareAmounts(balanceDifference, 0) === 0
           ? undefined
           : balanceChangeDescription.trim() || undefined,
+      balanceChangeAttachments: attachmentState.attachmentInputs,
     };
     try {
       setRspErrorMsg("");
@@ -217,6 +231,7 @@ export default function useAccountManagementDetail() {
         { id },
       );
       AppToast.success({ message: "Account updated successfully" });
+      attachmentState.markChangesCommitted(true);
       router.back();
     } catch (e) {
       console.error(
@@ -248,6 +263,7 @@ export default function useAccountManagementDetail() {
   const onDelete = async () => {
     try {
       setIsDeleting(true);
+      await attachmentState.cleanupUncommittedFiles();
       await deleteAccMgmt(id);
       await Promise.all([
         invalidateQuery(queryClient, accountManagementQueryKeys.lists()),
@@ -263,6 +279,7 @@ export default function useAccountManagementDetail() {
         { id },
       );
       AppToast.success({ message: "Account deleted successfully" });
+      attachmentState.markChangesCommitted(true);
       router.back();
     } catch (e) {
       console.error(
@@ -345,6 +362,7 @@ export default function useAccountManagementDetail() {
 
   return {
     accountTypeOptions,
+    attachmentState,
     creditCardTypeId,
     balanceChangeCategoryId,
     balanceChangeCategoryOptions,
@@ -364,6 +382,7 @@ export default function useAccountManagementDetail() {
     onDelete,
     onSubmit,
     rspErrorMsg,
+    recentBalanceChangeDescriptions,
     setFocus,
     setValue,
     setBalanceChangeCategoryId,

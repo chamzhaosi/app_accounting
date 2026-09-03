@@ -9,6 +9,7 @@ import {
   createCurrencyPreferencesTable,
   createCreditCardTables,
   createTransactionMgmtTable,
+  createTransactionAttachmentTable,
 } from "./schemas";
 import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
 import { randomUUID } from "expo-crypto";
@@ -570,6 +571,13 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
         );
       }
       await updateDBVersion(db, 16);
+    });
+  }
+
+  if (currentVersion < 17) {
+    await db.withTransactionAsync(async () => {
+      await createTransactionAttachmentTable(db);
+      await updateDBVersion(db, 17);
     });
   }
 };

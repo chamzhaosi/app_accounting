@@ -1,13 +1,21 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
-import { ActivityIndicator, Surface, Text } from "react-native-paper";
+import {
+  ActivityIndicator,
+  IconButton,
+  Surface,
+  Text,
+} from "react-native-paper";
 import { TabBar, TabBarProps, TabView } from "react-native-tab-view";
 import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
-import { TRANSACTION_MANAGEMENT_CREATE_URL } from "../../../constants/urls";
+import {
+  ACCOUNT_MANAGEMENT_DETAIL_URL,
+  TRANSACTION_MANAGEMENT_CREATE_URL,
+} from "../../../constants/urls";
 import { ACCOUNT_DETAIL_CARD_HEIGHT } from "../../../constants/size";
 import useAccountDetail from "../../../hook/account_management/useAccountDetail";
 import useSingleCurrencyMode from "../../../hook/currency_management/useSingleCurrencyMode";
@@ -39,6 +47,7 @@ const ACCOUNT_DETAIL_TAB_ROUTES: AccountDetailTabRoute[] = [
 
 export default function AccountDetail() {
   const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const navigation = useNavigation();
   const [showSkipDialog, setShowSkipDialog] = useState(false);
   const [tabIndex, setTabIndex] = useState(tab === "statement" ? 1 : 0);
   const layout = useWindowDimensions();
@@ -68,6 +77,25 @@ export default function AccountDetail() {
   const currencyCode = account?.currency_code ?? DEFAULT_CURRENCY_CODE;
   const isSingleCurrency = useSingleCurrencyMode();
   const today = formatDateValue(new Date());
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <IconButton
+          icon="pencil-outline"
+          iconColor={THEME.primary}
+          accessibilityLabel={t("Edit account")}
+          disabled={!account}
+          onPress={() =>
+            router.push({
+              pathname: ACCOUNT_MANAGEMENT_DETAIL_URL,
+              params: { id },
+            })
+          }
+        />
+      ),
+    });
+  }, [THEME.primary, account, id, navigation, t]);
 
   useEffect(() => {
     if (tab === "statement") setTabIndex(1);

@@ -660,6 +660,38 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Email unavailable": "E-mel tidak tersedia",
   "Please email your feedback to {{email}}.":
     "Sila e-mel maklum balas anda kepada {{email}}.",
+  Attachments: "Lampiran",
+  Attachment: "Lampiran",
+  "Add Attachment": "Tambah Lampiran",
+  "Take Photo": "Ambil Foto",
+  "Choose from Gallery": "Pilih daripada Galeri",
+  "Processing image...": "Memproses imej...",
+  "Remove attachment": "Buang lampiran",
+  "Transaction attachment": "Lampiran transaksi",
+  "Preview attachment": "Pratonton lampiran",
+  "Image unavailable": "Imej tidak tersedia",
+  "{{count}} of {{max}} attachments": "{{count}} daripada {{max}} lampiran",
+  "You can attach up to 5 images.": "Anda boleh melampirkan sehingga 5 imej.",
+  "Camera permission is required to take a photo.":
+    "Kebenaran kamera diperlukan untuk mengambil foto.",
+  "Photo permission is required to choose an image.":
+    "Kebenaran foto diperlukan untuk memilih imej.",
+  "Unable to process the image.": "Imej tidak dapat diproses.",
+  "Unable to remove the attachment.": "Lampiran tidak dapat dibuang.",
+  "One or more attachments are unavailable.":
+    "Satu atau lebih lampiran tidak tersedia.",
+  "Discard attachment changes?": "Buang perubahan lampiran?",
+  "Your unsaved attachment changes will be lost.":
+    "Perubahan lampiran yang belum disimpan akan hilang.",
+  "Keep editing": "Teruskan mengedit",
+  Discard: "Buang",
+  "Unable to discard attachment changes.":
+    "Perubahan lampiran tidak dapat dibuang.",
+  "Are you sure you want to delete this transaction and all linked fees and attachments?":
+    "Adakah anda pasti mahu memadam transaksi ini serta semua fi dan lampiran yang dipautkan?",
+  "Has attachments": "Mempunyai lampiran",
+  "Edit account": "Edit akaun",
+  "Edit category": "Edit kategori",
   OK: "OK",
   "Opening your email app...": "Membuka aplikasi e-mel anda...",
 };

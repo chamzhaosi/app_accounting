@@ -331,6 +331,28 @@ export const createTransactionMgmtTable = async (db: SQLite.SQLiteDatabase) => {
     `);
 };
 
+export const createTransactionAttachmentTable = async (
+  db: SQLite.SQLiteDatabase,
+) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS transaction_attachments (
+      id TEXT PRIMARY KEY,
+      transaction_id TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      mime_type TEXT,
+      file_size INTEGER,
+      width INTEGER,
+      height INTEGER,
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_transaction_attachments_transaction
+      ON transaction_attachments(transaction_id, created_at);
+  `);
+};
+
 export const createBudgetTables = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
       CREATE TABLE IF NOT EXISTS budget_plans (

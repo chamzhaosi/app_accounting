@@ -1,4 +1,5 @@
 import { TXN_TYPE_ENUM } from "../../constants/enum";
+import type { TransactionAttachmentInput } from "./transactionAttachmentType";
 
 export type ExchangeRateSource = "manual" | "previous" | "inverse";
 
@@ -31,10 +32,12 @@ export type TransactionMgmtCreateReqType = {
   fees: TransactionFeeReqType[];
   description?: string;
   transactionDate: string;
+  attachments: TransactionAttachmentInput[];
 };
 
 export type TransactionMgmtUpdateReqType = TransactionMgmtCreateReqType & {
   id: string;
+  removedAttachmentIds: string[];
 };
 
 export type TransactionDateRangeTotalsType = {
@@ -95,6 +98,7 @@ export type TransactionMgmtRspType = {
   account_label: string | null;
   from_account_label: string | null;
   to_account_label: string | null;
+  has_attachments: 0 | 1;
 };
 
 export type TransactionOperationRspType = {

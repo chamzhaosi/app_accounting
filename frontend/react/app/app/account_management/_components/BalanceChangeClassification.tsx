@@ -10,6 +10,8 @@ import { useTranslation } from "../../../i18n/helper";
 import { toAmountString, toBigAmount } from "../../../utils/amount";
 import { CategoryCardPicker } from "../../transaction_management/_components/CategoryIdField";
 import { DESCRIPTION_MAX_LEN } from "../../../forms/schemas/transaction_management.schema";
+import RecentDescriptionPicker from "../../transaction_management/_components/RecentDescriptionPicker";
+import { TransactionAttachmentAction } from "../../transaction_management/_components/TransactionAttachmentButton";
 
 type BalanceChangeClassificationProps = {
   difference: number;
@@ -17,12 +19,16 @@ type BalanceChangeClassificationProps = {
   categoryId: string;
   categoryOptions: AppListCardItemType[];
   description: string;
+  recentDescriptions: string[];
+  attachmentCount: number;
+  attachmentDisabled: boolean;
   transactionDate: string;
   disabled: boolean;
   onKindChange: (kind: BalanceChangeKind) => void;
   onCategoryChange: (categoryId: string) => void;
   onDateChange: (date: string) => void;
   onDescriptionChange: (description: string) => void;
+  onAttachmentPress: () => void;
 };
 
 export default function BalanceChangeClassification({
@@ -31,12 +37,16 @@ export default function BalanceChangeClassification({
   categoryId,
   categoryOptions,
   description,
+  recentDescriptions,
+  attachmentCount,
+  attachmentDisabled,
   transactionDate,
   disabled,
   onKindChange,
   onCategoryChange,
   onDateChange,
   onDescriptionChange,
+  onAttachmentPress,
 }: BalanceChangeClassificationProps) {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
@@ -56,7 +66,18 @@ export default function BalanceChangeClassification({
         },
       ]}
     >
-      <Text variant="titleMedium">{t("Explain balance difference")}</Text>
+      <View style={styles.titleRow}>
+        <Text variant="titleMedium" style={styles.title}>
+          {t("Explain balance difference")}
+        </Text>
+        <TransactionAttachmentAction
+          count={attachmentCount}
+          disabled={attachmentDisabled}
+          onPress={onAttachmentPress}
+          style={styles.attachmentButton}
+          iconSize={20}
+        />
+      </View>
       <Text
         variant="bodyMedium"
         style={[styles.description, { color: THEME.onSurfaceVariant }]}
@@ -121,7 +142,23 @@ export default function BalanceChangeClassification({
             multiline
             numberOfLines={3}
             showClear
+            showCounter={recentDescriptions.length === 0}
+            outlineStyle={
+              recentDescriptions.length > 0
+                ? {
+                    borderBottomLeftRadius: 0,
+                    borderBottomRightRadius: 0,
+                  }
+                : undefined
+            }
             onChangeText={onDescriptionChange}
+          />
+          <RecentDescriptionPicker
+            descriptions={recentDescriptions}
+            value={description}
+            maxLength={DESCRIPTION_MAX_LEN}
+            disabled={disabled}
+            onSelect={onDescriptionChange}
           />
           <Text variant="bodySmall" style={{ color: THEME.onSurfaceVariant }}>
             {t("This creates a normal {{kind}} and updates budget reports.", {
@@ -147,7 +184,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 14,
   },
+  attachmentButton: { height: 36, marginRight: -8, marginTop: -8, width: 36 },
   description: { marginTop: 4 },
   segmentedButtons: { marginBottom: 16, marginTop: 12 },
   segmentButton: { flex: 1 },
+  title: { flex: 1 },
+  titleRow: { alignItems: "flex-start", flexDirection: "row" },
 });

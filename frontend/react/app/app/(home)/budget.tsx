@@ -1,4 +1,5 @@
-import { Href, router } from "expo-router";
+import { Href, router, useNavigation } from "expo-router";
+import { useCallback, useLayoutEffect } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -44,6 +45,7 @@ import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
 
 export default function Budget() {
+  const navigation = useNavigation();
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
 
@@ -52,6 +54,7 @@ export default function Budget() {
   );
   const logic = useBudgetOverview(THEME);
   const isSingleCurrency = useSingleCurrencyMode();
+  const overview = logic.overview;
   const displayAmount = (value: number) =>
     formatPrivateLocalizedAmount(
       value,
@@ -60,12 +63,40 @@ export default function Budget() {
       areAmountsVisible,
     );
 
-  const openManagement = () =>
-    router.push(
-      (logic.selectedPlanId
-        ? BUDGET_MANAGEMENT_DETAIL_URL.replace("[id]", logic.selectedPlanId)
-        : BUDGET_MANAGEMENT_CREATE_URL) as Href,
-    );
+  const openManagement = useCallback(
+    () =>
+      router.push(
+        (logic.selectedPlanId
+          ? BUDGET_MANAGEMENT_DETAIL_URL.replace("[id]", logic.selectedPlanId)
+          : BUDGET_MANAGEMENT_CREATE_URL) as Href,
+      ),
+    [logic.selectedPlanId],
+  );
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () =>
+        overview && logic.isCurrentMonth && logic.selectedCurrencyEnabled ? (
+          <AppIconButton
+            iconName="Settings2"
+            accessibilityLabel={t("Manage budget")}
+            onPress={openManagement}
+            style={{
+              ...styles.manageButton,
+              backgroundColor: THEME.surfaceContainerHigh,
+            }}
+          />
+        ) : null,
+    });
+  }, [
+    THEME.surfaceContainerHigh,
+    logic.isCurrentMonth,
+    logic.selectedCurrencyEnabled,
+    navigation,
+    openManagement,
+    overview,
+    t,
+  ]);
 
   const currencyNavigator =
     logic.selectedCurrencyCode && !isSingleCurrency ? (
@@ -175,8 +206,6 @@ export default function Budget() {
       </AppView>
     );
   }
-
-  const overview = logic.overview;
 
   return (
     <AppView
@@ -378,14 +407,6 @@ export default function Budget() {
 
             <View style={styles.sectionHeader}>
               <Text variant="titleLarge">{t("Category progress")}</Text>
-              {logic.isCurrentMonth && logic.selectedCurrencyEnabled && (
-                <AppIconButton
-                  iconName="Settings2"
-                  accessibilityLabel={t("Manage budget")}
-                  onPress={openManagement}
-                  style={styles.manageButton}
-                />
-              )}
             </View>
 
             {logic.categories.map((category) => {

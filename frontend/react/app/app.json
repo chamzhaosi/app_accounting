@@ -48,7 +48,16 @@
       ],
       "expo-localization",
       "expo-mail-composer",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Finora to access your photos so you can attach images to transactions.",
+          "cameraPermission": "Allow Finora to use your camera so you can attach photos to transactions.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-image"
     ]
   }
 }
