@@ -1,4 +1,5 @@
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
+import { getActiveBookQueryScope } from "../stores/useBookStore";
 
 export enum QueryKeyModule {
   ACCOUNT_MANAGEMENT = "accountManagement",
@@ -10,7 +11,19 @@ export enum QueryKeyModule {
   CURRENCY_MANAGEMENT = "currencyManagement",
   CREDIT_CARD = "creditCard",
   TRANSACTION_SEARCH = "transactionSearch",
+  BOOK = "book",
 }
+
+const bookScope = () => ["book", getActiveBookQueryScope()] as const;
+
+export const bookQueryKeys = {
+  all: [QueryKeyModule.BOOK] as const,
+  lists: () => [...bookQueryKeys.all, "list"] as const,
+  list: (includeInactive = true) =>
+    [...bookQueryKeys.lists(), { includeInactive }] as const,
+  details: () => [...bookQueryKeys.all, "detail"] as const,
+  detail: (id: string) => [...bookQueryKeys.details(), id] as const,
+};
 
 export const transactionSearchQueryKeys = {
   all: [QueryKeyModule.TRANSACTION_SEARCH] as const,
@@ -19,15 +32,24 @@ export const transactionSearchQueryKeys = {
     keyword: string;
     filters: Record<string, string | string[] | undefined>;
     pageSize: number;
-  }) => [...transactionSearchQueryKeys.results(), params] as const,
+  }) =>
+    [...transactionSearchQueryKeys.results(), ...bookScope(), params] as const,
   filterOptions: () =>
-    [...transactionSearchQueryKeys.all, "filterOptions"] as const,
+    [
+      ...transactionSearchQueryKeys.all,
+      "filterOptions",
+      ...bookScope(),
+    ] as const,
 };
 
 export const currencyManagementQueryKeys = {
   all: [QueryKeyModule.CURRENCY_MANAGEMENT] as const,
   preferences: () =>
-    [...currencyManagementQueryKeys.all, "preferences"] as const,
+    [
+      ...currencyManagementQueryKeys.all,
+      "preferences",
+      ...bookScope(),
+    ] as const,
 };
 
 export const accountSettingsQueryKeys = {
@@ -38,18 +60,30 @@ export const accountSettingsQueryKeys = {
 export const budgetQueryKeys = {
   all: [QueryKeyModule.BUDGET] as const,
   plans: () => [...budgetQueryKeys.all, "plan"] as const,
-  planList: () => [...budgetQueryKeys.plans(), "list"] as const,
-  plan: (id: string) => [...budgetQueryKeys.plans(), "detail", id] as const,
+  planList: () => [...budgetQueryKeys.plans(), "list", ...bookScope()] as const,
+  plan: (id: string) =>
+    [...budgetQueryKeys.plans(), "detail", ...bookScope(), id] as const,
   months: () => [...budgetQueryKeys.all, "month"] as const,
   month: (params: { month: string; currencyCode: string }) =>
-    [...budgetQueryKeys.months(), params] as const,
+    [...budgetQueryKeys.months(), ...bookScope(), params] as const,
   dailyRemaining: (params: {
     startDate: string;
     endDate: string;
     currencyCode: string;
-  }) => [...budgetQueryKeys.months(), "dailyRemaining", params] as const,
+  }) =>
+    [
+      ...budgetQueryKeys.months(),
+      "dailyRemaining",
+      ...bookScope(),
+      params,
+    ] as const,
   management: (planId?: string) =>
-    [...budgetQueryKeys.all, "management", planId ?? "create"] as const,
+    [
+      ...budgetQueryKeys.all,
+      "management",
+      ...bookScope(),
+      planId ?? "create",
+    ] as const,
 };
 
 export const accountTypeQueryKeys = {
@@ -65,7 +99,11 @@ export const accountManagementQueryKeys = {
   all: [QueryKeyModule.ACCOUNT_MANAGEMENT] as const,
   lists: () => [...accountManagementQueryKeys.all, "list"] as const,
   assetBalances: () =>
-    [...accountManagementQueryKeys.lists(), "assetBalance"] as const,
+    [
+      ...accountManagementQueryKeys.lists(),
+      "assetBalance",
+      ...bookScope(),
+    ] as const,
   assetBalance: (currencyCode?: string) =>
     currencyCode
       ? ([...accountManagementQueryKeys.assetBalances(), currencyCode] as const)
@@ -74,39 +112,61 @@ export const accountManagementQueryKeys = {
     pageSize: number;
     includeInactive?: boolean;
     currencyCode?: string;
-  }) => [...accountManagementQueryKeys.lists(), params] as const,
+  }) =>
+    [...accountManagementQueryKeys.lists(), ...bookScope(), params] as const,
   typeBalanceTotals: () =>
-    [...accountManagementQueryKeys.lists(), "typeBalanceTotals"] as const,
+    [
+      ...accountManagementQueryKeys.lists(),
+      "typeBalanceTotals",
+      ...bookScope(),
+    ] as const,
   selectableList: (params: { pageSize: number }) =>
-    [...accountManagementQueryKeys.lists(), "selectable", params] as const,
+    [
+      ...accountManagementQueryKeys.lists(),
+      "selectable",
+      ...bookScope(),
+      params,
+    ] as const,
   details: () => [...accountManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
-    [...accountManagementQueryKeys.details(), id] as const,
+    [...accountManagementQueryKeys.details(), ...bookScope(), id] as const,
 };
 
 export const creditCardQueryKeys = {
   all: [QueryKeyModule.CREDIT_CARD] as const,
   cycles: () => [...creditCardQueryKeys.all, "cycle"] as const,
   currentCycle: (accountId: string) =>
-    [...creditCardQueryKeys.cycles(), accountId, "current"] as const,
+    [
+      ...creditCardQueryKeys.cycles(),
+      ...bookScope(),
+      accountId,
+      "current",
+    ] as const,
 };
 
 export const categoryManagementQueryKeys = {
   all: [QueryKeyModule.CATEGORY_MANAGEMENT] as const,
   lists: () => [...categoryManagementQueryKeys.all, "list"] as const,
-  feeList: () => [...categoryManagementQueryKeys.lists(), "fees"] as const,
+  feeList: () =>
+    [...categoryManagementQueryKeys.lists(), "fees", ...bookScope()] as const,
   list: (params: { typeId: number; pageSize: number }) =>
-    [...categoryManagementQueryKeys.lists(), params] as const,
+    [...categoryManagementQueryKeys.lists(), ...bookScope(), params] as const,
   periodList: (params: {
     typeId: number;
     pageSize: number;
     startDate: string;
     endDate: string;
     currencyCode?: string;
-  }) => [...categoryManagementQueryKeys.lists(), "periodList", params] as const,
+  }) =>
+    [
+      ...categoryManagementQueryKeys.lists(),
+      "periodList",
+      ...bookScope(),
+      params,
+    ] as const,
   details: () => [...categoryManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
-    [...categoryManagementQueryKeys.details(), id] as const,
+    [...categoryManagementQueryKeys.details(), ...bookScope(), id] as const,
 };
 
 export const transactionManagementQueryKeys = {
@@ -116,6 +176,7 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "frequentDescriptions",
+      ...bookScope(),
       categoryId,
       searchText.trim().toLocaleLowerCase(),
     ] as const,
@@ -128,6 +189,7 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "dateRangeTotals",
+      ...bookScope(),
       params,
     ] as const,
   periodCurrencyCodes: (params: {
@@ -138,6 +200,7 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "periodCurrencyCodes",
+      ...bookScope(),
       params,
     ] as const,
   dailyTotals: (params: {
@@ -145,11 +208,17 @@ export const transactionManagementQueryKeys = {
     endDate: string;
     currencyCode: string;
   }) =>
-    [...transactionManagementQueryKeys.lists(), "dailyTotals", params] as const,
+    [
+      ...transactionManagementQueryKeys.lists(),
+      "dailyTotals",
+      ...bookScope(),
+      params,
+    ] as const,
   accountForwardBalance: (params: { accountId: string; startDate: string }) =>
     [
       ...transactionManagementQueryKeys.lists(),
       "accountForwardBalance",
+      ...bookScope(),
       params,
     ] as const,
   accountFlowTotals: (params: {
@@ -160,6 +229,7 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "accountFlowTotals",
+      ...bookScope(),
       params,
     ] as const,
   accountDailyBalance: (params: {
@@ -170,6 +240,7 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "accountDailyBalance",
+      ...bookScope(),
       params,
     ] as const,
   categoryDateRangeSummary: (params: {
@@ -181,6 +252,7 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "categoryDateRangeSummary",
+      ...bookScope(),
       params,
     ] as const,
   categoryDailyTotal: (params: {
@@ -192,6 +264,7 @@ export const transactionManagementQueryKeys = {
     [
       ...transactionManagementQueryKeys.lists(),
       "categoryDailyTotal",
+      ...bookScope(),
       params,
     ] as const,
   list: (params: {
@@ -202,13 +275,47 @@ export const transactionManagementQueryKeys = {
     categoryId?: string;
     currencyCode?: string;
     creditCardStatementDate?: string;
-  }) => [...transactionManagementQueryKeys.lists(), params] as const,
+  }) =>
+    [
+      ...transactionManagementQueryKeys.lists(),
+      ...bookScope(),
+      params,
+    ] as const,
   details: () => [...transactionManagementQueryKeys.all, "detail"] as const,
   detail: (id: string) =>
-    [...transactionManagementQueryKeys.details(), id] as const,
+    [...transactionManagementQueryKeys.details(), ...bookScope(), id] as const,
   attachments: (id: string) =>
     [...transactionManagementQueryKeys.detail(id), "attachments"] as const,
 };
 
 export const invalidateQuery = (queryClient: QueryClient, queryKey: QueryKey) =>
   queryClient.invalidateQueries({ queryKey });
+
+const BOOK_SCOPED_MODULES = new Set<string>([
+  QueryKeyModule.ACCOUNT_MANAGEMENT,
+  QueryKeyModule.CATEGORY_MANAGEMENT,
+  QueryKeyModule.TRANSACTION_MANAGEMENT,
+  QueryKeyModule.BUDGET,
+  QueryKeyModule.CREDIT_CARD,
+  QueryKeyModule.TRANSACTION_SEARCH,
+  QueryKeyModule.CURRENCY_MANAGEMENT,
+]);
+
+export const resetBookScopedQueries = async (
+  queryClient: QueryClient,
+  bookId?: string,
+) => {
+  const matchesBookScope = ({ queryKey }: { queryKey: QueryKey }) =>
+    BOOK_SCOPED_MODULES.has(String(queryKey[0])) &&
+    (!bookId ||
+      queryKey.some(
+        (part, index) => part === "book" && queryKey[index + 1] === bookId,
+      ));
+
+  await queryClient.cancelQueries({
+    predicate: matchesBookScope,
+  });
+  queryClient.removeQueries({
+    predicate: matchesBookScope,
+  });
+};

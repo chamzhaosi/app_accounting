@@ -25,8 +25,11 @@ import { formatPrivateLocalizedAmount } from "../../../utils/number";
 import { useTranslation } from "../../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
 import CategoryCurrencyNavigator from "./_components/CategoryCurrencyNavigator";
+import InactiveBookBanner from "../../../components/InactiveBookBanner";
+import { useBookStore } from "../../../stores/useBookStore";
 
 export default function CategoriesList() {
+  useBookStore((state) => state.activeBookId);
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
   const layout = useWindowDimensions();
@@ -45,6 +48,7 @@ export default function CategoriesList() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <InactiveBookBanner />
       <Surface
         elevation={1}
         style={[

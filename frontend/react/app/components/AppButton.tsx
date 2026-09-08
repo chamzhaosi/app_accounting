@@ -7,6 +7,7 @@ export enum ButtonType {
   PRIMARY,
   SECONDARY,
   ERROR,
+  WARNING,
 }
 
 export type AppButtonProps = ButtonProps & {
@@ -54,6 +55,16 @@ export default function AppButton({
         color: THEME.onSecondary,
       };
       break;
+    case ButtonType.WARNING:
+      variantStyle = {
+        backgroundColor: THEME.warning,
+      };
+      variantContentStyle = {
+        backgroundColor: THEME.warning,
+      };
+      variantLabelStyle = {
+        color: THEME.onWarning,
+      };
     default:
       break;
   }

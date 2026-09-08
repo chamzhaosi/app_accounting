@@ -75,6 +75,10 @@ export type CategoryDateRangeSummaryType = {
 
 export type TransactionMgmtRspType = {
   id: string;
+  book_id: string;
+  book_label?: string;
+  book_icon?: string;
+  book_is_active?: boolean;
   transaction_type: TXN_TYPE_ENUM;
   category_id: string | null;
   account_id: string | null;

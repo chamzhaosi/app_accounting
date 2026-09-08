@@ -44,6 +44,8 @@ import {
   TransactionMgmtUpdateReqType,
   ExchangeRateSuggestionType,
 } from "../types/transactionMgmtType";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
+import { assertBookWritable } from "./bookService";
 
 export const getExchangeRateSuggestion = async (
   fromCurrencyCode: string,
@@ -313,6 +315,8 @@ const validateTransactionMgmt = async (
 export const createNewTransactionMgmt = async (
   data: TransactionMgmtCreateReqType,
 ): Promise<{ id?: string; errorMessage?: string }> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return { errorMessage: bookError };
   const errorMessage = await validateTransactionMgmt(data);
   if (errorMessage) return { errorMessage };
   const attachmentError = assertAttachmentLimit(0, data.attachments);
@@ -326,6 +330,8 @@ export const createNewTransactionMgmt = async (
 export const updateTransactionMgmt = async (
   data: TransactionMgmtUpdateReqType,
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   const current = await getTransactionMgmtByIdFromDB(data.id);
   if (!current) return "Transaction not found.";
 
@@ -368,6 +374,8 @@ export const updateTransactionMgmt = async (
 export const deleteTransactionMgmt = async (
   id: string,
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   const current = await getTransactionMgmtByIdFromDB(id);
   if (!current) return "Transaction not found.";
 

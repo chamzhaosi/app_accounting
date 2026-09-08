@@ -20,21 +20,24 @@ import {
 } from "../types/accMgmtType";
 import { SQLQueryOptions } from "../types/common";
 import { randomUUID } from "expo-crypto";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
 
 export const getAssetBalanceFromDB = async (
   currencyCode: string,
 ): Promise<number> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<{ balance: number }>(
       `
         SELECT ROUND(COALESCE(SUM(current_balance), 0), 3) AS balance
         FROM accounts
         WHERE is_asset = 1
+          AND book_id = ?
           AND currency_code = ?
           AND deleted_at IS NULL;
       `,
-      [currencyCode],
+      [bookId, currencyCode],
     );
 
     const balance = result?.balance ?? 0;
@@ -69,6 +72,7 @@ export const getAccMgmtListFromDB = async ({
   try {
     const offset = (curPage - 1) * pageSize;
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
 
     const sql = `
       SELECT
@@ -87,9 +91,12 @@ export const getAccMgmtListFromDB = async ({
       INNER JOIN account_types ON account_types.id = accounts.type_id
       LEFT JOIN currency_preferences
         ON currency_preferences.code = accounts.currency_code
+        AND currency_preferences.book_id = accounts.book_id
       LEFT JOIN credit_card_settings
         ON credit_card_settings.account_id = accounts.id
+        AND credit_card_settings.book_id = accounts.book_id
       WHERE accounts.deleted_at IS NULL
+      AND accounts.book_id = ?
       ${includeInactive ? "" : "AND accounts.is_active = 1"}
       ${currencyCode ? "AND accounts.currency_code = ?" : ""}
       ${
@@ -102,6 +109,7 @@ export const getAccMgmtListFromDB = async ({
     `;
 
     const result = await db.getAllAsync<AccMgmtRspType>(sql, [
+      bookId,
       ...(currencyCode ? [currencyCode] : []),
       pageSize,
       offset,
@@ -128,6 +136,7 @@ export const getAccountTypeBalanceTotalsFromDB = async (): Promise<
 > => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<AccountTypeBalanceTotalType>(
       `WITH currency_totals AS (
          SELECT
@@ -138,7 +147,7 @@ export const getAccountTypeBalanceTotalsFromDB = async (): Promise<
              CASE WHEN is_asset = 1 THEN current_balance ELSE 0 END
            ), 0), 3) AS balance
          FROM accounts
-         WHERE deleted_at IS NULL
+         WHERE deleted_at IS NULL AND book_id = ?
          GROUP BY type_id, currency_code
        )
        SELECT
@@ -149,6 +158,7 @@ export const getAccountTypeBalanceTotalsFromDB = async (): Promise<
          SUM(currency_account_count) OVER (PARTITION BY type_id) AS account_count
        FROM currency_totals
        ORDER BY currency_code ASC;`,
+      [bookId],
     );
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
@@ -173,6 +183,7 @@ export const getAccMgmtByTypeCurrencyAndLabelFromDB = async (
 ): Promise<AccMgmtRspType | null> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
 
     const result = await db.getFirstAsync<AccMgmtRspType>(
       `
@@ -192,14 +203,17 @@ export const getAccMgmtByTypeCurrencyAndLabelFromDB = async (
         INNER JOIN account_types ON account_types.id = accounts.type_id
         LEFT JOIN currency_preferences
           ON currency_preferences.code = accounts.currency_code
+          AND currency_preferences.book_id = accounts.book_id
         LEFT JOIN credit_card_settings
           ON credit_card_settings.account_id = accounts.id
+          AND credit_card_settings.book_id = accounts.book_id
         WHERE accounts.type_id = ?
+          AND accounts.book_id = ?
           AND accounts.currency_code = ? COLLATE NOCASE
           AND accounts.label = ? COLLATE NOCASE
           AND accounts.deleted_at IS NULL;
       `,
-      [typeId, currencyCode, label],
+      [typeId, bookId, currencyCode, label],
     );
     debugLog(
       DEBUG_TAG.ACCOUNT_MANAGEMENT_DB,
@@ -228,6 +242,7 @@ export const getAccMgmtByIdFromDB = async (
 ): Promise<AccMgmtRspType | null> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
 
     const result = await db.getFirstAsync<AccMgmtRspType>(
       `
@@ -247,12 +262,15 @@ export const getAccMgmtByIdFromDB = async (
         INNER JOIN account_types ON account_types.id = accounts.type_id
         LEFT JOIN currency_preferences
           ON currency_preferences.code = accounts.currency_code
+          AND currency_preferences.book_id = accounts.book_id
         LEFT JOIN credit_card_settings
           ON credit_card_settings.account_id = accounts.id
+          AND credit_card_settings.book_id = accounts.book_id
         WHERE accounts.id = ?
+          AND accounts.book_id = ?
           AND accounts.deleted_at IS NULL;
       `,
-      [id],
+      [id, bookId],
     );
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Loaded account by id", {
       id,
@@ -273,6 +291,7 @@ export const getAccMgmtByIdFromDB = async (
 export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const id = randomUUID();
     const currentBalance = toCurrencyAmountNumber(
       data.currentBalance,
@@ -283,6 +302,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
         `
         INSERT INTO accounts (
           id,
+          book_id,
           type_id,
           currency_code,
           label,
@@ -290,10 +310,11 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
           current_balance,
           is_active,
           is_asset
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
       `,
         [
           id,
+          bookId,
           data.typeId,
           data.currencyCode,
           data.label,
@@ -303,7 +324,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
           data.isAsset ? 1 : 0,
         ],
       );
-      await saveCreditCardConfiguration(db, id, data);
+      await saveCreditCardConfiguration(db, id, bookId, data);
     });
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Created account", {
       id,
@@ -322,6 +343,7 @@ export const createNewAccMgmtToDB = async (data: AccMgmtCreateReqType) => {
 export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const currentBalance = toCurrencyAmountNumber(
       data.currentBalance,
       data.currencyCode,
@@ -334,9 +356,10 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           SELECT current_balance
           FROM accounts
           WHERE id = ?
+            AND book_id = ?
             AND deleted_at IS NULL;
         `,
-        [data.id],
+        [data.id, bookId],
       );
       if (!account) throw new Error(`Account not found: ${data.id}`);
 
@@ -358,6 +381,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
             sync_status = ?,
             updated_at = datetime('now')
           WHERE id = ?
+            AND book_id = ?
             AND deleted_at IS NULL;
         `,
         [
@@ -370,13 +394,14 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           data.isAsset ? 1 : 0,
           DB_SYNC_STATUS.PENDING,
           data.id,
+          bookId,
         ],
       );
       if (result.changes !== 1) {
         throw new Error(`Account not found: ${data.id}`);
       }
 
-      await saveCreditCardConfiguration(db, data.id, data);
+      await saveCreditCardConfiguration(db, data.id, bookId, data);
 
       if (compareAmounts(balanceAdjustment, 0) !== 0) {
         const balanceChangeKind = data.balanceChangeKind ?? "correction";
@@ -404,6 +429,7 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
           `
             INSERT INTO transactions (
               id,
+              book_id,
               transaction_type,
               category_id,
               account_id,
@@ -417,10 +443,11 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
               converted_amount,
               descriptions,
               transaction_date
-            ) VALUES (?, ?, ?, ?, NULL, NULL, ?, 'main', ?, ?, ?, ?, ?, COALESCE(?, date('now', 'localtime')));
+            ) VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, 'main', ?, ?, ?, ?, ?, COALESCE(?, date('now', 'localtime')));
           `,
           [
             adjustmentTransactionId,
+            bookId,
             transactionType,
             categoryId,
             data.id,
@@ -437,11 +464,12 @@ export const updateAccMgmtToDB = async (data: AccMgmtUpdateReqType) => {
         for (const attachment of data.balanceChangeAttachments ?? []) {
           await db.runAsync(
             `INSERT INTO transaction_attachments (
-               id, transaction_id, file_path, file_name, mime_type,
+               id, book_id, transaction_id, file_path, file_name, mime_type,
                file_size, width, height
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
             [
               attachment.id,
+              bookId,
               adjustmentTransactionId,
               attachment.filePath,
               attachment.fileName,
@@ -480,6 +508,7 @@ const toDateKey = (date: Date) =>
 const saveCreditCardConfiguration = async (
   db: Awaited<ReturnType<typeof getDB>>,
   accountId: string,
+  bookId: string,
   data: AccMgmtCreateReqType,
 ) => {
   const type = await db.getFirstAsync<{ label: string; is_system: boolean }>(
@@ -491,17 +520,17 @@ const saveCreditCardConfiguration = async (
   );
   if (!isCreditCard) {
     await db.runAsync(
-      "UPDATE credit_card_settings SET reminder_enabled = 0, updated_at = datetime('now') WHERE account_id = ?;",
-      [accountId],
+      "UPDATE credit_card_settings SET reminder_enabled = 0, updated_at = datetime('now') WHERE account_id = ? AND book_id = ?;",
+      [accountId, bookId],
     );
     return;
   }
 
   await db.runAsync(
     `INSERT INTO credit_card_settings (
-       account_id, reminder_enabled, statement_day, due_day,
+       account_id, book_id, reminder_enabled, statement_day, due_day,
        reminder_lead_days, reminder_time, stop_condition, first_cycle_mode
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(account_id) DO UPDATE SET
        reminder_enabled = excluded.reminder_enabled,
        statement_day = excluded.statement_day,
@@ -513,6 +542,7 @@ const saveCreditCardConfiguration = async (
        updated_at = datetime('now');`,
     [
       accountId,
+      bookId,
       data.reminderEnabled ? 1 : 0,
       Number(data.statementDay),
       Number(data.dueDay),
@@ -552,9 +582,9 @@ const saveCreditCardConfiguration = async (
     );
     await db.runAsync(
       `INSERT INTO credit_card_cycles (
-         id, account_id, period_start, statement_date, due_date,
+         id, book_id, account_id, period_start, statement_date, due_date,
          statement_amount, remaining_due, status, is_manual_initial
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
        ON CONFLICT(account_id, statement_date) DO UPDATE SET
          period_start = excluded.period_start,
          due_date = excluded.due_date,
@@ -565,6 +595,7 @@ const saveCreditCardConfiguration = async (
          updated_at = datetime('now');`,
       [
         randomUUID(),
+        bookId,
         accountId,
         toDateKey(periodStart),
         toDateKey(statement),
@@ -580,6 +611,7 @@ const saveCreditCardConfiguration = async (
 export const deleteAccMgmtFromDB = async (id: string) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     await db.runAsync(
       `
         UPDATE accounts
@@ -588,9 +620,10 @@ export const deleteAccMgmtFromDB = async (id: string) => {
           sync_status = ?,
           is_active = ?
         WHERE id = ?
+          AND book_id = ?
           AND deleted_at IS NULL;
       `,
-      [DB_SYNC_STATUS.PENDING, 0, id],
+      [DB_SYNC_STATUS.PENDING, 0, id, bookId],
     );
     debugLog(DEBUG_TAG.ACCOUNT_MANAGEMENT_DB, "Deleted account", { id });
   } catch (e) {

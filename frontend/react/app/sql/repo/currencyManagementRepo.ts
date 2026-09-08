@@ -6,14 +6,18 @@ import type {
   CurrencyPreferenceRow,
   CurrencyPreferences,
 } from "../types/currencyManagementType";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
 
 export const getCurrencyPreferencesFromDB = async () => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const rows = await db.getAllAsync<CurrencyPreferenceRow>(
       `SELECT code, is_default
        FROM currency_preferences
+       WHERE book_id = ?
        ORDER BY is_default DESC, code ASC;`,
+      [bookId],
     );
 
     debugLog(DEBUG_TAG.CURRENCY_MANAGEMENT_DB, "Loaded currency preferences", {
@@ -33,23 +37,25 @@ export const getCurrencyPreferencesFromDB = async () => {
 export const getUsedCurrencyCodesFromDB = async (): Promise<string[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const rows = await db.getAllAsync<{ code: string }>(
       `SELECT currency_code AS code
        FROM accounts
-       WHERE deleted_at IS NULL
+       WHERE deleted_at IS NULL AND book_id = ?
        UNION
        SELECT currency_code AS code
        FROM transactions
-       WHERE deleted_at IS NULL
+       WHERE deleted_at IS NULL AND book_id = ?
        UNION
        SELECT account_currency_code AS code
        FROM transactions
-       WHERE deleted_at IS NULL
+       WHERE deleted_at IS NULL AND book_id = ?
        UNION
        SELECT currency_code AS code
        FROM budget_plans
-       WHERE deleted_at IS NULL
+       WHERE deleted_at IS NULL AND book_id = ?
        ORDER BY code ASC;`,
+      [bookId, bookId, bookId, bookId],
     );
 
     debugLog(DEBUG_TAG.CURRENCY_MANAGEMENT_DB, "Loaded used currencies", {
@@ -72,19 +78,23 @@ export const saveCurrencyPreferencesToDB = async (
 ) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     await db.withTransactionAsync(async () => {
       await deactivateBudgetsForCurrenciesWithDB(
         db,
         disabledCurrencyCodes,
         getMonthKey(),
+        bookId,
       );
-      await db.runAsync("DELETE FROM currency_preferences;");
+      await db.runAsync("DELETE FROM currency_preferences WHERE book_id = ?;", [
+        bookId,
+      ]);
 
       for (const code of data.enabledCurrencyCodes) {
         await db.runAsync(
-          `INSERT INTO currency_preferences (code, is_default)
-           VALUES (?, ?);`,
-          [code, code === data.defaultCurrencyCode ? 1 : 0],
+          `INSERT INTO currency_preferences (book_id, code, is_default)
+           VALUES (?, ?, ?);`,
+          [bookId, code, code === data.defaultCurrencyCode ? 1 : 0],
         );
       }
     });
@@ -92,6 +102,7 @@ export const saveCurrencyPreferencesToDB = async (
     debugLog(DEBUG_TAG.CURRENCY_MANAGEMENT_DB, "Saved currency preferences", {
       count: data.enabledCurrencyCodes.length,
       defaultCurrencyCode: data.defaultCurrencyCode,
+      bookId,
     });
   } catch (error) {
     console.error(

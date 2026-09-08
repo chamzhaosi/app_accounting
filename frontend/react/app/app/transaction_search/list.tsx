@@ -26,6 +26,7 @@ import { useThemeStore } from "../../stores/useThemeStore";
 import { formatSectionDate } from "../../utils/date";
 import TransactionListRow from "../transaction_management/_components/TransactionListRow";
 import TransactionSearchFilters from "./_components/TransactionSearchFilters";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function TransactionSearchList() {
   const logic = useTransactionSearch();
@@ -76,6 +77,7 @@ export default function TransactionSearchList() {
 
   return (
     <AppView>
+      <InactiveBookBanner />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
@@ -200,7 +202,10 @@ export default function TransactionSearchList() {
               >
                 {formatSectionDate(item.transactionDate, locale, t)}
               </Text>
-              <TransactionListRow item={item} />
+              <TransactionListRow
+                item={item}
+                onPress={() => void logic.openResult(item)}
+              />
             </View>
           )}
         />
@@ -213,6 +218,7 @@ export default function TransactionSearchList() {
           categoryOptions={logic.categoryOptions}
           currencyOptions={logic.currencyOptions}
           transactionTypeOptions={logic.transactionTypeOptions}
+          bookOptions={logic.bookOptions}
           onApply={logic.applyFilters}
           onDismiss={() => setShowFilters(false)}
           onReset={logic.resetFilters}

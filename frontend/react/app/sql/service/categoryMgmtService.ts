@@ -15,6 +15,8 @@ import {
   CategoryMgmtRspType,
   CategoryMgmtUpdateReqType,
 } from "../types/categoryMgmtType";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
+import { assertBookWritable } from "./bookService";
 
 export const getCategoryMgmtList = async (
   typeId: number,
@@ -36,6 +38,8 @@ export const reorderCategoryMgmt = async (
   typeId: number,
   orderedCategoryIds: string[],
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   if (!orderedCategoryIds.length) return "No categories to reorder.";
   if (new Set(orderedCategoryIds).size !== orderedCategoryIds.length)
     return "Invalid category order.";
@@ -74,6 +78,8 @@ export const getCategoryPeriodSummaryList = async (
 export const createNewCategoryMgmt = async (
   data: CategoryMgmtCreateReqType,
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   const existing = await getCategoryMgmtByTypeAndLabelFromDB(
     data.typeId,
     data.label,
@@ -101,6 +107,8 @@ export const getCategoryMgmtById = async (
 export const updateCategoryMgmt = async (
   data: CategoryMgmtUpdateReqType,
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   const current = await getCategoryMgmtByIdFromDB(data.id);
   if (!current) return "Category not found.";
   if (current.is_system) return "System-created categories cannot be edited.";
@@ -129,6 +137,8 @@ export const updateCategoryMgmt = async (
 export const deleteCategoryMgmt = async (
   id: string,
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   const current = await getCategoryMgmtByIdFromDB(id);
   if (!current) return "Category not found.";
   if (current.is_system) return "System-created categories cannot be deleted.";

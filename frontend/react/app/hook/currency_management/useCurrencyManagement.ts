@@ -1,7 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppToast } from "../../components/AppToast";
-import { CURRENCIES, DEFAULT_CURRENCY_CODE } from "../../constants/currencies";
+import {
+  ALL_CURRENCIES_VALUE,
+  CURRENCIES,
+  DEFAULT_CURRENCY_CODE,
+} from "../../constants/currencies";
 import {
   accountManagementQueryKeys,
   budgetQueryKeys,
@@ -13,6 +17,8 @@ import {
   saveCurrencyPreferences,
 } from "../../sql/service/currencyManagementService";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
+import { useBookStore } from "../../stores/useBookStore";
+import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 
 const normalizeSearchText = (value: string) =>
   value
@@ -25,6 +31,16 @@ const SEARCH_DEBOUNCE_MS = 250;
 
 export default function useCurrencyManagement() {
   const queryClient = useQueryClient();
+  const activeBook = useBookStore((state) => state.activeBook);
+  const currencySelection = useReportingCurrencyStore(
+    (state) => state.currencySelection,
+  );
+  const setReportingCurrencyCode = useReportingCurrencyStore(
+    (state) => state.setCurrencyCode,
+  );
+  const setReportingCurrencySelection = useReportingCurrencyStore(
+    (state) => state.setCurrencySelection,
+  );
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isPickerVisible, setIsPickerVisible] = useState(false);
@@ -152,6 +168,16 @@ export default function useCurrencyManagement() {
         return false;
       }
 
+      if (
+        currencySelection !== ALL_CURRENCIES_VALUE &&
+        !enabledCurrencyCodes.includes(currencySelection)
+      ) {
+        await setReportingCurrencySelection(ALL_CURRENCIES_VALUE);
+        await setReportingCurrencyCode(defaultCurrencyCode);
+      } else if (currencySelection === ALL_CURRENCIES_VALUE) {
+        await setReportingCurrencyCode(defaultCurrencyCode);
+      }
+
       await Promise.all([
         invalidateQuery(queryClient, currencyManagementQueryKeys.all),
         invalidateQuery(queryClient, budgetQueryKeys.all),
@@ -199,6 +225,7 @@ export default function useCurrencyManagement() {
     filteredCurrencies,
     isLoading,
     isPickerVisible,
+    isReadOnly: !activeBook?.is_active,
     isSaving,
     onSave,
     onConfirmDisable,

@@ -5,6 +5,8 @@ import {
   saveCurrencyPreferencesToDB,
 } from "../repo/currencyManagementRepo";
 import type { CurrencyPreferences } from "../types/currencyManagementType";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
+import { assertBookWritable } from "./bookService";
 
 export const getCurrencyPreferences =
   async (): Promise<CurrencyPreferences | null> => {
@@ -32,6 +34,9 @@ export const getCurrencyPreferences =
 export const saveCurrencyPreferences = async (
   data: Omit<CurrencyPreferences, "isSingleCurrency">,
 ) => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
+
   const enabledCurrencyCodes = [...new Set(data.enabledCurrencyCodes)].sort();
 
   if (!CURRENCY_CODES.has(data.defaultCurrencyCode)) {

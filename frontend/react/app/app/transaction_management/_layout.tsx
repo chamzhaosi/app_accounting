@@ -1,11 +1,12 @@
 import { Stack } from "expo-router";
 import { AppStack } from "../../components/AppStack";
 import { useTranslation } from "../../i18n/helper";
+import HeaderWithBookLabel from "../(home)/_components/HeaderWithBookLabel";
 
 export default function StackLayout() {
   const { t } = useTranslation();
   return (
-    <AppStack>
+    <AppStack bookScoped>
       <Stack.Screen
         name="list"
         options={{
@@ -17,14 +18,24 @@ export default function StackLayout() {
       <Stack.Screen
         name="create"
         options={{
-          title: t("New Transaction"),
+          headerTitle: () => (
+            <HeaderWithBookLabel
+              title="New Transaction"
+              textStyle={{ fontSize: 20 }}
+            />
+          ),
         }}
       />
 
       <Stack.Screen
         name="[id]"
         options={{
-          title: t("Transaction Detail"),
+          headerTitle: () => (
+            <HeaderWithBookLabel
+              title={"Transaction Detail"}
+              textStyle={{ fontSize: 20 }}
+            />
+          ),
         }}
       />
     </AppStack>

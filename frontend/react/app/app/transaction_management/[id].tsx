@@ -8,9 +8,12 @@ import AppDialog from "../../components/AppDialog";
 import { DIALOG_COMMON_BTN_PROPS } from "../../constants/size";
 import useTransactionManagementDetail from "../../hook/transaction_management/useTransactionManagementDetail";
 import { TransactionFormScreen } from "./create";
+import { useBookStore } from "../../stores/useBookStore";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function TransactionManagementDetail() {
   const logic = useTransactionManagementDetail();
+  const isReadOnly = useBookStore((state) => !state.activeBook?.is_active);
 
   if (logic.isLoadingTransaction) {
     return (
@@ -22,6 +25,7 @@ export default function TransactionManagementDetail() {
 
   return (
     <View className="flex flex-1">
+      <InactiveBookBanner />
       <AppDialog
         title="Delete Transaction"
         description="Are you sure you want to delete this transaction and all linked fees and attachments?"
@@ -80,33 +84,35 @@ export default function TransactionManagementDetail() {
       />
 
       <TransactionFormScreen
-        logic={logic}
+        logic={{ ...logic, isSubmitting: logic.isSubmitting || isReadOnly }}
         lockTransactionType
         footer={
-          <View className="flex-row items-center justify-center gap-4 mt-2 mb-4">
-            <AppButton
-              disabled={logic.isSubmitting}
-              loading={logic.isDeleting}
-              variant={ButtonType.ERROR}
-              onPress={() => {
-                Keyboard.dismiss();
-                logic.setShowDeleteDialog(true);
-              }}
-              style={{ flex: 1, borderRadius: 8 }}
-              {...SUBMIT_BTN_CONTENT_STYLE}
-            >
-              Delete
-            </AppButton>
-            <AppButton
-              disabled={logic.isSubmitting}
-              loading={logic.isSaving}
-              onPress={logic.handleSubmit(logic.onSubmit)}
-              style={{ flex: 0.4, borderRadius: 8 }}
-              {...SUBMIT_BTN_CONTENT_STYLE}
-            >
-              Save
-            </AppButton>
-          </View>
+          isReadOnly ? undefined : (
+            <View className="flex-row items-center justify-center gap-4 mt-2 mb-4">
+              <AppButton
+                disabled={logic.isSubmitting}
+                loading={logic.isDeleting}
+                variant={ButtonType.ERROR}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  logic.setShowDeleteDialog(true);
+                }}
+                style={{ flex: 1, borderRadius: 8 }}
+                {...SUBMIT_BTN_CONTENT_STYLE}
+              >
+                Delete
+              </AppButton>
+              <AppButton
+                disabled={logic.isSubmitting}
+                loading={logic.isSaving}
+                onPress={logic.handleSubmit(logic.onSubmit)}
+                style={{ flex: 0.4, borderRadius: 8 }}
+                {...SUBMIT_BTN_CONTENT_STYLE}
+              >
+                Save
+              </AppButton>
+            </View>
+          )
         }
       />
     </View>

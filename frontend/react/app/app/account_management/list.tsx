@@ -20,7 +20,9 @@ import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurre
 import { useTranslation } from "../../i18n/helper";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useBookStore } from "../../stores/useBookStore";
 import { formatPrivateCurrencyAmount } from "../../utils/number";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function AccountManagementList() {
   const logic = useAccountManagementList();
@@ -30,6 +32,9 @@ export default function AccountManagementList() {
     (state) => state.areAmountsVisible,
   );
   const isSingleCurrency = useSingleCurrencyMode();
+  const isWritable = useBookStore((state) =>
+    Boolean(state.activeBook?.is_active),
+  );
 
   if (logic.isLoading) {
     return (
@@ -41,6 +46,7 @@ export default function AccountManagementList() {
 
   return (
     <AppView className="relative bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <InactiveBookBanner />
       <SectionList
         sections={logic.accountSections}
         keyExtractor={(account) => account.id}
@@ -171,10 +177,12 @@ export default function AccountManagementList() {
           />
         )}
       />
-      <AppFloatingButton
-        icon="plus"
-        onPress={() => router.push(ACCOUNT_MANAGEMENT_CREATE_URL)}
-      />
+      {isWritable ? (
+        <AppFloatingButton
+          icon="plus"
+          onPress={() => router.push(ACCOUNT_MANAGEMENT_CREATE_URL)}
+        />
+      ) : null}
     </AppView>
   );
 }

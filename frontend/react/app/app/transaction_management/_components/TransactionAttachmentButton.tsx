@@ -50,10 +50,10 @@ export function TransactionAttachmentAction({
         { opacity: disabled ? 0.45 : pressed ? 0.65 : 1 },
       ]}
     >
-      <AppIcon name="Paperclip" color={THEME.primary} size={iconSize ?? 24} />
+      <AppIcon name="Paperclip" color={THEME.primary} size={iconSize ?? 26} />
       {count > 0 && (
         <View style={styles.badgeContainer}>
-          <Badge size={17}>{count}</Badge>
+          <Badge size={16}>{count}</Badge>
         </View>
       )}
     </Pressable>

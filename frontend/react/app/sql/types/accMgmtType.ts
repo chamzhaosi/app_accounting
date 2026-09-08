@@ -2,6 +2,7 @@ import type { TransactionAttachmentInput } from "./transactionAttachmentType";
 
 export type AccMgmtRspType = {
   id: string;
+  book_id: string;
   type_id: string;
   type_label: string;
   type_icon: string;
@@ -51,6 +52,7 @@ export type AccMgmtCreateReqType = {
 
 export type CreditCardCycleType = {
   id: string;
+  book_id: string;
   account_id: string;
   period_start: string;
   statement_date: string;

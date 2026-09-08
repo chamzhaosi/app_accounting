@@ -1,8 +1,13 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SelectOptionType } from "../../components/AppSelect";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
-import { transactionSearchQueryKeys } from "../../constants/queryKeys";
+import {
+  resetBookScopedQueries,
+  transactionSearchQueryKeys,
+} from "../../constants/queryKeys";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import {
   clearTransactionSearchHistory,
@@ -22,6 +27,10 @@ import { getCategoryDisplayLabel } from "../category_management/categoryManageme
 import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
 import { getTransactionAccountDisplayLabel } from "../transaction_management/transactionAccount.utils";
 import { mapTransactionListItem } from "../transaction_management/transactionList.utils";
+import { useBookStore } from "../../stores/useBookStore";
+import { TRANSACTION_MANAGEMENT_BASE_URL } from "../../constants/urls";
+import { getBookById } from "../../sql/service/bookService";
+import { AppToast } from "../../components/AppToast";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const SEARCH_HISTORY_IDLE_MS = 700;
@@ -75,6 +84,9 @@ const validateFilters = (filters: TransactionSearchFilters) => {
 };
 
 export default function useTransactionSearch() {
+  const queryClient = useQueryClient();
+  const activeBookId = useBookStore((state) => state.activeBookId);
+  const setActiveBook = useBookStore((state) => state.setActiveBook);
   const { t } = useTranslation();
   const isSingleCurrency = useSingleCurrencyMode();
   const [keyword, setKeyword] = useState("");
@@ -90,7 +102,7 @@ export default function useTransactionSearch() {
       historyRef.current = storedHistory;
       setHistory(storedHistory);
     });
-  }, []);
+  }, [activeBookId]);
 
   useEffect(() => {
     historyRef.current = history;
@@ -268,6 +280,19 @@ export default function useTransactionSearch() {
     ],
     [t],
   );
+  const bookOptions = useMemo<SelectOptionType[]>(
+    () => [
+      { id: "current", value: "current", label: t("Current Book") },
+      { id: "all", value: "all", label: t("All Books") },
+      ...(filterOptionsQuery.data?.books ?? []).map((book) => ({
+        id: book.id,
+        value: book.id,
+        label: `${book.label}${book.isActive ? "" : ` · ${t("Inactive")}`}`,
+        icon: book.icon as SelectOptionType["icon"],
+      })),
+    ],
+    [filterOptionsQuery.data?.books, t],
+  );
 
   const activeFilterCount = [
     Boolean(filters.startDate || filters.endDate),
@@ -276,7 +301,24 @@ export default function useTransactionSearch() {
     Boolean(filters.transactionTypes?.length),
     Boolean(filters.currencyCodes?.length),
     Boolean(filters.minimumAmount || filters.maximumAmount),
+    filters.bookScope === "all" || filters.bookScope === "specific",
   ].filter(Boolean).length;
+
+  const openResult = async (
+    item: ReturnType<typeof mapTransactionListItem>,
+  ) => {
+    if (item.bookId && item.bookId !== activeBookId) {
+      const book = await getBookById(item.bookId);
+      if (book) {
+        await resetBookScopedQueries(queryClient);
+        await setActiveBook(book);
+      } else {
+        AppToast.error({ message: t("Book not found.") });
+        return;
+      }
+    }
+    router.push(`${TRANSACTION_MANAGEMENT_BASE_URL}/${item.id}` as never);
+  };
 
   const submitSearch = () => {
     const normalizedKeyword = keyword.trim();
@@ -327,6 +369,7 @@ export default function useTransactionSearch() {
 
   return {
     accountPickerItems,
+    bookOptions,
     activeFilterCount,
     applyFilters,
     categoryOptions,
@@ -340,6 +383,7 @@ export default function useTransactionSearch() {
     isSearchActive,
     keyword,
     onLoadMore,
+    openResult,
     removeHistory,
     resetFilters,
     results,

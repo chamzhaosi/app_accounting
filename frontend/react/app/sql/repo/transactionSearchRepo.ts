@@ -5,17 +5,24 @@ import type {
   TransactionSearchRequest,
   TransactionSearchRspType,
 } from "../types/transactionSearchType";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
 
 const TRANSACTION_SEARCH_FROM = `
   FROM transactions
   LEFT JOIN categories
     ON categories.id = transactions.category_id
+    AND categories.book_id = transactions.book_id
   LEFT JOIN accounts
     ON accounts.id = transactions.account_id
+    AND accounts.book_id = transactions.book_id
   LEFT JOIN accounts AS from_accounts
     ON from_accounts.id = transactions.from_account_id
+    AND from_accounts.book_id = transactions.book_id
   LEFT JOIN accounts AS to_accounts
     ON to_accounts.id = transactions.to_account_id
+    AND to_accounts.book_id = transactions.book_id
+  INNER JOIN books
+    ON books.id = transactions.book_id
 `;
 
 const DESCRIPTION_VALUE = "LOWER(COALESCE(transactions.descriptions, ''))";
@@ -72,6 +79,15 @@ export const searchTransactionsFromDB = async ({
     const scoreParts: string[] = [];
     const keywordMatches: string[] = [];
     const filtersSql: string[] = ["transactions.deleted_at IS NULL"];
+
+    const scope = filters.bookScope ?? "current";
+    if (scope === "current") {
+      filtersSql.push("transactions.book_id = ?");
+      filterParams.push(getRequiredActiveBookId());
+    } else if (scope === "specific") {
+      filtersSql.push("transactions.book_id = ?");
+      filterParams.push(filters.bookId ?? getRequiredActiveBookId());
+    }
 
     if (keyword) {
       const startsWith = `${keyword}%`;
@@ -204,6 +220,9 @@ export const searchTransactionsFromDB = async ({
       `
         SELECT
           transactions.*,
+          books.label AS book_label,
+          books.icon AS book_icon,
+          books.is_active AS book_is_active,
           categories.label AS category_label,
           categories.translation_key AS category_translation_key,
           categories.icon AS category_icon,
@@ -214,6 +233,7 @@ export const searchTransactionsFromDB = async ({
             SELECT 1
             FROM transaction_attachments
             WHERE transaction_attachments.transaction_id = transactions.id
+              AND transaction_attachments.book_id = transactions.book_id
           ) AS has_attachments,
           (${searchScore}) AS search_score
         ${TRANSACTION_SEARCH_FROM}
@@ -253,7 +273,8 @@ export const getTransactionSearchFilterOptionsFromDB =
   async (): Promise<TransactionSearchFilterOptions> => {
     try {
       const db = await getDB();
-      const [accounts, categories, currencies] = await Promise.all([
+      const bookId = getRequiredActiveBookId();
+      const [accounts, categories, currencies, books] = await Promise.all([
         db.getAllAsync<{
           id: string;
           icon: string;
@@ -276,8 +297,10 @@ export const getTransactionSearchFilterOptionsFromDB =
          FROM accounts
          INNER JOIN account_types ON account_types.id = accounts.type_id
          WHERE accounts.deleted_at IS NULL
+           AND accounts.book_id = ?
          ORDER BY account_types.label COLLATE NOCASE ASC,
                   accounts.label COLLATE NOCASE ASC;`,
+          [bookId],
         ),
         db.getAllAsync<{
           id: string;
@@ -289,24 +312,43 @@ export const getTransactionSearchFilterOptionsFromDB =
           `SELECT id, icon, label, type_id, translation_key
          FROM categories
          WHERE deleted_at IS NULL
+           AND book_id = ?
          ORDER BY type_id ASC, label COLLATE NOCASE ASC;`,
+          [bookId],
         ),
         db.getAllAsync<{ code: string }>(
           `SELECT code
          FROM (
            SELECT currency_code AS code
            FROM transactions
-           WHERE deleted_at IS NULL
+           WHERE deleted_at IS NULL AND book_id = ?
            UNION
            SELECT account_currency_code AS code
            FROM transactions
-           WHERE deleted_at IS NULL
+           WHERE deleted_at IS NULL AND book_id = ?
          )
          ORDER BY code ASC;`,
+          [bookId, bookId],
+        ),
+        db.getAllAsync<{
+          id: string;
+          icon: string;
+          label: string;
+          is_active: boolean;
+        }>(
+          `SELECT id, icon, label, is_active
+           FROM books
+           ORDER BY sort_order ASC, created_at ASC;`,
         ),
       ]);
 
       return {
+        books: books.map(({ id, icon, label, is_active }) => ({
+          id,
+          icon,
+          label,
+          isActive: Boolean(is_active),
+        })),
         accounts: accounts.map(
           ({
             id,

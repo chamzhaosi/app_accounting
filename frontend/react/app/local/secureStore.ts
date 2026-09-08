@@ -11,6 +11,13 @@ export const AMOUNTS_VISIBLE_KEY = "amounts_visible";
 export const LANGUAGE_KEY = "language";
 export const REPORTING_CURRENCY_KEY = "reporting_currency";
 export const REPORTING_CURRENCY_SELECTION_KEY = "reporting_currency_selection";
+export const LAST_SELECTED_BOOK_KEY = "last_selected_book";
+
+export const getBookReportingCurrencyKey = (bookId: string) =>
+  `${REPORTING_CURRENCY_KEY}.${bookId}`;
+
+export const getBookReportingCurrencySelectionKey = (bookId: string) =>
+  `${REPORTING_CURRENCY_SELECTION_KEY}.${bookId}`;
 
 export const setStoredItem = async (
   key: string,

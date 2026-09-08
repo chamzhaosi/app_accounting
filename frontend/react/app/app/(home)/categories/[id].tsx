@@ -10,6 +10,7 @@ import {
 import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppCurrencyTotalsSheet from "../../../components/AppCurrencyTotalsSheet";
 import AppFloatingButton from "../../../components/AppFloatingButton";
+import { useBookStore } from "../../../stores/useBookStore";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
 import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
@@ -28,8 +29,12 @@ import CategoryCumulativeChart from "./_components/CategoryCumulativeChart";
 import { useTranslation } from "../../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
 import CategoryCurrencyNavigator from "./_components/CategoryCurrencyNavigator";
+import InactiveBookBanner from "../../../components/InactiveBookBanner";
 
 export default function CategoryDetail() {
+  const isWritable = useBookStore((state) =>
+    Boolean(state.activeBook?.is_active),
+  );
   const navigation = useNavigation();
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
@@ -65,21 +70,25 @@ export default function CategoryDetail() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <IconButton
-          icon="pencil-outline"
-          iconColor={THEME.primary}
-          accessibilityLabel={t("Edit category")}
-          disabled={!category}
-          onPress={() =>
-            router.push({
-              pathname: CATEGORY_MANAGEMENT_DETAIL_URL,
-              params: { id },
-            })
-          }
-        />
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          {isWritable ? (
+            <IconButton
+              icon="pencil-outline"
+              iconColor={THEME.primary}
+              accessibilityLabel={t("Edit category")}
+              disabled={!category}
+              onPress={() =>
+                router.push({
+                  pathname: CATEGORY_MANAGEMENT_DETAIL_URL,
+                  params: { id },
+                })
+              }
+            />
+          ) : null}
+        </View>
       ),
     });
-  }, [THEME.primary, category, id, navigation, t]);
+  }, [THEME.primary, category, id, isWritable, navigation, t]);
 
   if (isLoading) {
     return (
@@ -91,6 +100,7 @@ export default function CategoryDetail() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <InactiveBookBanner />
       <AppCurrencyTotalsSheet
         title={t("Period Total")}
         subtitle={`${t("Date Range")}: ${startDate} – ${endDate}`}
@@ -254,7 +264,7 @@ export default function CategoryDetail() {
         />
       )}
 
-      {category && (
+      {category && isWritable && (
         <AppFloatingButton
           icon="plus"
           accessibilityLabel={t("Add transaction for {{name}}", {

@@ -1,13 +1,21 @@
 import { Stack } from "expo-router";
 import { AppStack } from "../../components/AppStack";
-import { useTranslation } from "../../i18n/helper";
+import HeaderWithBookLabel from "../(home)/_components/HeaderWithBookLabel";
 
 export default function StackLayout() {
-  const { t } = useTranslation();
-
   return (
     <AppStack>
-      <Stack.Screen name="list" options={{ title: t("Currency Management") }} />
+      <Stack.Screen
+        name="list"
+        options={{
+          headerTitle: () => (
+            <HeaderWithBookLabel
+              title="Currency Management"
+              textStyle={{ fontSize: 20 }}
+            />
+          ),
+        }}
+      />
     </AppStack>
   );
 }

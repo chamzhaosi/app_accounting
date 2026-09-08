@@ -40,6 +40,7 @@ export default function AccountsBalanceSummary({
     isLoading,
     nextCurrency,
     previousCurrency,
+    showCurrencyNavigator,
   } = useAccountsBalanceSummary({
     selectedCurrencyCode,
     onSelectedCurrencyChange,
@@ -66,7 +67,12 @@ export default function AccountsBalanceSummary({
           { backgroundColor: THEME.surfaceContainerHigh },
         ]}
       >
-        <View style={styles.balanceContainer}>
+        <View
+          style={[
+            styles.balanceContainer,
+            !showCurrencyNavigator && styles.singleCurrencyBalanceContainer,
+          ]}
+        >
           <Text variant="labelLarge" style={{ color: THEME.onSurfaceVariant }}>
             {t("Balance")}
           </Text>
@@ -133,50 +139,48 @@ export default function AccountsBalanceSummary({
           )}
         </View>
 
-        <View
-          style={[
-            styles.currencyNavigator,
-            { backgroundColor: THEME.surfaceContainerHighest },
-          ]}
-        >
-          <AppIconButton
-            iconName="ChevronLeft"
-            iconSize={20}
-            accessibilityLabel={t("Previous currency")}
-            disabled={!canSelectPreviousCurrency}
-            onPress={previousCurrency}
-            style={{
-              ...styles.currencyButton,
-              backgroundColor: THEME.surfaceContainerHighest,
-            }}
-          />
-          <View style={styles.currencyLabel}>
-            <Text
-              variant="labelSmall"
-              style={{ color: THEME.onSurfaceVariant }}
-            >
-              {t("Currency")}
-            </Text>
-            <Text variant="titleMedium" style={styles.currencyCode}>
-              {hasAccountCurrencies
-                ? isAllCurrencies
-                  ? t("All")
-                  : currencyCode
-                : "—"}
-            </Text>
+        {showCurrencyNavigator ? (
+          <View
+            style={[
+              styles.currencyNavigator,
+              { backgroundColor: THEME.surfaceContainerHighest },
+            ]}
+          >
+            <AppIconButton
+              iconName="ChevronLeft"
+              iconSize={20}
+              accessibilityLabel={t("Previous currency")}
+              disabled={!canSelectPreviousCurrency}
+              onPress={previousCurrency}
+              style={{
+                ...styles.currencyButton,
+                backgroundColor: THEME.surfaceContainerHighest,
+              }}
+            />
+            <View style={styles.currencyLabel}>
+              <Text
+                variant="labelSmall"
+                style={{ color: THEME.onSurfaceVariant }}
+              >
+                {t("Currency")}
+              </Text>
+              <Text variant="titleMedium" style={styles.currencyCode}>
+                {isAllCurrencies ? t("All") : currencyCode}
+              </Text>
+            </View>
+            <AppIconButton
+              iconName="ChevronRight"
+              iconSize={20}
+              accessibilityLabel={t("Next currency")}
+              disabled={!canSelectNextCurrency}
+              onPress={nextCurrency}
+              style={{
+                ...styles.currencyButton,
+                backgroundColor: THEME.surfaceContainerHighest,
+              }}
+            />
           </View>
-          <AppIconButton
-            iconName="ChevronRight"
-            iconSize={20}
-            accessibilityLabel={t("Next currency")}
-            disabled={!canSelectNextCurrency}
-            onPress={nextCurrency}
-            style={{
-              ...styles.currencyButton,
-              backgroundColor: THEME.surfaceContainerHighest,
-            }}
-          />
-        </View>
+        ) : null}
       </Surface>
     </>
   );
@@ -186,6 +190,7 @@ const styles = StyleSheet.create({
   balanceAmount: { fontWeight: "700", marginTop: 4, maxWidth: "100%" },
   allBalances: { alignItems: "flex-start", marginTop: 4 },
   balanceContainer: { flex: 1, minWidth: 0 },
+  singleCurrencyBalanceContainer: { alignItems: "center" },
   container: {
     alignItems: "center",
     borderRadius: 20,

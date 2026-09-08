@@ -89,5 +89,6 @@ export default function useAccountsBalanceSummary({
     previousCurrency: () => {
       selectOption(selectorOptions[selectedIndex - 1]);
     },
+    showCurrencyNavigator: currencyCodes.length > 1,
   };
 }

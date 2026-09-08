@@ -66,6 +66,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "test": "node --test --test-isolation=none utils/book.test.mjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",

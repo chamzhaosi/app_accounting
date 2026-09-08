@@ -1,5 +1,6 @@
 export type CategoryMgmtRspType = {
   id: string;
+  book_id: string;
   type_id: number;
   label: string;
   icon: string;

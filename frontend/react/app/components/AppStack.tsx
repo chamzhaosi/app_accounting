@@ -3,9 +3,11 @@ import { Stack } from "expo-router";
 import { useThemeStore } from "../stores/useThemeStore";
 import { FONTS } from "../constants/fonts";
 
-type AppStackProps = React.ComponentProps<typeof Stack>;
+type AppStackProps = React.ComponentProps<typeof Stack> & {
+  bookScoped?: boolean;
+};
 
-export function AppStack({ ...props }: AppStackProps) {
+export function AppStack({ bookScoped = false, ...props }: AppStackProps) {
   const { THEME } = useThemeStore();
 
   return (

@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { AppStack } from "../../../components/AppStack";
 import { useTranslation } from "../../../i18n/helper";
+import HeaderWithBookLabel from "../_components/HeaderWithBookLabel";
 
 export const unstable_settings = {
   initialRouteName: "list",
@@ -9,7 +10,7 @@ export const unstable_settings = {
 export default function AccountsStackLayout() {
   const { t } = useTranslation();
   return (
-    <AppStack initialRouteName="list">
+    <AppStack initialRouteName="list" bookScoped>
       <Stack.Screen
         name="list"
         options={{
@@ -20,7 +21,12 @@ export default function AccountsStackLayout() {
       <Stack.Screen
         name="[id]"
         options={{
-          title: t("Account Detail"),
+          headerTitle: () => (
+            <HeaderWithBookLabel
+              title={"Account Detail"}
+              textStyle={{ fontSize: 20 }}
+            />
+          ),
         }}
       />
     </AppStack>

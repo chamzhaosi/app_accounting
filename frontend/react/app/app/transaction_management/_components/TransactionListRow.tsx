@@ -25,8 +25,10 @@ import {
 
 export default function TransactionListRow({
   item,
+  onPress,
 }: {
   item: TransactionListItem;
+  onPress?: () => void;
 }) {
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
@@ -82,7 +84,7 @@ export default function TransactionListRow({
           : t("Opens transaction details for editing")
       }
       android_ripple={{ color: THEME.outlineVariant }}
-      onPress={() => router.push(transactionUrl as Href)}
+      onPress={onPress ?? (() => router.push(transactionUrl as Href))}
       style={({ pressed }) => [
         styles.pressable,
         { backgroundColor: THEME.surfaceContainerLow },
@@ -163,6 +165,17 @@ export default function TransactionListRow({
             >
               {item.description}
             </Text>
+          ) : null}
+          {item.bookLabel ? (
+            <View style={styles.bookRow}>
+              {item.bookIcon ? (
+                <AppIcon name={item.bookIcon} size={14} color={THEME.primary} />
+              ) : null}
+              <Text variant="labelSmall" style={{ color: THEME.primary }}>
+                {item.bookLabel}
+                {item.isBookActive === false ? ` · ${t("Inactive")}` : ""}
+              </Text>
+            </View>
           ) : null}
         </View>
 
@@ -267,4 +280,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginHorizontal: 6,
   },
+  bookRow: { alignItems: "center", flexDirection: "row", gap: 4, marginTop: 3 },
 });

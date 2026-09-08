@@ -1,10 +1,13 @@
 import { clearStoredItem, getStoredItem, setStoredItem } from "./secureStore";
+import { getRequiredActiveBookId } from "../stores/useBookStore";
 
 const TRANSACTION_SEARCH_HISTORY_KEY = "transaction_search_history";
 const TRANSACTION_SEARCH_HISTORY_LIMIT = 10;
+const getHistoryKey = () =>
+  `${TRANSACTION_SEARCH_HISTORY_KEY}:${getRequiredActiveBookId()}`;
 
 export const getTransactionSearchHistory = async (): Promise<string[]> => {
-  const storedValue = await getStoredItem(TRANSACTION_SEARCH_HISTORY_KEY);
+  const storedValue = await getStoredItem(getHistoryKey());
   if (!storedValue) return [];
 
   try {
@@ -37,10 +40,7 @@ export const saveTransactionSearchKeyword = async (
       );
     }),
   ].slice(0, TRANSACTION_SEARCH_HISTORY_LIMIT);
-  await setStoredItem(
-    TRANSACTION_SEARCH_HISTORY_KEY,
-    JSON.stringify(nextHistory),
-  );
+  await setStoredItem(getHistoryKey(), JSON.stringify(nextHistory));
   return nextHistory;
 };
 
@@ -52,12 +52,9 @@ export const removeTransactionSearchKeyword = async (
   const nextHistory = currentHistory.filter(
     (item) => item.trim().toLocaleLowerCase() !== normalizedKey,
   );
-  await setStoredItem(
-    TRANSACTION_SEARCH_HISTORY_KEY,
-    JSON.stringify(nextHistory),
-  );
+  await setStoredItem(getHistoryKey(), JSON.stringify(nextHistory));
   return nextHistory;
 };
 
 export const clearTransactionSearchHistory = async (): Promise<void> =>
-  clearStoredItem(TRANSACTION_SEARCH_HISTORY_KEY);
+  clearStoredItem(getHistoryKey());

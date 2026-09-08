@@ -18,6 +18,7 @@ import type { AccountPickerModalItem } from "../../transaction_management/_compo
 import TransactionSearchAccountPicker from "./TransactionSearchAccountPicker";
 import TransactionSearchCategoryPicker from "./TransactionSearchCategoryPicker";
 import TransactionSearchMultiSelect from "./TransactionSearchMultiSelect";
+import AppSelect from "../../../components/AppSelect";
 
 type TransactionSearchFiltersProps = {
   visible: boolean;
@@ -27,6 +28,7 @@ type TransactionSearchFiltersProps = {
   categoryOptions: SelectOptionType[];
   currencyOptions: SelectOptionType[];
   transactionTypeOptions: SelectOptionType[];
+  bookOptions: SelectOptionType[];
   onApply: (filters: TransactionSearchFilters) => boolean;
   onDismiss: () => void;
   onReset: () => void;
@@ -40,6 +42,7 @@ export default function TransactionSearchFilters({
   categoryOptions,
   currencyOptions,
   transactionTypeOptions,
+  bookOptions,
   onApply,
   onDismiss,
   onReset,
@@ -107,6 +110,34 @@ export default function TransactionSearchFilters({
           ]}
           contentContainerStyle={styles.content}
         >
+          <AppSelect
+            label="Book"
+            value={
+              draft.bookScope === "specific"
+                ? (draft.bookId ?? "current")
+                : (draft.bookScope ?? "current")
+            }
+            options={bookOptions}
+            showClear={false}
+            onChange={(value) => {
+              const selected = String(value ?? "current");
+              setDraft((current) => ({
+                ...current,
+                bookScope:
+                  selected === "all"
+                    ? "all"
+                    : selected === "current"
+                      ? "current"
+                      : "specific",
+                bookId:
+                  selected === "all" || selected === "current"
+                    ? undefined
+                    : selected,
+                accountIds: undefined,
+                categoryIds: undefined,
+              }));
+            }}
+          />
           <AppDateRangePicker
             label={t("Date range")}
             value={{

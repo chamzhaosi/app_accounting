@@ -1,4 +1,4 @@
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
 import { FlatList, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Surface, Text } from "react-native-paper";
 import AppButton, {
@@ -13,6 +13,7 @@ import { useTranslation } from "../../i18n/helper";
 import { useThemeStore } from "../../stores/useThemeStore";
 import CurrencyPickerModal from "./_components/CurrencyPickerModal";
 import CurrencyRow from "./_components/CurrencyRow";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function CurrencyManagementList() {
   const { t } = useTranslation();
@@ -29,7 +30,7 @@ export default function CurrencyManagementList() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
-      <Stack.Screen options={{ title: t("Currency Management") }} />
+      <InactiveBookBanner />
       <CurrencyPickerModal
         currencies={logic.filteredCurrencies}
         defaultCurrencyCode={logic.defaultCurrencyCode}
@@ -54,7 +55,7 @@ export default function CurrencyManagementList() {
           <>
             <AppButton
               variant={ButtonType.SECONDARY}
-              disabled={logic.isSaving}
+              disabled={logic.isSaving || logic.isReadOnly}
               onPress={logic.dismissDisableDialog}
               style={styles.dialogButton}
               contentStyle={styles.dialogButtonContent}
@@ -65,7 +66,7 @@ export default function CurrencyManagementList() {
             <AppButton
               variant={ButtonType.ERROR}
               loading={logic.isSaving}
-              disabled={logic.isSaving}
+              disabled={logic.isSaving || logic.isReadOnly}
               style={styles.dialogButton}
               contentStyle={styles.dialogButtonContent}
               labelStyle={styles.dialogButtonLabel}
@@ -116,7 +117,7 @@ export default function CurrencyManagementList() {
         renderItem={({ item }) => (
           <CurrencyRow
             currency={item}
-            disabled={logic.isSaving}
+            disabled={logic.isSaving || logic.isReadOnly}
             isDefault={item.code === logic.defaultCurrencyCode}
             isEnabled={logic.enabledCurrencyCodes.includes(item.code)}
             onSelectDefault={logic.selectDefaultCurrency}
@@ -139,7 +140,7 @@ export default function CurrencyManagementList() {
             {...SUBMIT_BTN_CONTENT_STYLE}
             icon="plus"
             variant={ButtonType.SECONDARY}
-            disabled={logic.isSaving}
+            disabled={logic.isSaving || logic.isReadOnly}
             style={styles.footerButton}
             onPress={logic.openPicker}
           >
@@ -147,7 +148,7 @@ export default function CurrencyManagementList() {
           </AppButton>
           <AppButton
             {...SUBMIT_BTN_CONTENT_STYLE}
-            disabled={logic.isSaving}
+            disabled={logic.isSaving || logic.isReadOnly}
             loading={logic.isSaving}
             style={styles.footerButton}
             onPress={async () => {

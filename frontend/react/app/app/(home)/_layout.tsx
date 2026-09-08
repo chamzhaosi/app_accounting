@@ -9,6 +9,7 @@ import {
 import { FONTS } from "../../constants/fonts";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useTranslation } from "../../i18n/helper";
+import HeaderWithBookLabel from "./_components/HeaderWithBookLabel";
 
 export default function StackLayout() {
   const { THEME } = useThemeStore();
@@ -43,15 +44,16 @@ export default function StackLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: t("Dashboard"),
-          headerShown: false,
+          headerTitle: () => (
+            <HeaderWithBookLabel title="Dashboard" switchable />
+          ),
           tabBarIcon: ({ color, size }) => <Gauge color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="accounts"
         options={{
-          title: t("Accounts"),
+          headerTitle: () => <HeaderWithBookLabel title={"Accounts"} />,
           headerShown: isAccountsList,
           tabBarIcon: ({ color, size }) => (
             <WalletCards color={color} size={size} />
@@ -61,7 +63,7 @@ export default function StackLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          title: t("Categories"),
+          headerTitle: () => <HeaderWithBookLabel title={"Categories"} />,
           headerShown: isCategoriesList,
           tabBarIcon: ({ color, size }) => <Tags color={color} size={size} />,
         }}
@@ -69,7 +71,7 @@ export default function StackLayout() {
       <Tabs.Screen
         name="budget"
         options={{
-          title: t("Budget"),
+          headerTitle: () => <HeaderWithBookLabel title={"Budget"} />,
           tabBarIcon: ({ color, size }) => (
             <HandCoins color={color} size={size} />
           ),
@@ -100,6 +102,13 @@ export default function StackLayout() {
       />
       <Tabs.Screen
         name="_components/DashboardSummaryCarousel"
+        options={{
+          href: null,
+          tabBarItemStyle: { display: "none" },
+        }}
+      />
+      <Tabs.Screen
+        name="_components/HeaderWithBookLabel"
         options={{
           href: null,
           tabBarItemStyle: { display: "none" },

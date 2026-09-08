@@ -25,6 +25,8 @@ import {
 } from "../../utils/amount";
 import { getMonthKey } from "../../utils/date";
 import { getCurrencyPreferences } from "./currencyManagementService";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
+import { assertBookWritable } from "./bookService";
 
 export const getBudgetDailyRemaining = async (
   startDate: string,
@@ -120,6 +122,8 @@ export const getBudgetManagement = async (
 export const saveBudget = async (
   data: BudgetSaveReqType,
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   if (data.effectiveMonth !== getMonthKey())
     return "Budgets can only be changed for the current month.";
 

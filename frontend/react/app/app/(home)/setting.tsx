@@ -10,12 +10,20 @@ import {
   CURRENCY_MANAGEMENT_URL,
   LOCAL_AUTHENTICATE_URL,
   FEEDBACK_URL,
+  BOOK_MANAGEMENT_LIST_URL,
 } from "../../constants/urls";
 import { useTranslation } from "../../i18n/helper";
 
 export default function Setting() {
   const { t } = useTranslation();
   const data: AppListItemType[] = [
+    {
+      id: "book-management",
+      label: t("Book Management"),
+      descriptions: t("Manage separate financial books"),
+      icon: "LibraryBig",
+      onPress: () => router.push(BOOK_MANAGEMENT_LIST_URL as Href),
+    },
     {
       id: "account-settings",
       label: t("Account Settings"),

@@ -24,6 +24,10 @@ export type TransactionListItem = {
   transactionType: TXN_TYPE_ENUM;
   transactionDate: string;
   hasAttachments: boolean;
+  bookId?: string;
+  bookLabel?: string;
+  bookIcon?: AppIconProps["name"];
+  isBookActive?: boolean;
 };
 
 type MapTransactionListItemOptions = {
@@ -131,5 +135,9 @@ export const mapTransactionListItem = (
     transactionType: transaction.transaction_type,
     transactionDate: transaction.transaction_date,
     hasAttachments: Boolean(transaction.has_attachments),
+    bookId: transaction.book_id,
+    bookLabel: transaction.book_label,
+    bookIcon: transaction.book_icon as AppIconProps["name"] | undefined,
+    isBookActive: transaction.book_is_active,
   };
 };

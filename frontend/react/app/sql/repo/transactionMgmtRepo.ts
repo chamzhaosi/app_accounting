@@ -28,6 +28,7 @@ import {
   TransactionMgmtUpdateReqType,
   ExchangeRateSuggestionType,
 } from "../types/transactionMgmtType";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
 
 export const getExchangeRateSuggestionFromDB = async (
   fromCurrencyCode: string,
@@ -36,6 +37,7 @@ export const getExchangeRateSuggestionFromDB = async (
   excludeTransactionId?: string,
 ): Promise<ExchangeRateSuggestionType | null> => {
   const db = await getDB();
+  const bookId = getRequiredActiveBookId();
   const exact = await db.getFirstAsync<{
     id: string;
     exchange_rate: number;
@@ -44,6 +46,7 @@ export const getExchangeRateSuggestionFromDB = async (
     `SELECT id, exchange_rate, transaction_date
      FROM transactions
      WHERE currency_code = ?
+       AND book_id = ?
        AND account_currency_code = ?
        AND exchange_rate IS NOT NULL
        AND exchange_rate > 0
@@ -54,6 +57,7 @@ export const getExchangeRateSuggestionFromDB = async (
      LIMIT 1;`,
     [
       fromCurrencyCode,
+      bookId,
       toCurrencyCode,
       transactionDate,
       excludeTransactionId ?? null,
@@ -77,6 +81,7 @@ export const getExchangeRateSuggestionFromDB = async (
     `SELECT id, exchange_rate, transaction_date
      FROM transactions
      WHERE currency_code = ?
+       AND book_id = ?
        AND account_currency_code = ?
        AND exchange_rate IS NOT NULL
        AND exchange_rate > 0
@@ -87,6 +92,7 @@ export const getExchangeRateSuggestionFromDB = async (
      LIMIT 1;`,
     [
       toCurrencyCode,
+      bookId,
       fromCurrencyCode,
       transactionDate,
       excludeTransactionId ?? null,
@@ -110,6 +116,7 @@ export const getAccountDailyBalanceChangesFromDB = async (
 ): Promise<AccountDailyBalanceChangeType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<AccountDailyBalanceChangeType>(
       `SELECT
          transaction_date,
@@ -125,6 +132,7 @@ export const getAccountDailyBalanceChangesFromDB = async (
          ), 0), 3) AS balance_change
        FROM transactions
        WHERE deleted_at IS NULL
+         AND book_id = ?
          AND transaction_date >= ?
          AND transaction_date <= ?
          AND (account_id = ? OR from_account_id = ? OR to_account_id = ?)
@@ -136,6 +144,7 @@ export const getAccountDailyBalanceChangesFromDB = async (
         accountId,
         accountId,
         accountId,
+        bookId,
         startDate,
         endDate,
         accountId,
@@ -172,19 +181,21 @@ export const getCategoryDailyTotalsFromDB = async (
 ): Promise<CategoryDailyTotalType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<CategoryDailyTotalType>(
       `SELECT
          transaction_date,
          ROUND(COALESCE(SUM(converted_amount), 0), 3) AS daily_total
        FROM transactions
        WHERE category_id = ?
+         AND book_id = ?
          AND transaction_date >= ?
          AND transaction_date <= ?
          AND account_currency_code = ?
          AND deleted_at IS NULL
        GROUP BY transaction_date
        ORDER BY transaction_date ASC;`,
-      [categoryId, startDate, endDate, currencyCode],
+      [categoryId, bookId, startDate, endDate, currencyCode],
     );
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
@@ -215,6 +226,7 @@ export const getTransactionDailyTotalsFromDB = async (
 ): Promise<TransactionDailyTotalsType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<TransactionDailyTotalsType>(
       `
         SELECT
@@ -238,13 +250,14 @@ export const getTransactionDailyTotalsFromDB = async (
           ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN converted_amount ELSE 0 END), 0), 3) AS recorded_expense_total
         FROM transactions
         WHERE deleted_at IS NULL
+          AND book_id = ?
           AND transaction_date >= ?
           AND transaction_date <= ?
           AND account_currency_code = ?
         GROUP BY transaction_date
         ORDER BY transaction_date ASC;
       `,
-      [startDate, endDate, currencyCode],
+      [bookId, startDate, endDate, currencyCode],
     );
 
     debugLog(
@@ -303,16 +316,21 @@ const TRANSACTION_DETAIL_SELECT = `
       SELECT 1
       FROM transaction_attachments
       WHERE transaction_attachments.transaction_id = transactions.id
+        AND transaction_attachments.book_id = transactions.book_id
     ) AS has_attachments
   FROM transactions
   LEFT JOIN categories
     ON categories.id = transactions.category_id
+    AND categories.book_id = transactions.book_id
   LEFT JOIN accounts
     ON accounts.id = transactions.account_id
+    AND accounts.book_id = transactions.book_id
   LEFT JOIN accounts AS from_accounts
     ON from_accounts.id = transactions.from_account_id
+    AND from_accounts.book_id = transactions.book_id
   LEFT JOIN accounts AS to_accounts
     ON to_accounts.id = transactions.to_account_id
+    AND to_accounts.book_id = transactions.book_id
 `;
 
 export const getAccountForwardBalanceFromDB = async (
@@ -321,6 +339,7 @@ export const getAccountForwardBalanceFromDB = async (
 ): Promise<number> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<{ forward_balance: number }>(
       `
         SELECT
@@ -337,10 +356,12 @@ export const getAccountForwardBalanceFromDB = async (
             )
             FROM transactions
             WHERE deleted_at IS NULL
+              AND book_id = ?
               AND transaction_date >= ?
           ), 0), 3) AS forward_balance
         FROM accounts
         WHERE id = ?
+          AND book_id = ?
           AND deleted_at IS NULL;
       `,
       [
@@ -349,8 +370,10 @@ export const getAccountForwardBalanceFromDB = async (
         accountId,
         accountId,
         accountId,
+        bookId,
         startDate,
         accountId,
+        bookId,
       ],
     );
 
@@ -379,6 +402,7 @@ export const getAccountDateRangeFlowTotalsFromDB = async (
 ): Promise<AccountDateRangeFlowTotalsType> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<AccountDateRangeFlowTotalsType>(
       `
         SELECT
@@ -400,6 +424,7 @@ export const getAccountDateRangeFlowTotalsFromDB = async (
           ), 0), 3) AS out_total
         FROM transactions
         WHERE deleted_at IS NULL
+          AND book_id = ?
           AND transaction_date >= ?
           AND transaction_date <= ?;
       `,
@@ -410,6 +435,7 @@ export const getAccountDateRangeFlowTotalsFromDB = async (
         accountId,
         accountId,
         accountId,
+        bookId,
         startDate,
         endDate,
       ],
@@ -441,6 +467,7 @@ export const getCategoryDateRangeSummaryFromDB = async (
 ): Promise<CategoryDateRangeSummaryType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<CategoryDateRangeSummaryType>(
       `
         SELECT
@@ -449,13 +476,20 @@ export const getCategoryDateRangeSummaryFromDB = async (
           COUNT(*) AS transaction_count
         FROM transactions
         WHERE category_id = ?
+          AND book_id = ?
           AND transaction_date >= ?
           AND transaction_date <= ?
           ${currencyCode ? "AND account_currency_code = ?" : ""}
           AND deleted_at IS NULL
         GROUP BY account_currency_code;
       `,
-      [categoryId, startDate, endDate, ...(currencyCode ? [currencyCode] : [])],
+      [
+        categoryId,
+        bookId,
+        startDate,
+        endDate,
+        ...(currencyCode ? [currencyCode] : []),
+      ],
     );
 
     debugLog(
@@ -483,6 +517,7 @@ export const getTransactionDateRangeTotalsFromDB = async (
 ): Promise<TransactionDateRangeTotalsType> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<TransactionDateRangeTotalsType>(
       `
         SELECT
@@ -491,14 +526,15 @@ export const getTransactionDateRangeTotalsFromDB = async (
           ROUND(COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN converted_amount ELSE 0 END), 0), 3) AS expense_total
         FROM transactions
         WHERE deleted_at IS NULL
+          AND book_id = ?
           AND transaction_date >= ?
           AND transaction_date <= ?
           AND account_currency_code = ?
           ${accountId ? "AND account_id = ?" : ""};
       `,
       accountId
-        ? [currencyCode, startDate, endDate, currencyCode, accountId]
-        : [currencyCode, startDate, endDate, currencyCode],
+        ? [currencyCode, bookId, startDate, endDate, currencyCode, accountId]
+        : [currencyCode, bookId, startDate, endDate, currencyCode],
     );
 
     const totals = result ?? {
@@ -530,15 +566,17 @@ export const getTransactionPeriodCurrencyCodesFromDB = async (
 ): Promise<string[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const rows = await db.getAllAsync<{ currency_code: string }>(
       `SELECT DISTINCT account_currency_code AS currency_code
        FROM transactions
        WHERE transaction_date >= ?
+         AND book_id = ?
          AND transaction_date <= ?
          ${categoryId ? "AND category_id = ?" : ""}
          AND deleted_at IS NULL
        ORDER BY account_currency_code ASC;`,
-      [startDate, endDate, ...(categoryId ? [categoryId] : [])],
+      [startDate, bookId, endDate, ...(categoryId ? [categoryId] : [])],
     );
 
     debugLog(
@@ -657,15 +695,17 @@ const applyBalanceAdjustments = async (
   });
 
   for (const [accountId, adjustmentAmount] of adjustmentsByAccount) {
+    const bookId = getRequiredActiveBookId();
     const mustBeActive =
       requireActiveAccount && !allowedInactiveAccountIds.has(accountId);
     const account = await db.getFirstAsync<{ current_balance: number }>(
       `SELECT current_balance
        FROM accounts
        WHERE id = ?
+         AND book_id = ?
          ${mustBeActive ? "AND is_active = 1" : ""}
          AND deleted_at IS NULL;`,
-      [accountId],
+      [accountId, bookId],
     );
     if (!account) {
       throw new Error(`Account is unavailable: ${accountId}`);
@@ -682,10 +722,11 @@ const applyBalanceAdjustments = async (
           sync_status = ?,
           updated_at = datetime('now')
         WHERE id = ?
+          AND book_id = ?
           ${mustBeActive ? "AND is_active = 1" : ""}
           AND deleted_at IS NULL;
       `,
-      [nextBalance, DB_SYNC_STATUS.PENDING, accountId],
+      [nextBalance, DB_SYNC_STATUS.PENDING, accountId, bookId],
     );
 
     if (result.changes !== 1) {
@@ -712,10 +753,25 @@ const getStoredTransactionForWrite = async (
         converted_amount
       FROM transactions
       WHERE id = ?
+        AND book_id = ?
         AND deleted_at IS NULL;
     `,
-    [id],
+    [id, getRequiredActiveBookId()],
   );
+
+const assertCategoryBelongsToBook = async (
+  db: Awaited<ReturnType<typeof getDB>>,
+  categoryId: string | null | undefined,
+  bookId: string,
+) => {
+  if (!categoryId) return;
+  const category = await db.getFirstAsync<{ id: string }>(
+    `SELECT id FROM categories
+     WHERE id = ? AND book_id = ? AND deleted_at IS NULL;`,
+    [categoryId, bookId],
+  );
+  if (!category) throw new Error(`Category is unavailable: ${categoryId}`);
+};
 
 const getStoredOperationForWrite = async (
   db: Awaited<ReturnType<typeof getDB>>,
@@ -736,9 +792,10 @@ const getStoredOperationForWrite = async (
        converted_amount
      FROM transactions
      WHERE operation_id = ?
+       AND book_id = ?
        AND deleted_at IS NULL
      ORDER BY transaction_role ASC, created_at ASC;`,
-    [target.operation_id],
+    [target.operation_id, getRequiredActiveBookId()],
   );
 };
 
@@ -757,6 +814,7 @@ export const getTransactionMgmtListFromDB = async (
 ): Promise<TransactionMgmtRspType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const offset = (curPage - 1) * pageSize;
     const filters: string[] = [];
     const filterParams: (string | number)[] = [];
@@ -821,11 +879,19 @@ export const getTransactionMgmtListFromDB = async (
           AND ${filters.join(" AND ")}
         `
       : "";
-    const params = [startDate, endDate, ...filterParams, pageSize, offset];
+    const params = [
+      bookId,
+      startDate,
+      endDate,
+      ...filterParams,
+      pageSize,
+      offset,
+    ];
     const result = await db.getAllAsync<TransactionMgmtRspType>(
       `
         ${TRANSACTION_DETAIL_SELECT}
         WHERE transactions.deleted_at IS NULL
+          AND transactions.book_id = ?
           AND transactions.transaction_date >= ?
           AND transactions.transaction_date <= ?
           ${transactionFilter}
@@ -863,12 +929,14 @@ export const getFrequentTransactionDescriptionsFromDB = async (
 ): Promise<string[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const prefix = searchText.trim();
     const result = await db.getAllAsync<{ description: string }>(
       `SELECT
          TRIM(descriptions) AS description
        FROM transactions
        WHERE deleted_at IS NULL
+         AND book_id = ?
          AND transaction_role = 'main'
          AND category_id = ?
          AND TRIM(COALESCE(descriptions, '')) <> ''
@@ -876,7 +944,7 @@ export const getFrequentTransactionDescriptionsFromDB = async (
        GROUP BY TRIM(descriptions) COLLATE NOCASE
        ORDER BY COUNT(*) DESC, MAX(created_at) DESC, description ASC
        LIMIT 8;`,
-      [categoryId, prefix, prefix],
+      [bookId, categoryId, prefix, prefix],
     );
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
@@ -899,13 +967,15 @@ export const getTransactionMgmtByIdFromDB = async (
 ): Promise<TransactionMgmtRspType | null> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<TransactionMgmtRspType>(
       `
         ${TRANSACTION_DETAIL_SELECT}
         WHERE transactions.id = ?
+          AND transactions.book_id = ?
           AND transactions.deleted_at IS NULL;
       `,
-      [id],
+      [id, bookId],
     );
     debugLog(DEBUG_TAG.TRANSACTION_MANAGEMENT_DB, "Loaded transaction by id", {
       id,
@@ -927,11 +997,12 @@ export const getTransactionOperationByIdFromDB = async (
   id: string,
 ): Promise<TransactionOperationRspType | null> => {
   const db = await getDB();
+  const bookId = getRequiredActiveBookId();
   const operation = await db.getFirstAsync<{ operation_id: string }>(
     `SELECT operation_id
      FROM transactions
-     WHERE id = ? AND deleted_at IS NULL;`,
-    [id],
+     WHERE id = ? AND book_id = ? AND deleted_at IS NULL;`,
+    [id, bookId],
   );
 
   if (!operation) return null;
@@ -939,9 +1010,10 @@ export const getTransactionOperationByIdFromDB = async (
   const rows = await db.getAllAsync<TransactionMgmtRspType>(
     `${TRANSACTION_DETAIL_SELECT}
      WHERE transactions.operation_id = ?
+       AND transactions.book_id = ?
        AND transactions.deleted_at IS NULL
      ORDER BY transactions.transaction_role ASC, transactions.created_at ASC;`,
-    [operation.operation_id],
+    [operation.operation_id, bookId],
   );
   const main = rows.find((row) => row.transaction_role === "main");
   if (!main) return null;
@@ -956,6 +1028,7 @@ export const createNewTransactionMgmtToDB = async (
 ): Promise<string> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const id = randomUUID();
     const operationId = id;
     const isTransfer = data.transactionType === "transfer";
@@ -972,10 +1045,16 @@ export const createNewTransactionMgmtToDB = async (
     ];
 
     await db.withTransactionAsync(async () => {
+      await assertCategoryBelongsToBook(
+        db,
+        isTransfer ? null : data.categoryId,
+        bookId,
+      );
       await db.runAsync(
         `
           INSERT INTO transactions (
             id,
+            book_id,
             transaction_type,
             category_id,
             account_id,
@@ -992,10 +1071,11 @@ export const createNewTransactionMgmtToDB = async (
             exchange_rate_source_transaction_id,
             descriptions,
             transaction_date
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'main', ?, ?, ?, ?, ?, ?, ?, ?, ?);
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'main', ?, ?, ?, ?, ?, ?, ?, ?, ?);
         `,
         [
           id,
+          bookId,
           data.transactionType,
           isTransfer ? null : data.categoryId,
           isTransfer ? null : data.accountId,
@@ -1018,12 +1098,13 @@ export const createNewTransactionMgmtToDB = async (
       );
 
       for (const fee of data.fees) {
+        await assertCategoryBelongsToBook(db, fee.categoryId, bookId);
         const feeId = randomUUID();
         const feeAccount = await db.getFirstAsync<{ currency_code: string }>(
           `SELECT currency_code
            FROM accounts
-           WHERE id = ? AND is_active = 1 AND deleted_at IS NULL;`,
-          [fee.accountId],
+           WHERE id = ? AND book_id = ? AND is_active = 1 AND deleted_at IS NULL;`,
+          [fee.accountId, bookId],
         );
         if (!feeAccount) {
           throw new Error(`Fee account is unavailable: ${fee.accountId}`);
@@ -1033,6 +1114,7 @@ export const createNewTransactionMgmtToDB = async (
           `
             INSERT INTO transactions (
               id,
+              book_id,
               transaction_type,
               category_id,
               account_id,
@@ -1046,10 +1128,11 @@ export const createNewTransactionMgmtToDB = async (
               converted_amount,
               descriptions,
               transaction_date
-            ) VALUES (?, 'expense', ?, ?, NULL, NULL, ?, 'fee', ?, ?, ?, ?, 'Transaction fee', ?);
+            ) VALUES (?, ?, 'expense', ?, ?, NULL, NULL, ?, 'fee', ?, ?, ?, ?, 'Transaction fee', ?);
           `,
           [
             feeId,
+            bookId,
             fee.categoryId,
             fee.accountId,
             operationId,
@@ -1065,11 +1148,12 @@ export const createNewTransactionMgmtToDB = async (
       for (const attachment of data.attachments) {
         await db.runAsync(
           `INSERT INTO transaction_attachments (
-             id, transaction_id, file_path, file_name, mime_type,
+             id, book_id, transaction_id, file_path, file_name, mime_type,
              file_size, width, height
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           [
             attachment.id,
+            bookId,
             id,
             attachment.filePath,
             attachment.fileName,
@@ -1109,6 +1193,7 @@ export const updateTransactionMgmtToDB = async (
 ) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const isTransfer = data.transactionType === "transfer";
     const newBalanceAdjustments = [
       ...getBalanceAdjustments(getBalanceTransaction(data)),
@@ -1125,6 +1210,12 @@ export const updateTransactionMgmtToDB = async (
         (row) => row.transaction_role === "main",
       );
       if (!currentMain) throw new Error(`Transaction not found: ${data.id}`);
+
+      await assertCategoryBelongsToBook(
+        db,
+        isTransfer ? null : data.categoryId,
+        bookId,
+      );
 
       reversedBalanceAdjustments = currentRows.flatMap((row) =>
         getBalanceAdjustments(getStoredBalanceTransaction(row), -1),
@@ -1161,6 +1252,7 @@ export const updateTransactionMgmtToDB = async (
             sync_status = ?,
             updated_at = datetime('now')
           WHERE id = ?
+            AND book_id = ?
             AND deleted_at IS NULL;
         `,
         [
@@ -1183,6 +1275,7 @@ export const updateTransactionMgmtToDB = async (
           data.transactionDate,
           DB_SYNC_STATUS.PENDING,
           currentMain.id,
+          bookId,
         ],
       );
       if (result.changes !== 1) {
@@ -1197,12 +1290,14 @@ export const updateTransactionMgmtToDB = async (
            sync_status = ?,
            updated_at = datetime('now')
          WHERE operation_id = ?
+           AND book_id = ?
            AND transaction_role = 'fee'
            AND deleted_at IS NULL;`,
-        [DB_SYNC_STATUS.PENDING, currentMain.operation_id],
+        [DB_SYNC_STATUS.PENDING, currentMain.operation_id, bookId],
       );
 
       for (const fee of data.fees) {
+        await assertCategoryBelongsToBook(db, fee.categoryId, bookId);
         const feeId = randomUUID();
         const feeAccount = await db.getFirstAsync<{
           currency_code: string;
@@ -1210,8 +1305,8 @@ export const updateTransactionMgmtToDB = async (
         }>(
           `SELECT currency_code, is_active
            FROM accounts
-           WHERE id = ? AND deleted_at IS NULL;`,
-          [fee.accountId],
+           WHERE id = ? AND book_id = ? AND deleted_at IS NULL;`,
+          [fee.accountId, bookId],
         );
         if (
           !feeAccount ||
@@ -1221,16 +1316,17 @@ export const updateTransactionMgmtToDB = async (
         }
         await db.runAsync(
           `INSERT INTO transactions (
-             id, transaction_type, category_id, account_id,
+             id, book_id, transaction_type, category_id, account_id,
              from_account_id, to_account_id, operation_id, transaction_role,
              amount, currency_code, account_currency_code, converted_amount,
              descriptions, transaction_date
            ) VALUES (
-             ?, 'expense', ?, ?, NULL, NULL, ?, 'fee',
+             ?, ?, 'expense', ?, ?, NULL, NULL, ?, 'fee',
              ?, ?, ?, ?, 'Transaction fee', ?
            );`,
           [
             feeId,
+            bookId,
             fee.categoryId,
             fee.accountId,
             currentMain.operation_id,
@@ -1247,19 +1343,21 @@ export const updateTransactionMgmtToDB = async (
         const placeholders = data.removedAttachmentIds.map(() => "?").join(",");
         await db.runAsync(
           `DELETE FROM transaction_attachments
-           WHERE transaction_id = ? AND id IN (${placeholders});`,
-          [currentMain.id, ...data.removedAttachmentIds],
+           WHERE transaction_id = ? AND book_id = ?
+             AND id IN (${placeholders});`,
+          [currentMain.id, bookId, ...data.removedAttachmentIds],
         );
       }
 
       for (const attachment of data.attachments) {
         await db.runAsync(
           `INSERT INTO transaction_attachments (
-             id, transaction_id, file_path, file_name, mime_type,
+             id, book_id, transaction_id, file_path, file_name, mime_type,
              file_size, width, height
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           [
             attachment.id,
+            bookId,
             currentMain.id,
             attachment.filePath,
             attachment.fileName,
@@ -1294,6 +1392,7 @@ export const updateTransactionMgmtToDB = async (
 export const deleteTransactionMgmtFromDB = async (id: string) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     let reversedBalanceAdjustments: BalanceAdjustment[] = [];
 
     await db.withTransactionAsync(async () => {
@@ -1310,8 +1409,8 @@ export const deleteTransactionMgmtFromDB = async (id: string) => {
       );
       if (!mainTransaction) throw new Error(`Transaction not found: ${id}`);
       await db.runAsync(
-        "DELETE FROM transaction_attachments WHERE transaction_id = ?;",
-        [mainTransaction.id],
+        "DELETE FROM transaction_attachments WHERE transaction_id = ? AND book_id = ?;",
+        [mainTransaction.id, bookId],
       );
 
       const result = await db.runAsync(
@@ -1323,9 +1422,10 @@ export const deleteTransactionMgmtFromDB = async (id: string) => {
             sync_status = ?,
             updated_at = datetime('now')
           WHERE operation_id = ?
+            AND book_id = ?
             AND deleted_at IS NULL;
         `,
-        [DB_SYNC_STATUS.PENDING, currentRows[0].operation_id],
+        [DB_SYNC_STATUS.PENDING, currentRows[0].operation_id, bookId],
       );
       if (result.changes !== currentRows.length)
         throw new Error(`Unable to delete complete operation: ${id}`);

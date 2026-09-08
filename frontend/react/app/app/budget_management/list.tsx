@@ -12,6 +12,8 @@ import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurre
 import { useTranslation } from "../../i18n/helper";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { useThemeStore } from "../../stores/useThemeStore";
+import { useBookStore } from "../../stores/useBookStore";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 import {
   formatPrivateCurrencyAmount,
   formatPrivateLocalizedAmount,
@@ -25,6 +27,9 @@ export default function BudgetPlanList() {
     (state) => state.areAmountsVisible,
   );
   const isSingleCurrency = useSingleCurrencyMode();
+  const isWritable = useBookStore((state) =>
+    Boolean(state.activeBook?.is_active),
+  );
 
   if (logic.isLoading) {
     return (
@@ -36,6 +41,7 @@ export default function BudgetPlanList() {
 
   return (
     <AppView className="relative bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <InactiveBookBanner />
       <AppDialog
         title="Currency disabled"
         description="Enable {{currency}} in Currency Management before editing or reactivating this budget."
@@ -169,7 +175,8 @@ export default function BudgetPlanList() {
 
       <AppFloatingButton
         icon="plus"
-        disabled={!logic.canCreate}
+        disabled={!logic.canCreate || !isWritable}
+        visible={isWritable}
         accessibilityLabel={t("Create budget")}
         onPress={() => router.push(BUDGET_MANAGEMENT_CREATE_URL)}
       />

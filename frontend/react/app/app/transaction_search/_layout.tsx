@@ -5,7 +5,7 @@ import { useTranslation } from "../../i18n/helper";
 export default function StackLayout() {
   const { t } = useTranslation();
   return (
-    <AppStack>
+    <AppStack bookScoped>
       <Stack.Screen name="list" options={{ title: t("Search Transactions") }} />
     </AppStack>
   );

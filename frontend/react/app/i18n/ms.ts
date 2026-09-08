@@ -727,4 +727,37 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Enter a valid amount.": "Masukkan amaun yang sah.",
   "Minimum amount must not exceed maximum amount.":
     "Amaun minimum tidak boleh melebihi amaun maksimum.",
+  Book: "Buku",
+  "Book Management": "Pengurusan Buku",
+  "Manage separate financial books": "Urus buku kewangan yang berasingan",
+  "Switch Book": "Tukar Buku",
+  "Current Book": "Buku Semasa",
+  "All Books": "Semua Buku",
+  "Show inactive books": "Tunjukkan buku tidak aktif",
+  "Add Book": "Tambah Buku",
+  "Manage Books": "Urus Buku",
+  "New Book": "Buku Baharu",
+  "Book Detail": "Butiran Buku",
+  Active: "Aktif",
+  Inactive: "Tidak Aktif",
+  "Inactive · Read-only": "Tidak aktif · Baca sahaja",
+  "System Book": "Buku Sistem",
+  "This book is inactive. Records are read-only.":
+    "Buku ini tidak aktif. Rekod adalah baca sahaja.",
+  "The system-default book must remain active.":
+    "Buku lalai sistem mesti kekal aktif.",
+  "Inactive books are read-only.": "Buku tidak aktif adalah baca sahaja.",
+  "Use this Book": "Gunakan Buku ini",
+  "Book created successfully": "Buku berjaya dicipta",
+  "Book updated successfully": "Buku berjaya dikemas kini",
+  "Unable to create Book.": "Buku tidak dapat dicipta.",
+  "Unable to update Book.": "Buku tidak dapat dikemas kini.",
+  "Book not found.": "Buku tidak ditemui.",
+  "Book label is required": "Label buku diperlukan",
+  "Book label is required.": "Label buku diperlukan.",
+  "A book with this name already exists.": "Buku dengan nama ini sudah wujud.",
+  "This book is inactive and cannot be modified.":
+    "Buku ini tidak aktif dan tidak boleh diubah suai.",
+  "The system-default book cannot be made inactive.":
+    "Buku lalai sistem tidak boleh dinyahaktifkan.",
 };

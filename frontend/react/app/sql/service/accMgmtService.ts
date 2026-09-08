@@ -25,6 +25,8 @@ import {
 import { getCurrencyPreferences } from "./currencyManagementService";
 import { cancelCreditCardAccountNotifications } from "./creditCardService";
 import { assertAttachmentLimit } from "./transactionAttachmentService";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
+import { assertBookWritable } from "./bookService";
 
 const isEnabledCurrency = async (currencyCode: string) => {
   if (!CURRENCY_CODES.has(currencyCode)) return false;
@@ -71,6 +73,8 @@ export const getSelectableAccMgmtList = async (
 export const createNewAccMgmt = async (
   data: AccMgmtCreateReqType,
 ): Promise<string | void> => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   if (!(await isEnabledCurrency(data.currencyCode)))
     return "Selected currency is not enabled.";
 
@@ -111,6 +115,8 @@ export const getAccMgmtById = async (
 };
 
 export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   if (!CURRENCY_CODES.has(data.currencyCode)) return "Please select a currency";
 
   if (
@@ -198,6 +204,8 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
 };
 
 export const deleteAccMgmt = async (id: string) => {
+  const bookError = await assertBookWritable(getRequiredActiveBookId());
+  if (bookError) return bookError;
   await cancelCreditCardAccountNotifications(id);
   await deleteAccMgmtFromDB(id);
 };

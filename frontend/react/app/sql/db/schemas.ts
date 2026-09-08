@@ -16,6 +16,58 @@ import {
   NICKNAME_MAX_LEN as ACCOUNT_SETTINGS_NICKNAME_MAX_LEN,
 } from "../../forms/schemas/account_settings.schema";
 import { DEFAULT_CURRENCY_CODE } from "../../constants/currencies";
+import {
+  DESCRIPTION_MAX_LEN as BOOK_DESCRIPTION_MAX_LEN,
+  LABEL_MAX_LEN as BOOK_LABEL_MAX_LEN,
+} from "../../forms/schemas/book_management.schema";
+
+export const createBooksTable = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS books (
+      id TEXT PRIMARY KEY,
+      label VARCHAR(${BOOK_LABEL_MAX_LEN}) NOT NULL,
+      normalized_label VARCHAR(${BOOK_LABEL_MAX_LEN}) NOT NULL,
+      description VARCHAR(${BOOK_DESCRIPTION_MAX_LEN}),
+      icon VARCHAR(100) NOT NULL DEFAULT 'UserRound',
+      is_active BOOLEAN NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+      is_system_default BOOLEAN NOT NULL DEFAULT 0
+        CHECK (is_system_default IN (0, 1)),
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      CHECK (is_system_default = 0 OR is_active = 1)
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_books_normalized_label
+      ON books(normalized_label);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_books_system_default
+      ON books(is_system_default)
+      WHERE is_system_default = 1;
+    CREATE INDEX IF NOT EXISTS idx_books_active_sort_order
+      ON books(is_active, sort_order);
+
+    CREATE TRIGGER IF NOT EXISTS trg_books_protect_system_default
+    BEFORE UPDATE OF is_active ON books
+    WHEN OLD.is_system_default = 1 AND NEW.is_active = 0
+    BEGIN
+      SELECT RAISE(ABORT, 'The system-default book cannot be made inactive.');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_books_prevent_system_default_delete
+    BEFORE DELETE ON books
+    WHEN OLD.is_system_default = 1
+    BEGIN
+      SELECT RAISE(ABORT, 'The system-default book cannot be deleted.');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_books_protect_system_default_flag
+    BEFORE UPDATE OF is_system_default ON books
+    WHEN NEW.is_system_default <> OLD.is_system_default
+    BEGIN
+      SELECT RAISE(ABORT, 'The system-default book flag is immutable.');
+    END;
+  `);
+};
 
 export const createAccountSettingsTable = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`
@@ -48,6 +100,27 @@ export const createCurrencyPreferencesTable = async (
 
     INSERT OR IGNORE INTO currency_preferences (code, is_default)
     VALUES ('${DEFAULT_CURRENCY_CODE}', 1);
+  `);
+};
+
+export const createBookCurrencyPreferencesTable = async (
+  db: SQLite.SQLiteDatabase,
+) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS currency_preferences (
+      book_id TEXT NOT NULL REFERENCES books(id),
+      code CHAR(3) NOT NULL COLLATE NOCASE,
+      is_default BOOLEAN NOT NULL DEFAULT 0 CHECK (is_default IN (0, 1)),
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (book_id, code)
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_currency_preferences_book_default
+      ON currency_preferences(book_id)
+      WHERE is_default = 1;
+    CREATE INDEX IF NOT EXISTS idx_currency_preferences_code
+      ON currency_preferences(code);
   `);
 };
 

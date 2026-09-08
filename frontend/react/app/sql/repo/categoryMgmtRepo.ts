@@ -14,6 +14,7 @@ import {
   CategoryMgmtUpdateReqType,
 } from "../types/categoryMgmtType";
 import { SQLQueryOptions } from "../types/common";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
 
 type CategoryListQueryOptions = SQLQueryOptions & {
   typeId: number;
@@ -34,16 +35,18 @@ export const getCategoryMgmtListFromDB = async ({
   try {
     const offset = (curPage - 1) * pageSize;
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<CategoryMgmtRspType>(
       `
         SELECT *
         FROM categories
         WHERE type_id = ?
+          AND book_id = ?
           AND deleted_at IS NULL
         ${buildOrderBy(orderBy)}
         LIMIT ? OFFSET ?;
       `,
-      [typeId, pageSize, offset],
+      [typeId, bookId, pageSize, offset],
     );
     debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Loaded category page", {
       typeId,
@@ -77,6 +80,7 @@ export const getCategoryPeriodSummaryListFromDB = async (
   try {
     const offset = (curPage - 1) * pageSize;
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const currencyFilter = currencyCode
       ? "AND transactions.account_currency_code = ?"
       : "";
@@ -94,11 +98,13 @@ export const getCategoryPeriodSummaryListFromDB = async (
         FROM categories
         INNER JOIN transactions
           ON transactions.category_id = categories.id
+          AND transactions.book_id = categories.book_id
           AND transactions.transaction_date >= ?
           AND transactions.transaction_date <= ?
           AND transactions.deleted_at IS NULL
           ${currencyFilter}
         WHERE categories.type_id = ?
+          AND categories.book_id = ?
           AND categories.deleted_at IS NULL
         GROUP BY categories.id
         ${buildOrderBy(orderBy)}
@@ -109,6 +115,7 @@ export const getCategoryPeriodSummaryListFromDB = async (
         endDate,
         ...(currencyCode ? [currencyCode] : []),
         typeId,
+        bookId,
         pageSize,
         offset,
       ],
@@ -122,12 +129,14 @@ export const getCategoryPeriodSummaryListFromDB = async (
              ROUND(SUM(converted_amount), 3) AS total_amount
            FROM transactions
            WHERE deleted_at IS NULL
+             AND book_id = ?
              AND transaction_date >= ?
              AND transaction_date <= ?
              AND category_id IN (${categoryIds.map(() => "?").join(", ")})
              ${currencyCode ? "AND account_currency_code = ?" : ""}
            GROUP BY category_id, account_currency_code;`,
           [
+            bookId,
             startDate,
             endDate,
             ...categoryIds,
@@ -180,15 +189,17 @@ export const getCategoryMgmtByTypeAndLabelFromDB = async (
 ): Promise<CategoryMgmtRspType | null> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<CategoryMgmtRspType>(
       `
         SELECT *
         FROM categories
         WHERE type_id = ?
+          AND book_id = ?
           AND label = ? COLLATE NOCASE
           AND deleted_at IS NULL;
       `,
-      [typeId, label],
+      [typeId, bookId, label],
     );
     debugLog(
       DEBUG_TAG.CATEGORY_MANAGEMENT_DB,
@@ -212,9 +223,10 @@ export const getCategoryMgmtByIdFromDB = async (
 ): Promise<CategoryMgmtRspType | null> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<CategoryMgmtRspType>(
-      `SELECT * FROM categories WHERE id = ? AND deleted_at IS NULL;`,
-      [id],
+      `SELECT * FROM categories WHERE id = ? AND book_id = ? AND deleted_at IS NULL;`,
+      [id, bookId],
     );
     debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Loaded category by id", {
       id,
@@ -237,11 +249,13 @@ export const createNewCategoryMgmtToDB = async (
 ) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const id = randomUUID();
     await db.runAsync(
       `
         INSERT INTO categories (
           id,
+          book_id,
           type_id,
           label,
           icon,
@@ -254,21 +268,25 @@ export const createNewCategoryMgmtToDB = async (
           ?,
           ?,
           ?,
+          ?,
           (
             SELECT COALESCE(MAX(sort_order), -1) + 1
             FROM categories
             WHERE type_id = ?
+              AND book_id = ?
               AND deleted_at IS NULL
           )
         );
       `,
       [
         id,
+        bookId,
         data.typeId,
         data.label,
         data.icon,
         data.descriptions || null,
         data.typeId,
+        bookId,
       ],
     );
     debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Created category", {
@@ -292,6 +310,7 @@ export const reorderCategoryMgmtInDB = async (
 ) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     await db.withTransactionAsync(async () => {
       for (const [sortOrder, id] of orderedCategoryIds.entries()) {
         await db.runAsync(
@@ -302,10 +321,11 @@ export const reorderCategoryMgmtInDB = async (
               sync_status = ?,
               updated_at = datetime('now')
             WHERE id = ?
+              AND book_id = ?
               AND type_id = ?
               AND deleted_at IS NULL;
           `,
-          [sortOrder, DB_SYNC_STATUS.PENDING, id, typeId],
+          [sortOrder, DB_SYNC_STATUS.PENDING, id, bookId, typeId],
         );
       }
     });
@@ -328,6 +348,7 @@ export const updateCategoryMgmtToDB = async (
 ) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     await db.runAsync(
       `
         UPDATE categories
@@ -341,6 +362,7 @@ export const updateCategoryMgmtToDB = async (
               SELECT COALESCE(MAX(sort_order), -1) + 1
               FROM categories
               WHERE type_id = ?
+                AND book_id = ?
                 AND deleted_at IS NULL
             )
             ELSE sort_order
@@ -352,6 +374,7 @@ export const updateCategoryMgmtToDB = async (
           sync_status = ?,
           updated_at = datetime('now')
         WHERE id = ?
+          AND book_id = ?
           AND deleted_at IS NULL
           AND is_system = 0;
       `,
@@ -359,12 +382,14 @@ export const updateCategoryMgmtToDB = async (
         data.isLabelCustomized ? 1 : 0,
         data.typeId,
         data.typeId,
+        bookId,
         data.typeId,
         data.label,
         data.icon,
         data.descriptions || null,
         DB_SYNC_STATUS.PENDING,
         data.id,
+        bookId,
       ],
     );
     debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Updated category", {
@@ -385,6 +410,7 @@ export const updateCategoryMgmtToDB = async (
 export const deleteCategoryMgmtFromDB = async (id: string) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     await db.runAsync(
       `
         UPDATE categories
@@ -394,10 +420,11 @@ export const deleteCategoryMgmtFromDB = async (id: string) => {
           is_active = 0,
           updated_at = datetime('now')
         WHERE id = ?
+          AND book_id = ?
           AND deleted_at IS NULL
           AND is_system = 0;
       `,
-      [DB_SYNC_STATUS.PENDING, id],
+      [DB_SYNC_STATUS.PENDING, id, bookId],
     );
     debugLog(DEBUG_TAG.CATEGORY_MANAGEMENT_DB, "Deleted category", { id });
   } catch (e) {

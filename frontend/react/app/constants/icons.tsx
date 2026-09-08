@@ -1,6 +1,6 @@
 import type { AppIconProps } from "../components/AppIcon";
 
-const ICON_KEYS = ["ACCOUNT_TYPE", "CATEGORY_ICONS"] as const;
+const ICON_KEYS = ["ACCOUNT_TYPE", "CATEGORY_ICONS", "BOOK"] as const;
 type AppIconName = AppIconProps["name"];
 
 type CategoryIconGroup = {
@@ -326,4 +326,21 @@ export const ICONS: Record<(typeof ICON_KEYS)[number], AppIconProps["name"][]> =
       "PiggyBank",
     ],
     CATEGORY_ICONS,
+    BOOK: [
+      "UserRound",
+      "CircleUserRound",
+      "User",
+      "ContactRound",
+      "UserStar",
+      "UsersRound",
+      "Users",
+      "HeartHandshake",
+      "Heart",
+      "Baby",
+      "PersonStanding",
+      "HouseHeart",
+      "House",
+      "Smile",
+      "Star",
+    ],
   };

@@ -31,13 +31,17 @@ import {
 import { AppStack } from "../components/AppStack";
 import { queryClient } from "../config/queryClient";
 import { DARK, LIGHT } from "../constants/colors";
+import { DEFAULT_CURRENCY_CODE } from "../constants/currencies";
 import { initDB } from "../sql/db/database";
 import { reconcileAllCreditCards } from "../sql/service/creditCardService";
+import { getCurrencyPreferences } from "../sql/service/currencyManagementService";
 import { useToastStore } from "../stores/useToastStore";
 import { useLanguageStore } from "../stores/useLanguageStore";
 import { useReportingCurrencyStore } from "../stores/useReportingCurrencyStore";
 import { DEBUG_TAG, debugLog } from "../utils/debugLog";
 import { useTranslation } from "../i18n/helper";
+import { useBookStore } from "../stores/useBookStore";
+import HeaderWithBookLabel from "./(home)/_components/HeaderWithBookLabel";
 
 export default function StackLayout() {
   const { setShowToast, setHideToast } = useToastStore();
@@ -56,6 +60,9 @@ export default function StackLayout() {
   const isReportingCurrencyHydrated = useReportingCurrencyStore(
     (state) => state.isHydrated,
   );
+  const hydrateBook = useBookStore((state) => state.hydrate);
+  const isBookHydrated = useBookStore((state) => state.isHydrated);
+  const activeBookId = useBookStore((state) => state.activeBookId);
   const { t } = useTranslation();
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
@@ -132,8 +139,40 @@ export default function StackLayout() {
   }, [hydrateLanguage]);
 
   useEffect(() => {
-    void hydrateReportingCurrency();
-  }, [hydrateReportingCurrency]);
+    if (isDatabaseReady) void hydrateBook();
+  }, [hydrateBook, isDatabaseReady]);
+
+  useEffect(() => {
+    if (!isDatabaseReady || !isBookHydrated || !activeBookId) return;
+
+    let isCurrentBook = true;
+    const hydrateBookCurrency = async () => {
+      try {
+        const preferences = await getCurrencyPreferences();
+        if (!isCurrentBook) return;
+        await hydrateReportingCurrency(
+          activeBookId,
+          preferences?.defaultCurrencyCode ?? DEFAULT_CURRENCY_CODE,
+          preferences?.enabledCurrencyCodes ?? [DEFAULT_CURRENCY_CODE],
+        );
+      } catch (error) {
+        if (!isCurrentBook) return;
+        console.error(
+          DEBUG_TAG.CURRENCY_MANAGEMENT,
+          "Unable to hydrate reporting currency",
+          error,
+        );
+        await hydrateReportingCurrency(activeBookId, DEFAULT_CURRENCY_CODE, [
+          DEFAULT_CURRENCY_CODE,
+        ]);
+      }
+    };
+    void hydrateBookCurrency();
+
+    return () => {
+      isCurrentBook = false;
+    };
+  }, [activeBookId, hydrateReportingCurrency, isBookHydrated, isDatabaseReady]);
 
   useEffect(() => {
     if (
@@ -141,6 +180,7 @@ export default function StackLayout() {
       !isDatabaseReady ||
       !isLanguageHydrated ||
       !isReportingCurrencyHydrated ||
+      !isBookHydrated ||
       isAppReady
     )
       return;
@@ -152,6 +192,7 @@ export default function StackLayout() {
     isDatabaseReady,
     isLanguageHydrated,
     isReportingCurrencyHydrated,
+    isBookHydrated,
     loaded,
   ]);
 
@@ -170,7 +211,14 @@ export default function StackLayout() {
             <Stack.Screen name="(home)" options={{ headerShown: false }} />
             <Stack.Screen
               name="category_detail/[id]"
-              options={{ title: t("Category Detail") }}
+              options={{
+                headerTitle: () => (
+                  <HeaderWithBookLabel
+                    title={"Category Detail"}
+                    textStyle={{ fontSize: 20 }}
+                  />
+                ),
+              }}
             />
             <Stack.Screen
               name="account_type"
@@ -204,6 +252,10 @@ export default function StackLayout() {
             <Stack.Screen name="feedback" options={{ headerShown: false }} />
             <Stack.Screen
               name="transaction_search"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="book_management"
               options={{ headerShown: false }}
             />
           </AppStack>

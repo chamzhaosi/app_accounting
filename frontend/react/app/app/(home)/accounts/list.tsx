@@ -20,8 +20,11 @@ import { useReportingCurrencyStore } from "../../../stores/useReportingCurrencyS
 import { formatPrivateCurrencyAmount } from "../../../utils/number";
 import { useTranslation } from "../../../i18n/helper";
 import AccountsBalanceSummary from "./_components/AccountsBalanceSummary";
+import InactiveBookBanner from "../../../components/InactiveBookBanner";
+import { useBookStore } from "../../../stores/useBookStore";
 
 export default function AccountsList() {
+  useBookStore((state) => state.activeBookId);
   const currencySelection = useReportingCurrencyStore(
     (state) => state.currencySelection,
   );
@@ -48,6 +51,7 @@ export default function AccountsList() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <InactiveBookBanner />
       <AppCurrencyTotalsSheet
         title={logic.selectedTotals ? t(logic.selectedTotals.title) : ""}
         subtitle={t("Balance by currency")}

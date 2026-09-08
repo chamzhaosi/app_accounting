@@ -98,25 +98,6 @@ export default function AccountBalanceSummary({
                 onChange={onDateRangeChange}
               />
             </View>
-            <View
-              style={[
-                styles.searchAction,
-                { borderLeftColor: THEME.surfaceDim },
-              ]}
-            >
-              <AppIconButton
-                iconName="Search"
-                iconSize={22}
-                accessibilityRole="button"
-                accessibilityLabel={t("Global Search")}
-                onPress={() => router.push(TRANSACTION_SEARCH_URL)}
-                hitSlop={8}
-                style={{
-                  ...styles.searchButton,
-                  backgroundColor: THEME.surfaceContainerHigh,
-                }}
-              />
-            </View>
           </View>
         </View>
 
@@ -340,12 +321,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     paddingLeft: 6,
     paddingRight: 4,
-  },
-  searchButton: {
-    alignItems: "center",
-    height: 25,
-    justifyContent: "center",
-    width: 25,
   },
   currencyNavigator: {
     alignItems: "center",

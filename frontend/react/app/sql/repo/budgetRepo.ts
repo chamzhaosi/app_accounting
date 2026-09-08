@@ -12,6 +12,7 @@ import type {
   BudgetRspType,
   BudgetSaveReqType,
 } from "../types/budgetType";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
 
 const mapBudget = (budget: BudgetRspType | null) =>
   budget ? { ...budget, is_active: Boolean(budget.is_active) } : null;
@@ -23,6 +24,7 @@ export const getBudgetDailyRemainingFromDB = async (
 ): Promise<BudgetDailyRemainingType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<BudgetDailyRemainingType>(
       `WITH RECURSIVE dates(transaction_date) AS (
          SELECT date(?)
@@ -34,6 +36,7 @@ export const getBudgetDailyRemainingFromDB = async (
          SELECT id
          FROM budget_plans
          WHERE currency_code = ?
+           AND book_id = ?
            AND deleted_at IS NULL
          LIMIT 1
        ), dated_budgets AS (
@@ -62,6 +65,7 @@ export const getBudgetDailyRemainingFromDB = async (
              FROM transactions t
              JOIN accounts a ON a.id = t.account_id
              WHERE t.transaction_type = 'expense'
+               AND t.book_id = ?
                AND t.deleted_at IS NULL
                AND t.account_currency_code = ?
                AND t.transaction_date >= date(dated_budgets.transaction_date, 'start of month')
@@ -71,7 +75,7 @@ export const getBudgetDailyRemainingFromDB = async (
        FROM dated_budgets
        LEFT JOIN budgets b ON b.id = dated_budgets.budget_id
        ORDER BY dated_budgets.transaction_date ASC;`,
-      [startDate, endDate, currencyCode, currencyCode],
+      [startDate, endDate, currencyCode, bookId, bookId, currencyCode],
     );
     debugLog(DEBUG_TAG.BUDGET_DB, "Loaded daily remaining budget", {
       startDate,
@@ -96,18 +100,21 @@ export const getBudgetByPlanAndMonthFromDB = async (
 ) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const budget = await db.getFirstAsync<BudgetRspType>(
-      `SELECT b.id, b.plan_id, bp.currency_code, b.month,
+      `SELECT b.id, b.book_id, b.plan_id, bp.currency_code, b.month,
               b.total_budget, b.is_active
        FROM budget_plans bp
        JOIN budgets b ON b.plan_id = bp.id
        WHERE bp.id = ?
+         AND bp.book_id = ?
+         AND b.book_id = bp.book_id
          AND bp.deleted_at IS NULL
          AND b.month <= ?
          AND b.deleted_at IS NULL
        ORDER BY b.month DESC
        LIMIT 1;`,
-      [planId, month],
+      [planId, bookId, month],
     );
     return mapBudget(budget);
   } catch (error) {
@@ -122,18 +129,21 @@ export const getBudgetByCurrencyAndMonthFromDB = async (
 ) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const budget = await db.getFirstAsync<BudgetRspType>(
-      `SELECT b.id, b.plan_id, bp.currency_code, b.month,
+      `SELECT b.id, b.book_id, b.plan_id, bp.currency_code, b.month,
               b.total_budget, b.is_active
        FROM budget_plans bp
        JOIN budgets b ON b.plan_id = bp.id
        WHERE bp.currency_code = ?
+         AND bp.book_id = ?
+         AND b.book_id = bp.book_id
          AND bp.deleted_at IS NULL
          AND b.month <= ?
          AND b.deleted_at IS NULL
        ORDER BY b.month DESC
        LIMIT 1;`,
-      [currencyCode, month],
+      [currencyCode, bookId, month],
     );
     return mapBudget(budget);
   } catch (error) {
@@ -151,6 +161,7 @@ export const getBudgetPlanListFromDB = async (
 ): Promise<BudgetPlanListItemType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const rows = await db.getAllAsync<BudgetPlanListItemType>(
       `SELECT
          bp.id AS plan_id,
@@ -175,10 +186,13 @@ export const getBudgetPlanListFromDB = async (
          ORDER BY latest.month DESC
          LIMIT 1
        )
-       LEFT JOIN currency_preferences cp ON cp.code = bp.currency_code
+       LEFT JOIN currency_preferences cp
+         ON cp.code = bp.currency_code AND cp.book_id = bp.book_id
        WHERE bp.deleted_at IS NULL
+         AND bp.book_id = ?
+         AND b.book_id = bp.book_id
        ORDER BY is_currency_enabled DESC, b.is_active DESC, bp.currency_code ASC;`,
-      [month],
+      [month, bookId],
     );
     return rows.map((row) => ({
       ...row,
@@ -198,9 +212,11 @@ export const getBudgetPlanListFromDB = async (
 export const getBudgetPlanCurrencyCodesFromDB = async () => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const rows = await db.getAllAsync<{ currency_code: string }>(
       `SELECT currency_code FROM budget_plans
-       WHERE deleted_at IS NULL ORDER BY currency_code ASC;`,
+       WHERE deleted_at IS NULL AND book_id = ? ORDER BY currency_code ASC;`,
+      [bookId],
     );
     return rows.map(({ currency_code }) => currency_code);
   } catch (error) {
@@ -220,12 +236,14 @@ export const getBudgetCategoryProgressFromDB = async (
 ): Promise<BudgetCategoryProgressType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getAllAsync<BudgetCategoryProgressType>(
       `WITH category_spending AS (
          SELECT t.category_id, ROUND(SUM(t.converted_amount), 3) AS spent_amount
          FROM transactions t
          JOIN accounts a ON a.id = t.account_id
          WHERE t.transaction_type = 'expense'
+           AND t.book_id = ?
            AND t.deleted_at IS NULL
            AND t.account_currency_code = ?
            AND t.transaction_date >= ?
@@ -243,14 +261,16 @@ export const getBudgetCategoryProgressFromDB = async (
        FROM categories c
        LEFT JOIN budget_categories bc
          ON bc.category_id = c.id
+        AND bc.book_id = c.book_id
         AND bc.budget_id = ?
         AND bc.deleted_at IS NULL
        LEFT JOIN category_spending
          ON category_spending.category_id = c.id
        WHERE c.type_id = 2
+         AND c.book_id = ?
          AND (bc.id IS NOT NULL OR category_spending.spent_amount > 0)
        ORDER BY spent_amount DESC, c.label ASC;`,
-      [currencyCode, month, month, budgetId],
+      [bookId, currencyCode, month, month, budgetId, bookId],
     );
     debugLog(DEBUG_TAG.BUDGET_DB, "Loaded budget category progress", {
       budgetId,
@@ -273,19 +293,22 @@ export const getBudgetManageCategoriesFromDB = async (
 ): Promise<BudgetManageCategoryType[]> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     return await db.getAllAsync<BudgetManageCategoryType>(
       `SELECT c.id AS category_id, c.label, c.translation_key, c.icon,
               bc.id AS allocation_id, COALESCE(bc.amount, 0) AS amount
        FROM categories c
        LEFT JOIN budget_categories bc
          ON bc.category_id = c.id
+        AND bc.book_id = c.book_id
         AND bc.budget_id = ?
         AND bc.deleted_at IS NULL
        WHERE c.type_id = 2
+         AND c.book_id = ?
          AND c.is_active = 1
          AND c.deleted_at IS NULL
        ORDER BY c.label ASC;`,
-      [budgetId ?? null],
+      [budgetId ?? null, bookId],
     );
   } catch (error) {
     console.error(
@@ -303,16 +326,18 @@ export const getMonthExpenseTotalFromDB = async (
 ): Promise<number> => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const result = await db.getFirstAsync<{ total: number }>(
       `SELECT ROUND(COALESCE(SUM(t.converted_amount), 0), 3) AS total
        FROM transactions t
        JOIN accounts a ON a.id = t.account_id
        WHERE t.transaction_type = 'expense'
+         AND t.book_id = ?
          AND t.deleted_at IS NULL
          AND t.account_currency_code = ?
          AND t.transaction_date >= ?
          AND t.transaction_date < date(?, '+1 month');`,
-      [currencyCode, month, month],
+      [bookId, currencyCode, month, month],
     );
     return result?.total ?? 0;
   } catch (error) {
@@ -330,14 +355,15 @@ const saveAllocations = async (
   budgetId: string,
   currencyCode: string,
   allocations: BudgetSaveReqType["allocations"],
+  bookId: string,
 ) => {
   const existingAllocations = await db.getAllAsync<{
     id: string;
     category_id: string;
   }>(
     `SELECT id, category_id FROM budget_categories
-     WHERE budget_id = ? AND deleted_at IS NULL;`,
-    [budgetId],
+     WHERE budget_id = ? AND book_id = ? AND deleted_at IS NULL;`,
+    [budgetId, bookId],
   );
   const existingByCategory = new Map(
     existingAllocations.map((item) => [item.category_id, item.id]),
@@ -353,14 +379,14 @@ const saveAllocations = async (
       await db.runAsync(
         `UPDATE budget_categories
          SET amount = ?, deleted_at = NULL, sync_status = ?, updated_at = datetime('now')
-         WHERE id = ?;`,
-        [amount, DB_SYNC_STATUS.PENDING, allocationId],
+         WHERE id = ? AND book_id = ?;`,
+        [amount, DB_SYNC_STATUS.PENDING, allocationId, bookId],
       );
     } else {
       await db.runAsync(
-        `INSERT INTO budget_categories (id, budget_id, category_id, amount)
-         VALUES (?, ?, ?, ?);`,
-        [randomUUID(), budgetId, allocation.categoryId, amount],
+        `INSERT INTO budget_categories (id, book_id, budget_id, category_id, amount)
+         VALUES (?, ?, ?, ?, ?);`,
+        [randomUUID(), bookId, budgetId, allocation.categoryId, amount],
       );
     }
   }
@@ -370,8 +396,8 @@ const saveAllocations = async (
     await db.runAsync(
       `UPDATE budget_categories
        SET deleted_at = datetime('now'), sync_status = ?, updated_at = datetime('now')
-       WHERE id = ?;`,
-      [DB_SYNC_STATUS.PENDING, allocation.id],
+       WHERE id = ? AND book_id = ?;`,
+      [DB_SYNC_STATUS.PENDING, allocation.id, bookId],
     );
   }
 };
@@ -379,6 +405,7 @@ const saveAllocations = async (
 export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
   try {
     const db = await getDB();
+    const bookId = getRequiredActiveBookId();
     const totalBudget = toCurrencyAmountNumber(
       data.totalBudget,
       data.currencyCode,
@@ -389,15 +416,15 @@ export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
       if (!planId) {
         planId = randomUUID();
         await db.runAsync(
-          `INSERT INTO budget_plans (id, currency_code) VALUES (?, ?);`,
-          [planId, data.currencyCode],
+          `INSERT INTO budget_plans (id, book_id, currency_code) VALUES (?, ?, ?);`,
+          [planId, bookId, data.currencyCode],
         );
       }
 
       const existingRevision = await db.getFirstAsync<{ id: string }>(
         `SELECT id FROM budgets
-         WHERE plan_id = ? AND month = ? AND deleted_at IS NULL;`,
-        [planId, data.effectiveMonth],
+         WHERE plan_id = ? AND book_id = ? AND month = ? AND deleted_at IS NULL;`,
+        [planId, bookId, data.effectiveMonth],
       );
       const budgetId = existingRevision?.id ?? randomUUID();
 
@@ -405,20 +432,22 @@ export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
         await db.runAsync(
           `UPDATE budgets
            SET total_budget = ?, is_active = ?, sync_status = ?, updated_at = datetime('now')
-           WHERE id = ?;`,
+           WHERE id = ? AND book_id = ?;`,
           [
             totalBudget,
             data.isActive ? 1 : 0,
             DB_SYNC_STATUS.PENDING,
             budgetId,
+            bookId,
           ],
         );
       } else {
         await db.runAsync(
-          `INSERT INTO budgets (id, plan_id, month, total_budget, is_active)
-           VALUES (?, ?, ?, ?, ?);`,
+          `INSERT INTO budgets (id, book_id, plan_id, month, total_budget, is_active)
+           VALUES (?, ?, ?, ?, ?, ?);`,
           [
             budgetId,
+            bookId,
             planId,
             data.effectiveMonth,
             totalBudget,
@@ -427,7 +456,13 @@ export const saveBudgetToDB = async (data: BudgetSaveReqType) => {
         );
       }
 
-      await saveAllocations(db, budgetId, data.currencyCode, data.allocations);
+      await saveAllocations(
+        db,
+        budgetId,
+        data.currencyCode,
+        data.allocations,
+        bookId,
+      );
     });
 
     debugLog(DEBUG_TAG.BUDGET_DB, "Saved budget revision", {
@@ -447,53 +482,75 @@ export const deactivateBudgetsForCurrenciesWithDB = async (
   db: SQLite.SQLiteDatabase,
   currencyCodes: string[],
   effectiveMonth: string,
+  bookId: string,
 ) => {
   for (const currencyCode of currencyCodes) {
-    const latest = await db.getFirstAsync<BudgetRspType>(
-      `SELECT b.id, b.plan_id, bp.currency_code, b.month,
+    const latestBudgets = await db.getAllAsync<BudgetRspType>(
+      `SELECT b.id, b.book_id, b.plan_id, bp.currency_code, b.month,
               b.total_budget, b.is_active
        FROM budget_plans bp
-       JOIN budgets b ON b.plan_id = bp.id
+       JOIN budgets b ON b.id = (
+         SELECT latest.id
+         FROM budgets latest
+         WHERE latest.plan_id = bp.id
+           AND latest.month <= ?
+           AND latest.deleted_at IS NULL
+         ORDER BY latest.month DESC
+         LIMIT 1
+       )
+       JOIN books book ON book.id = bp.book_id AND book.is_active = 1
        WHERE bp.currency_code = ?
+         AND bp.book_id = ?
          AND bp.deleted_at IS NULL
-         AND b.month <= ?
-         AND b.deleted_at IS NULL
-       ORDER BY b.month DESC
-       LIMIT 1;`,
-      [currencyCode, effectiveMonth],
+       ORDER BY bp.book_id ASC;`,
+      [effectiveMonth, currencyCode, bookId],
     );
-    if (!latest || !latest.is_active) continue;
+    for (const latest of latestBudgets) {
+      if (!latest.is_active) continue;
 
-    if (latest.month === effectiveMonth) {
-      await db.runAsync(
-        `UPDATE budgets
-         SET is_active = 0, sync_status = ?, updated_at = datetime('now')
-         WHERE id = ?;`,
-        [DB_SYNC_STATUS.PENDING, latest.id],
-      );
-      continue;
-    }
+      if (latest.month === effectiveMonth) {
+        await db.runAsync(
+          `UPDATE budgets
+           SET is_active = 0, sync_status = ?, updated_at = datetime('now')
+           WHERE id = ? AND book_id = ?;`,
+          [DB_SYNC_STATUS.PENDING, latest.id, latest.book_id],
+        );
+        continue;
+      }
 
-    const revisionId = randomUUID();
-    await db.runAsync(
-      `INSERT INTO budgets (id, plan_id, month, total_budget, is_active)
-       VALUES (?, ?, ?, ?, 0);`,
-      [revisionId, latest.plan_id, effectiveMonth, latest.total_budget],
-    );
-    const allocations = await db.getAllAsync<{
-      category_id: string;
-      amount: number;
-    }>(
-      `SELECT category_id, amount FROM budget_categories
-       WHERE budget_id = ? AND deleted_at IS NULL;`,
-      [latest.id],
-    );
-    for (const allocation of allocations) {
+      const revisionId = randomUUID();
       await db.runAsync(
-        `INSERT INTO budget_categories (id, budget_id, category_id, amount)
-         VALUES (?, ?, ?, ?);`,
-        [randomUUID(), revisionId, allocation.category_id, allocation.amount],
+        `INSERT INTO budgets (id, book_id, plan_id, month, total_budget, is_active)
+         VALUES (?, ?, ?, ?, ?, 0);`,
+        [
+          revisionId,
+          latest.book_id,
+          latest.plan_id,
+          effectiveMonth,
+          latest.total_budget,
+        ],
       );
+      const allocations = await db.getAllAsync<{
+        category_id: string;
+        amount: number;
+      }>(
+        `SELECT category_id, amount FROM budget_categories
+         WHERE budget_id = ? AND book_id = ? AND deleted_at IS NULL;`,
+        [latest.id, latest.book_id],
+      );
+      for (const allocation of allocations) {
+        await db.runAsync(
+          `INSERT INTO budget_categories (id, book_id, budget_id, category_id, amount)
+           VALUES (?, ?, ?, ?, ?);`,
+          [
+            randomUUID(),
+            latest.book_id,
+            revisionId,
+            allocation.category_id,
+            allocation.amount,
+          ],
+        );
+      }
     }
   }
 };

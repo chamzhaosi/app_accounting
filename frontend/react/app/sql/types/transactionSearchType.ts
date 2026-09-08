@@ -2,6 +2,8 @@ import type { TXN_TYPE_ENUM } from "../../constants/enum";
 import type { TransactionMgmtRspType } from "./transactionMgmtType";
 
 export type TransactionSearchFilters = {
+  bookScope?: "current" | "all" | "specific";
+  bookId?: string;
   startDate?: string;
   endDate?: string;
   accountIds?: string[];
@@ -25,6 +27,12 @@ export type TransactionSearchRspType = TransactionMgmtRspType & {
 };
 
 export type TransactionSearchFilterOptions = {
+  books: Array<{
+    id: string;
+    icon: string;
+    label: string;
+    isActive: boolean;
+  }>;
   accounts: Array<{
     id: string;
     icon: string;

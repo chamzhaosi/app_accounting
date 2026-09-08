@@ -1,5 +1,6 @@
 export type BudgetRspType = {
   id: string;
+  book_id: string;
   plan_id: string;
   currency_code: string;
   month: string;
@@ -8,6 +9,7 @@ export type BudgetRspType = {
 };
 
 export type BudgetPlanListItemType = {
+  book_id?: string;
   plan_id: string;
   currency_code: string;
   revision_id: string;

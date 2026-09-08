@@ -21,6 +21,8 @@ import { formatPrivateCurrencyAmount } from "../../utils/number";
 import BudgetCategoryPickerModal from "./_components/BudgetCategoryPickerModal";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
+import { useBookStore } from "../../stores/useBookStore";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function BudgetManagement() {
   const { THEME } = useThemeStore();
@@ -56,7 +58,8 @@ export default function BudgetManagement() {
     showCurrencyField,
     errors,
   } = useBudgetManagement();
-  const isFormDisabled = isSaving || isCurrencyDisabled;
+  const isReadOnly = useBookStore((state) => !state.activeBook?.is_active);
+  const isFormDisabled = isSaving || isCurrencyDisabled || isReadOnly;
 
   if (isLoading) {
     return (
@@ -86,6 +89,7 @@ export default function BudgetManagement() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <InactiveBookBanner />
       <BudgetCategoryPickerModal
         categories={availableCategories}
         visible={isCategoryPickerVisible}
@@ -303,15 +307,17 @@ export default function BudgetManagement() {
         {rspErrorMsg ? (
           <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
         ) : null}
-        <AppButton
-          {...SUBMIT_BTN_CONTENT_STYLE}
-          loading={isSaving}
-          disabled={isFormDisabled}
-          onPress={handleSubmit(onSubmit)}
-          style={styles.saveButton}
-        >
-          Save Budget
-        </AppButton>
+        {!isReadOnly ? (
+          <AppButton
+            {...SUBMIT_BTN_CONTENT_STYLE}
+            loading={isSaving}
+            disabled={isFormDisabled}
+            onPress={handleSubmit(onSubmit)}
+            style={styles.saveButton}
+          >
+            Save Budget
+          </AppButton>
+        ) : null}
       </KeyboardAwareScrollView>
     </AppView>
   );

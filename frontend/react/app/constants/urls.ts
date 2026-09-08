@@ -44,3 +44,8 @@ export const GOOGLE_PLAY_REVIEW_URL =
   "https://play.google.com/store/apps/details?id=com.cham.finora&showAllReviews=true";
 
 export const TRANSACTION_SEARCH_URL = "/transaction_search/list";
+
+export const BOOK_MANAGEMENT_BASE_URL = "/book_management";
+export const BOOK_MANAGEMENT_LIST_URL = `${BOOK_MANAGEMENT_BASE_URL}/list`;
+export const BOOK_MANAGEMENT_CREATE_URL = `${BOOK_MANAGEMENT_BASE_URL}/create`;
+export const BOOK_MANAGEMENT_DETAIL_URL = `${BOOK_MANAGEMENT_BASE_URL}/[id]`;

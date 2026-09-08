@@ -43,11 +43,16 @@ import {
 } from "../../utils/number";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
+import { useBookStore } from "../../stores/useBookStore";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function Budget() {
   const navigation = useNavigation();
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
+  const isWritable = useBookStore((state) =>
+    Boolean(state.activeBook?.is_active),
+  );
 
   const areAmountsVisible = useAmountPrivacyStore(
     (state) => state.areAmountsVisible,
@@ -75,18 +80,24 @@ export default function Budget() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () =>
-        overview && logic.isCurrentMonth && logic.selectedCurrencyEnabled ? (
-          <AppIconButton
-            iconName="Settings2"
-            accessibilityLabel={t("Manage budget")}
-            onPress={openManagement}
-            style={{
-              ...styles.manageButton,
-              backgroundColor: THEME.surfaceContainerHigh,
-            }}
-          />
-        ) : null,
+      headerRight: () => (
+        <View style={{ marginRight: 8 }}>
+          {overview &&
+          logic.isCurrentMonth &&
+          logic.selectedCurrencyEnabled &&
+          isWritable ? (
+            <AppIconButton
+              iconName="Settings2"
+              accessibilityLabel={t("Manage budget")}
+              onPress={openManagement}
+              style={{
+                ...styles.manageButton,
+                backgroundColor: THEME.surfaceContainerHigh,
+              }}
+            />
+          ) : null}
+        </View>
+      ),
     });
   }, [
     THEME.surfaceContainerHigh,
@@ -95,6 +106,7 @@ export default function Budget() {
     navigation,
     openManagement,
     overview,
+    isWritable,
     t,
   ]);
 
@@ -212,6 +224,7 @@ export default function Budget() {
       edges={["top"]}
       className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow"
     >
+      <InactiveBookBanner />
       {!overview ? (
         <ScrollView
           contentContainerStyle={styles.content}
@@ -257,7 +270,7 @@ export default function Budget() {
                   : "Budgets follow the latest active plan when each new month begins.",
               )}
             </Text>
-            {logic.isCurrentMonth && (
+            {logic.isCurrentMonth && isWritable && (
               <AppButton
                 {...SUBMIT_BTN_CONTENT_STYLE}
                 disabled={!logic.selectedCurrencyEnabled}

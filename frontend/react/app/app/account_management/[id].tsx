@@ -16,9 +16,12 @@ import BalanceChangeClassification from "./_components/BalanceChangeClassificati
 import TransactionAttachmentButton from "../transaction_management/_components/TransactionAttachmentButton";
 import TransactionAttachmentManager from "../transaction_management/_components/TransactionAttachmentManager";
 import TransactionAttachmentPreview from "../transaction_management/_components/TransactionAttachmentPreview";
+import { useBookStore } from "../../stores/useBookStore";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function AccountManagementDetail() {
   const logic = useAccountManagementDetail();
+  const isReadOnly = useBookStore((state) => !state.activeBook?.is_active);
   if (logic.isLoading) {
     return (
       <View className="h-full justify-center items-center">
@@ -33,6 +36,7 @@ export default function AccountManagementDetail() {
         edges={["bottom", "left", "left"]}
         className="bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer"
       >
+        <InactiveBookBanner />
         <TransactionAttachmentButton
           count={logic.attachmentState.attachmentCount}
           visible={
@@ -40,7 +44,9 @@ export default function AccountManagementDetail() {
             logic.attachmentState.attachmentCount > 0
           }
           disabled={
-            logic.isSubmitting || logic.attachmentState.isLoadingAttachments
+            logic.isSubmitting ||
+            isReadOnly ||
+            logic.attachmentState.isLoadingAttachments
           }
           onPress={logic.attachmentState.onAttachmentPress}
         />
@@ -155,7 +161,7 @@ export default function AccountManagementDetail() {
             creditCardTypeId={logic.creditCardTypeId}
             currencyOptions={logic.currencyOptions}
             control={logic.control}
-            isSubmitting={logic.isSubmitting}
+            isSubmitting={logic.isSubmitting || isReadOnly}
             setFocus={logic.setFocus}
             setValue={logic.setValue}
             showCurrencyField={logic.showCurrencyField}
@@ -169,10 +175,12 @@ export default function AccountManagementDetail() {
             recentDescriptions={logic.recentBalanceChangeDescriptions}
             attachmentCount={logic.attachmentState.attachmentCount}
             attachmentDisabled={
-              logic.isSubmitting || logic.attachmentState.isLoadingAttachments
+              logic.isSubmitting ||
+              isReadOnly ||
+              logic.attachmentState.isLoadingAttachments
             }
             transactionDate={logic.balanceChangeDate}
-            disabled={logic.isSubmitting}
+            disabled={logic.isSubmitting || isReadOnly}
             onKindChange={logic.setBalanceChangeKind}
             onCategoryChange={logic.setBalanceChangeCategoryId}
             onDateChange={logic.setBalanceChangeDate}
@@ -183,34 +191,36 @@ export default function AccountManagementDetail() {
           {logic.rspErrorMsg && (
             <AppText type={TextTypEnum.ERROR}>{logic.rspErrorMsg}</AppText>
           )}
-          <View className="flex-row items-center justify-center gap-4 mt-6">
-            <AppButton
-              disabled={logic.isSubmitting}
-              loading={logic.isDeleting}
-              onPress={() => {
-                Keyboard.dismiss();
-                logic.setShowDeleteDialog(true);
-              }}
-              variant={ButtonType.ERROR}
-              style={{ flex: 1, borderRadius: 8 }}
-              {...SUBMIT_BTN_CONTENT_STYLE}
-            >
-              Delete
-            </AppButton>
-            <AppButton
-              disabled={logic.isSubmitting || !logic.isBalanceChangeReady}
-              loading={logic.isSaving}
-              onPress={() => {
-                Keyboard.dismiss();
-                logic.handleSubmit(logic.onSubmit)();
-              }}
-              variant={ButtonType.PRIMARY}
-              style={{ flex: 0.4, borderRadius: 8 }}
-              {...SUBMIT_BTN_CONTENT_STYLE}
-            >
-              Save
-            </AppButton>
-          </View>
+          {!isReadOnly ? (
+            <View className="flex-row items-center justify-center gap-4 mt-6">
+              <AppButton
+                disabled={logic.isSubmitting}
+                loading={logic.isDeleting}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  logic.setShowDeleteDialog(true);
+                }}
+                variant={ButtonType.ERROR}
+                style={{ flex: 1, borderRadius: 8 }}
+                {...SUBMIT_BTN_CONTENT_STYLE}
+              >
+                Delete
+              </AppButton>
+              <AppButton
+                disabled={logic.isSubmitting || !logic.isBalanceChangeReady}
+                loading={logic.isSaving}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  logic.handleSubmit(logic.onSubmit)();
+                }}
+                variant={ButtonType.PRIMARY}
+                style={{ flex: 0.4, borderRadius: 8 }}
+                {...SUBMIT_BTN_CONTENT_STYLE}
+              >
+                Save
+              </AppButton>
+            </View>
+          ) : null}
         </AppScrollView>
       </AppView>
     </TouchableWithoutFeedback>

@@ -19,6 +19,8 @@ import {
 import { subtractAmounts } from "../../utils/amount";
 import type { CreditCardCycleType } from "../types/accMgmtType";
 import { DEBUG_TAG } from "../../utils/debugLog";
+import { getRequiredActiveBookId } from "../../stores/useBookStore";
+import { assertBookWritable } from "./bookService";
 
 const dateAtDay = (year: number, month: number, day: number) => {
   const last = new Date(year, month + 1, 0).getDate();
@@ -46,19 +48,28 @@ const cycleDates = (statementDay: number, dueDay: number, now = new Date()) => {
   };
 };
 
-export const reconcileCreditCardAccount = async (accountId: string) => {
+export const reconcileCreditCardAccount = async (
+  accountId: string,
+  expectedBookId?: string,
+) => {
   const setting = await getCreditCardSettingFromDB(accountId);
   if (!setting) return;
+  if (expectedBookId && setting.book_id !== expectedBookId) return;
+  if (!setting.book_is_active) return;
   if (!setting.reminder_enabled || !setting.account_is_active) {
-    const cycles = await getCreditCardCyclesFromDB(accountId);
+    const cycles = await getCreditCardCyclesFromDB(accountId, setting.book_id);
     for (const cycle of cycles) {
       await cancelCreditCardNotifications(cycle.notification_ids);
-      await setCreditCardCycleNotificationsFromDB(cycle.id, []);
+      await setCreditCardCycleNotificationsFromDB(cycle.id, cycle.book_id, []);
     }
     return;
   }
   const currentDates = cycleDates(setting.statement_day, setting.due_day);
-  await ensureCreditCardCycleFromDB({ accountId, ...currentDates });
+  await ensureCreditCardCycleFromDB({
+    accountId,
+    bookId: setting.book_id,
+    ...currentDates,
+  });
   const currentStatement = new Date(`${currentDates.statementDate}T00:00:00`);
   const nextAnchor = dateAtDay(
     currentStatement.getFullYear(),
@@ -70,8 +81,12 @@ export const reconcileCreditCardAccount = async (accountId: string) => {
     setting.due_day,
     nextAnchor,
   );
-  await ensureCreditCardCycleFromDB({ accountId, ...nextDates });
-  const cycles = await getCreditCardCyclesFromDB(accountId);
+  await ensureCreditCardCycleFromDB({
+    accountId,
+    bookId: setting.book_id,
+    ...nextDates,
+  });
+  const cycles = await getCreditCardCyclesFromDB(accountId, setting.book_id);
   const today = key(new Date());
   for (let index = 0; index < cycles.length; index += 1) {
     const cycle = cycles[index];
@@ -80,6 +95,7 @@ export const reconcileCreditCardAccount = async (accountId: string) => {
     const balance = await getBalanceAtStatementFromDB(
       accountId,
       cycle.statement_date,
+      setting.book_id,
     );
     const statementAmount = cycle.is_manual_initial
       ? cycle.statement_amount
@@ -87,6 +103,7 @@ export const reconcileCreditCardAccount = async (accountId: string) => {
     const credits = await getCreditsAfterStatementFromDB(
       accountId,
       cycle.statement_date,
+      setting.book_id,
       nextStatement,
     );
     const remaining = Math.max(0, subtractAmounts(statementAmount, credits));
@@ -102,8 +119,8 @@ export const reconcileCreditCardAccount = async (accountId: string) => {
               ? "overdue"
               : "pending";
     await cancelCreditCardNotifications(cycle.notification_ids);
-    await setCreditCardCycleNotificationsFromDB(cycle.id, []);
-    await updateCreditCardCycleFromDB(cycle.id, {
+    await setCreditCardCycleNotificationsFromDB(cycle.id, cycle.book_id, []);
+    await updateCreditCardCycleFromDB(cycle.id, cycle.book_id, {
       statement_amount: statementAmount,
       credited_amount: credits,
       remaining_due: remaining,
@@ -128,7 +145,7 @@ export const reconcileCreditCardAccount = async (accountId: string) => {
         });
       }
     }
-    await setCreditCardCycleNotificationsFromDB(cycle.id, ids);
+    await setCreditCardCycleNotificationsFromDB(cycle.id, cycle.book_id, ids);
   }
 };
 
@@ -150,16 +167,19 @@ export const reconcileAllCreditCards = async () => {
 export const cancelCreditCardAccountNotifications = async (
   accountId: string,
 ) => {
-  const cycles = await getCreditCardCyclesFromDB(accountId);
+  const setting = await getCreditCardSettingFromDB(accountId);
+  if (!setting) return;
+  const cycles = await getCreditCardCyclesFromDB(accountId, setting.book_id);
   for (const cycle of cycles) {
     await cancelCreditCardNotifications(cycle.notification_ids);
-    await setCreditCardCycleNotificationsFromDB(cycle.id, []);
+    await setCreditCardCycleNotificationsFromDB(cycle.id, cycle.book_id, []);
   }
 };
 
 export const getCurrentCreditCardCycle = async (accountId: string) => {
-  await reconcileCreditCardAccount(accountId);
-  return getCurrentCreditCardCycleFromDB(accountId);
+  const bookId = getRequiredActiveBookId();
+  await reconcileCreditCardAccount(accountId, bookId);
+  return getCurrentCreditCardCycleFromDB(accountId, bookId);
 };
 
 export const setCreditCardCycleSkipped = async (
@@ -167,33 +187,52 @@ export const setCreditCardCycleSkipped = async (
   cycleId: string,
   skipped: boolean,
 ) => {
-  const cycle = await getCurrentCreditCardCycleFromDB(accountId);
+  const bookId = getRequiredActiveBookId();
+  const bookError = await assertBookWritable(bookId);
+  if (bookError) return bookError;
+  const cycle = await getCurrentCreditCardCycleFromDB(accountId, bookId);
   if (!cycle || cycle.id !== cycleId) return "Credit-card cycle not found.";
   await cancelCreditCardNotifications(cycle.notification_ids);
-  await setCreditCardCycleSkippedFromDB(cycleId, skipped);
-  await setCreditCardCycleNotificationsFromDB(cycleId, []);
-  if (!skipped) await reconcileCreditCardAccount(accountId);
+  await setCreditCardCycleSkippedFromDB(cycleId, bookId, skipped);
+  await setCreditCardCycleNotificationsFromDB(cycleId, bookId, []);
+  if (!skipped) await reconcileCreditCardAccount(accountId, bookId);
 };
 
 export const confirmCreditCardMinimumPayment = async (
   accountId: string,
   transactionId: string,
 ) => {
+  const bookId = getRequiredActiveBookId();
+  const bookError = await assertBookWritable(bookId);
+  if (bookError) return bookError;
   const setting = await getCreditCardSettingFromDB(accountId);
-  const cycle = await getCurrentCreditCardCycleFromDB(accountId);
-  if (!setting || !cycle || setting.stop_condition !== "minimum") return;
+  const cycle = await getCurrentCreditCardCycleFromDB(accountId, bookId);
+  if (
+    !setting ||
+    setting.book_id !== bookId ||
+    !cycle ||
+    setting.stop_condition !== "minimum"
+  )
+    return;
   await cancelCreditCardNotifications(cycle.notification_ids);
-  await confirmCreditCardMinimumFromDB(cycle.id, accountId, transactionId);
-  await setCreditCardCycleNotificationsFromDB(cycle.id, []);
+  await confirmCreditCardMinimumFromDB(
+    cycle.id,
+    bookId,
+    accountId,
+    transactionId,
+  );
+  await setCreditCardCycleNotificationsFromDB(cycle.id, bookId, []);
 };
 
 export const canConfirmCreditCardMinimumPayment = async (
   accountId: string,
   transactionDate: string,
 ) => {
+  const bookId = getRequiredActiveBookId();
   const setting = await getCreditCardSettingFromDB(accountId);
-  const cycle = await getCurrentCreditCardCycleFromDB(accountId);
+  const cycle = await getCurrentCreditCardCycleFromDB(accountId, bookId);
   return Boolean(
+    setting?.book_id === bookId &&
     setting?.stop_condition === "minimum" &&
     cycle &&
     cycle.remaining_due > 0 &&

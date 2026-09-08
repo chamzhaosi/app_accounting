@@ -10,6 +10,7 @@ import {
 import { TabBar, TabBarProps, TabView } from "react-native-tab-view";
 import AppDateRangePicker from "../../../components/AppDateRangePicker";
 import AppFloatingButton from "../../../components/AppFloatingButton";
+import { useBookStore } from "../../../stores/useBookStore";
 import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
 import {
@@ -34,6 +35,7 @@ import AppDialog from "../../../components/AppDialog";
 import AppButton, { ButtonType } from "../../../components/AppButton";
 import { DIALOG_COMMON_BTN_PROPS } from "../../../constants/size";
 import { formatDateValue } from "../../../utils/date";
+import InactiveBookBanner from "../../../components/InactiveBookBanner";
 
 type AccountDetailTabRoute = {
   key: "summary" | "statement";
@@ -46,6 +48,9 @@ const ACCOUNT_DETAIL_TAB_ROUTES: AccountDetailTabRoute[] = [
 ];
 
 export default function AccountDetail() {
+  const isWritable = useBookStore((state) =>
+    Boolean(state.activeBook?.is_active),
+  );
   const { tab } = useLocalSearchParams<{ tab?: string }>();
   const navigation = useNavigation();
   const [showSkipDialog, setShowSkipDialog] = useState(false);
@@ -81,21 +86,25 @@ export default function AccountDetail() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <IconButton
-          icon="pencil-outline"
-          iconColor={THEME.primary}
-          accessibilityLabel={t("Edit account")}
-          disabled={!account}
-          onPress={() =>
-            router.push({
-              pathname: ACCOUNT_MANAGEMENT_DETAIL_URL,
-              params: { id },
-            })
-          }
-        />
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          {isWritable ? (
+            <IconButton
+              icon="pencil-outline"
+              iconColor={THEME.primary}
+              accessibilityLabel={t("Edit account")}
+              disabled={!account}
+              onPress={() =>
+                router.push({
+                  pathname: ACCOUNT_MANAGEMENT_DETAIL_URL,
+                  params: { id },
+                })
+              }
+            />
+          ) : null}
+        </View>
       ),
     });
-  }, [THEME.primary, account, id, navigation, t]);
+  }, [THEME.primary, account, id, isWritable, navigation, t]);
 
   useEffect(() => {
     if (tab === "statement") setTabIndex(1);
@@ -241,6 +250,7 @@ export default function AccountDetail() {
       {account && creditCardCycle && (
         <>
           <CreditCardCycleCard
+            readOnly={!isWritable}
             cycle={creditCardCycle}
             currencyCode={currencyCode}
             reminderLeadDays={account.reminder_lead_days ?? 3}
@@ -265,6 +275,7 @@ export default function AccountDetail() {
 
   return (
     <AppView className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow">
+      <InactiveBookBanner />
       <AppDialog
         title="Skip this cycle?"
         description="This will not mark the statement as paid. Reminders resume automatically for the next cycle."
@@ -314,7 +325,7 @@ export default function AccountDetail() {
         renderSummaryTab()
       )}
 
-      {account && (
+      {account && isWritable && (
         <AppFloatingButton
           icon="plus"
           accessibilityLabel={t("Add transaction for {{name}}", {

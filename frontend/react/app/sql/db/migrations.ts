@@ -7,9 +7,11 @@ import {
   createBudgetTables,
   createCategoryMgmtTable,
   createCurrencyPreferencesTable,
+  createBookCurrencyPreferencesTable,
   createCreditCardTables,
   createTransactionMgmtTable,
   createTransactionAttachmentTable,
+  createBooksTable,
 } from "./schemas";
 import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
 import { randomUUID } from "expo-crypto";
@@ -133,6 +135,166 @@ const migrateCurrencyAmountPrecision = async (db: SQLite.SQLiteDatabase) => {
     DROP TABLE budgets_precision_v12;
     DROP TABLE transactions_precision_v12;
     DROP TABLE accounts_precision_v12;
+  `);
+};
+
+const addBookScope = async (
+  db: SQLite.SQLiteDatabase,
+  systemBookId: string,
+) => {
+  const tables = [
+    "accounts",
+    "categories",
+    "transactions",
+    "transaction_attachments",
+    "budget_plans",
+    "budgets",
+    "budget_categories",
+    "credit_card_settings",
+    "credit_card_cycles",
+  ] as const;
+
+  for (const table of tables) {
+    const columns = await db.getAllAsync<{ name: string }>(
+      `PRAGMA table_info(${table});`,
+    );
+    if (!columns.some(({ name }) => name === "book_id")) {
+      await db.execAsync(
+        `ALTER TABLE ${table} ADD COLUMN book_id TEXT NOT NULL DEFAULT '${systemBookId}' REFERENCES books(id);`,
+      );
+    }
+  }
+
+  await db.execAsync(`
+    DROP INDEX IF EXISTS idx_accounts_active_type_currency_label;
+    DROP INDEX IF EXISTS idx_categories_active_type_label;
+    DROP INDEX IF EXISTS idx_budget_plans_active_currency;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_book_type_currency_label
+      ON accounts(book_id, type_id, currency_code, label)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_accounts_book_active
+      ON accounts(book_id, is_active)
+      WHERE deleted_at IS NULL;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_book_type_label
+      ON categories(book_id, type_id, label)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_categories_book_type_sort
+      ON categories(book_id, type_id, sort_order)
+      WHERE deleted_at IS NULL;
+
+    CREATE INDEX IF NOT EXISTS idx_transactions_book_date
+      ON transactions(book_id, transaction_date DESC, created_at DESC)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_transactions_book_account
+      ON transactions(book_id, account_id)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_transactions_book_category_date
+      ON transactions(book_id, category_id, transaction_date)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_transactions_book_operation
+      ON transactions(book_id, operation_id, transaction_role)
+      WHERE deleted_at IS NULL;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_plans_book_currency
+      ON budget_plans(book_id, currency_code)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_budgets_book_month
+      ON budgets(book_id, month)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_budget_categories_book_budget
+      ON budget_categories(book_id, budget_id)
+      WHERE deleted_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_credit_card_settings_book
+      ON credit_card_settings(book_id);
+    CREATE INDEX IF NOT EXISTS idx_credit_card_cycles_book_due
+      ON credit_card_cycles(book_id, due_date);
+    CREATE INDEX IF NOT EXISTS idx_transaction_attachments_book_transaction
+      ON transaction_attachments(book_id, transaction_id, created_at);
+  `);
+
+  for (const table of tables) {
+    await db.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS trg_${table}_active_book_insert
+      BEFORE INSERT ON ${table}
+      WHEN COALESCE((SELECT is_active FROM books WHERE id = NEW.book_id), 0) <> 1
+      BEGIN
+        SELECT RAISE(ABORT, 'This book is inactive and cannot be modified.');
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS trg_${table}_active_book_update
+      BEFORE UPDATE ON ${table}
+      WHEN COALESCE((SELECT is_active FROM books WHERE id = OLD.book_id), 0) <> 1
+        OR COALESCE((SELECT is_active FROM books WHERE id = NEW.book_id), 0) <> 1
+      BEGIN
+        SELECT RAISE(ABORT, 'This book is inactive and cannot be modified.');
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS trg_${table}_active_book_delete
+      BEFORE DELETE ON ${table}
+      WHEN COALESCE((SELECT is_active FROM books WHERE id = OLD.book_id), 0) <> 1
+      BEGIN
+        SELECT RAISE(ABORT, 'This book is inactive and cannot be modified.');
+      END;
+    `);
+  }
+};
+
+const addBookScopedCurrencyPreferences = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+    ALTER TABLE currency_preferences
+      RENAME TO currency_preferences_global_v19;
+    DROP INDEX IF EXISTS idx_currency_preferences_default;
+  `);
+
+  await createBookCurrencyPreferencesTable(db);
+
+  await db.execAsync(`
+    INSERT INTO currency_preferences (
+      book_id, code, is_default, created_at, updated_at
+    )
+    SELECT
+      books.id,
+      currency_preferences_global_v19.code,
+      currency_preferences_global_v19.is_default,
+      currency_preferences_global_v19.created_at,
+      currency_preferences_global_v19.updated_at
+    FROM books
+    CROSS JOIN currency_preferences_global_v19;
+
+    INSERT INTO currency_preferences (book_id, code, is_default)
+    SELECT books.id, 'MYR', 1
+    FROM books
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM currency_preferences
+      WHERE currency_preferences.book_id = books.id
+    );
+
+    DROP TABLE currency_preferences_global_v19;
+
+    CREATE TRIGGER IF NOT EXISTS trg_currency_preferences_active_book_insert
+    BEFORE INSERT ON currency_preferences
+    WHEN COALESCE((SELECT is_active FROM books WHERE id = NEW.book_id), 0) <> 1
+    BEGIN
+      SELECT RAISE(ABORT, 'This book is inactive and cannot be modified.');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_currency_preferences_active_book_update
+    BEFORE UPDATE ON currency_preferences
+    WHEN COALESCE((SELECT is_active FROM books WHERE id = OLD.book_id), 0) <> 1
+      OR COALESCE((SELECT is_active FROM books WHERE id = NEW.book_id), 0) <> 1
+    BEGIN
+      SELECT RAISE(ABORT, 'This book is inactive and cannot be modified.');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_currency_preferences_active_book_delete
+    BEFORE DELETE ON currency_preferences
+    WHEN COALESCE((SELECT is_active FROM books WHERE id = OLD.book_id), 0) <> 1
+    BEGIN
+      SELECT RAISE(ABORT, 'This book is inactive and cannot be modified.');
+    END;
   `);
 };
 
@@ -578,6 +740,40 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
     await db.withTransactionAsync(async () => {
       await createTransactionAttachmentTable(db);
       await updateDBVersion(db, 17);
+    });
+  }
+
+  if (currentVersion < 18) {
+    await db.execAsync("PRAGMA foreign_keys = OFF;");
+    try {
+      await db.withTransactionAsync(async () => {
+        await createBooksTable(db);
+        let systemBook = await db.getFirstAsync<{ id: string }>(
+          "SELECT id FROM books WHERE is_system_default = 1 LIMIT 1;",
+        );
+        if (!systemBook) {
+          const id = randomUUID();
+          await db.runAsync(
+            `INSERT INTO books (
+               id, label, normalized_label, description, icon,
+               is_active, is_system_default, sort_order
+             ) VALUES (?, 'ME', 'me', NULL, 'UserRound', 1, 1, 0);`,
+            [id],
+          );
+          systemBook = { id };
+        }
+        await addBookScope(db, systemBook.id);
+        await updateDBVersion(db, 18);
+      });
+    } finally {
+      await db.execAsync("PRAGMA foreign_keys = ON;");
+    }
+  }
+
+  if (currentVersion < 19) {
+    await db.withTransactionAsync(async () => {
+      await addBookScopedCurrencyPreferences(db);
+      await updateDBVersion(db, 19);
     });
   }
 };

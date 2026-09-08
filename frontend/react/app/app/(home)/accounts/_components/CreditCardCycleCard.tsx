@@ -13,6 +13,7 @@ type Props = {
   reminderTime: string;
   onToggleSkipped: () => void;
   notificationsAvailable: boolean;
+  readOnly?: boolean;
 };
 
 export default function CreditCardCycleCard({
@@ -22,6 +23,7 @@ export default function CreditCardCycleCard({
   reminderTime,
   onToggleSkipped,
   notificationsAvailable,
+  readOnly = false,
 }: Props) {
   const { THEME } = useThemeStore();
   const { locale, t } = useTranslation();
@@ -53,7 +55,7 @@ export default function CreditCardCycleCard({
           >
             {t("Open settings")}
           </AppButton>
-        ) : actionable ? (
+        ) : actionable && !readOnly ? (
           <AppButton
             compact
             style={styles.headerButton}

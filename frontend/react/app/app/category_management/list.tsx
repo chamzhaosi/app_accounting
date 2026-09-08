@@ -18,6 +18,9 @@ import CategoryReorderList from "./_components/CategoryReorderList";
 import { useTranslation } from "../../i18n/helper";
 import { CATEGORY_MANAGEMENT_TAB_ROUTES } from "../../constants/options";
 import { CATEGORY_REORDER_HEADER_ICON_SIZE } from "../../constants/size";
+import { useBookStore } from "../../stores/useBookStore";
+import BookContextIndicator from "../../components/BookContextIndicator";
+import InactiveBookBanner from "../../components/InactiveBookBanner";
 
 export default function CategoryManagementList() {
   const router = useRouter();
@@ -28,6 +31,9 @@ export default function CategoryManagementList() {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
   const layout = useWindowDimensions();
+  const isWritable = useBookStore((state) =>
+    Boolean(state.activeBook?.is_active),
+  );
 
   const [index, setIndex] = useState<number>(type === "exp" ? 1 : 0);
   const [adjustingTypeId, setAdjustingTypeId] = useState<number>();
@@ -63,41 +69,51 @@ export default function CategoryManagementList() {
         }
         typeId={route.typeId}
       />
-      <AppFloatingButton
-        icon="plus"
-        onPress={() =>
-          router.push({
-            pathname: CATEGORY_MANAGEMENT_CREATE_URL,
-            params: { type: route.key },
-          })
-        }
-        visible={adjustingTypeId !== route.typeId}
-      />
+      {isWritable ? (
+        <AppFloatingButton
+          icon="plus"
+          onPress={() =>
+            router.push({
+              pathname: CATEGORY_MANAGEMENT_CREATE_URL,
+              params: { type: route.key },
+            })
+          }
+          visible={adjustingTypeId !== route.typeId}
+        />
+      ) : null}
     </AppView>
   );
 
   return (
     <>
+      <InactiveBookBanner />
       <Stack.Screen
         options={{
           headerRight: () => (
-            <IconButton
-              accessibilityHint={t(
-                "Select two category cards to swap positions.",
-              )}
-              accessibilityLabel={t("Reorder categories")}
-              disabled={isAdjusting}
-              icon={({ color, size }) => (
-                <ArrowLeftRight color={color} size={size} />
-              )}
-              iconColor={THEME.primary}
-              mode="contained-tonal"
-              onPress={() =>
-                setAdjustingTypeId(CATEGORY_MANAGEMENT_TAB_ROUTES[index].typeId)
-              }
-              size={CATEGORY_REORDER_HEADER_ICON_SIZE}
-              style={{ margin: 0 }}
-            />
+            <View className="flex-row items-center gap-2">
+              <BookContextIndicator />
+              {isWritable ? (
+                <IconButton
+                  accessibilityHint={t(
+                    "Select two category cards to swap positions.",
+                  )}
+                  accessibilityLabel={t("Reorder categories")}
+                  disabled={isAdjusting}
+                  icon={({ color, size }) => (
+                    <ArrowLeftRight color={color} size={size} />
+                  )}
+                  iconColor={THEME.primary}
+                  mode="contained-tonal"
+                  onPress={() =>
+                    setAdjustingTypeId(
+                      CATEGORY_MANAGEMENT_TAB_ROUTES[index].typeId,
+                    )
+                  }
+                  size={CATEGORY_REORDER_HEADER_ICON_SIZE}
+                  style={{ margin: 0 }}
+                />
+              ) : null}
+            </View>
           ),
         }}
       />
