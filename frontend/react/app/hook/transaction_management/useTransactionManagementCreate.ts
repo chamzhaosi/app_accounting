@@ -26,10 +26,12 @@ import {
   invalidateQuery,
   transactionManagementQueryKeys,
   creditCardQueryKeys,
+  beneficiaryQueryKeys,
 } from "../../constants/queryKeys";
 import {
   ACCOUNT_MANAGEMENT_LIST_URL,
   CATEGORY_MANAGEMENT_LIST_URL,
+  BENEFICIARY_MANAGEMENT_LIST_URL,
 } from "../../constants/urls";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import {
@@ -68,6 +70,7 @@ import {
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 import useFrequentTransactionDescriptions from "./useFrequentTransactionDescriptions";
 import useTransactionAttachments from "./useTransactionAttachments";
+import { getSelectableBeneficiaries } from "../../sql/service/beneficiaryService";
 
 const TRANSACTION_CATEGORY_PAGE_SIZE = 1000;
 
@@ -100,6 +103,7 @@ export default function useTransactionManagementCreate() {
   } | null>(null);
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
+  const refreshBeneficiariesOnFocus = useRef(false);
   const today = dayjs().format("YYYY-MM-DD");
   const currencyPreferences = useCurrencyPreferenceOptions();
   const isSingleCurrency = useSingleCurrencyMode();
@@ -135,6 +139,7 @@ export default function useTransactionManagementCreate() {
   } = useFieldArray({ control, name: "fees" });
 
   const transactionType = watch("transactionType");
+  const beneficiaryId = watch("beneficiaryId");
   const categoryId = watch("categoryId");
   const accountId = watch("accountId");
   const fromAccountId = watch("fromAccountId");
@@ -205,6 +210,12 @@ export default function useTransactionManagementCreate() {
     queryKey: categoryManagementQueryKeys.feeList(),
     queryFn: () => getCategoryMgmtList(2, 1, 1000),
   });
+  const { data: beneficiaries = [], refetch: refetchBeneficiaries } = useQuery({
+    queryKey: beneficiaryQueryKeys.selectable(),
+    queryFn: getSelectableBeneficiaries,
+  });
+  const selfBeneficiary = beneficiaries.find((item) => item.is_self);
+  const showBeneficiaryField = beneficiaries.some((item) => !item.is_self);
 
   const recentDescriptions = useFrequentTransactionDescriptions(
     categoryId,
@@ -523,6 +534,11 @@ export default function useTransactionManagementCreate() {
     });
   };
 
+  const onManageBeneficiaries = () => {
+    refreshBeneficiariesOnFocus.current = true;
+    router.push(BENEFICIARY_MANAGEMENT_LIST_URL);
+  };
+
   const accountFieldProps = {
     accountItems,
     control,
@@ -548,8 +564,22 @@ export default function useTransactionManagementCreate() {
         refreshCategoriesOnFocus.current = false;
         void refetchCategories();
       }
-    }, [refetchAccounts, refetchCategories]),
+      if (refreshBeneficiariesOnFocus.current) {
+        refreshBeneficiariesOnFocus.current = false;
+        void refetchBeneficiaries();
+      }
+    }, [refetchAccounts, refetchBeneficiaries, refetchCategories]),
   );
+
+  useEffect(() => {
+    if (
+      transactionType === TXN_TYPE_ENUM.EXPENSE &&
+      !beneficiaryId &&
+      selfBeneficiary
+    ) {
+      setValue("beneficiaryId", selfBeneficiary.id, { shouldValidate: true });
+    }
+  }, [beneficiaryId, selfBeneficiary, setValue, transactionType]);
 
   useEffect(() => {
     if (
@@ -607,6 +637,7 @@ export default function useTransactionManagementCreate() {
           accountId: initialAccountId ?? "",
           categoryId: initialCategoryId ?? "",
           transactionType: initialTransactionType ?? TXN_TYPE_ENUM.EXPENSE,
+          beneficiaryId: selfBeneficiary?.id ?? "",
         });
         if (!saveAnotherTransaction) router.back();
       };
@@ -655,6 +686,7 @@ export default function useTransactionManagementCreate() {
       accountId: initialAccountId ?? "",
       categoryId: initialCategoryId ?? "",
       transactionType: initialTransactionType ?? TXN_TYPE_ENUM.EXPENSE,
+      beneficiaryId: selfBeneficiary?.id ?? "",
     });
     if (!pending.saveAnother) router.back();
   };
@@ -697,6 +729,8 @@ export default function useTransactionManagementCreate() {
 
   return {
     accountCurrencyCode,
+    beneficiaries,
+    beneficiaryId,
     attachmentState,
     accountFieldProps,
     addFee,
@@ -727,6 +761,7 @@ export default function useTransactionManagementCreate() {
     isSubmitting,
     onLoadMoreCategories,
     onManageCategories,
+    onManageBeneficiaries,
     onAccountChange,
     onAmountChange,
     onConvertedAmountChange,
@@ -745,6 +780,7 @@ export default function useTransactionManagementCreate() {
     setFocus,
     setValue,
     showCurrencyField: currencyPreferences.showCurrencyField,
+    showBeneficiaryField,
     transactionType,
     usesExchangeRate,
   };

@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { type Control, Controller } from "react-hook-form";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Keyboard, ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Surface,
@@ -15,6 +15,7 @@ import { TEXTINPUT_HEIGHT } from "../../../constants/size";
 import type { TransactionManagementFormType } from "../../../forms/schemas/transaction_management.schema";
 import { useTranslation } from "../../../i18n/helper";
 import { useThemeStore } from "../../../stores/useThemeStore";
+import CategoryPickerModal from "./CategoryPickerModal";
 
 type CategoryCardPickerProps = {
   categoryItems: AppListCardItemType[];
@@ -26,6 +27,7 @@ type CategoryCardPickerProps = {
   onChange: (categoryId: string) => void;
   onManageCategories?: () => void;
   queryError?: Error | null;
+  presentation?: "inline" | "modal";
   useInternalScroll?: boolean;
   value: string;
 };
@@ -40,6 +42,7 @@ export function CategoryCardPicker({
   onChange,
   onManageCategories,
   queryError,
+  presentation = "inline",
   useInternalScroll = true,
   value,
 }: CategoryCardPickerProps) {
@@ -57,6 +60,28 @@ export function CategoryCardPicker({
         leadingControl ? styles.companionSection : undefined,
       ]}
     >
+      <CategoryPickerModal
+        categories={categoryItems}
+        disabled={disabled}
+        errorMessage={errorMessage}
+        isLoading={isLoading}
+        queryError={queryError}
+        selectedId={value}
+        visible={presentation === "modal" && isExpanded}
+        onDismiss={() => setIsExpanded(false)}
+        onSelect={(categoryId) => {
+          onChange(categoryId);
+          setIsExpanded(false);
+        }}
+        onManage={
+          onManageCategories
+            ? () => {
+                setIsExpanded(false);
+                onManageCategories();
+              }
+            : undefined
+        }
+      />
       <View style={leadingControl ? styles.headerRow : undefined}>
         {leadingControl ? (
           <View style={styles.leadingControl}>{leadingControl}</View>
@@ -70,7 +95,10 @@ export function CategoryCardPicker({
                 : "Expand category picker",
             )}
             disabled={disabled}
-            onPress={() => setIsExpanded((current) => !current)}
+            onPress={() => {
+              Keyboard.dismiss();
+              setIsExpanded((current) => !current);
+            }}
             style={[
               styles.header,
               leadingControl && styles.companionHeader,
@@ -115,7 +143,7 @@ export function CategoryCardPicker({
         </View>
       </View>
 
-      {isExpanded && (
+      {isExpanded && presentation === "inline" && (
         <View style={styles.panel}>
           {useInternalScroll ? (
             <ScrollView
@@ -280,6 +308,7 @@ export default function CategoryIdField({
             field.onBlur();
           }}
           onManageCategories={onManageCategories}
+          presentation="modal"
           queryError={queryError}
           value={field.value}
         />

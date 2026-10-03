@@ -10,6 +10,7 @@ import {
   CURRENCY_MANAGEMENT_URL,
   LOCAL_AUTHENTICATE_URL,
   FEEDBACK_URL,
+  BENEFICIARY_MANAGEMENT_LIST_URL,
 } from "../../constants/urls";
 import { useTranslation } from "../../i18n/helper";
 
@@ -47,6 +48,13 @@ export default function Setting() {
       label: t("Category Management"),
       icon: "BookOpenCheck",
       onPress: () => router.push(CATEGORY_MANAGEMENT_LIST_URL),
+    },
+    {
+      id: "beneficiary-management",
+      label: t("Beneficiary Management"),
+      descriptions: t("Individuals and groups for expenses"),
+      icon: "UsersRound",
+      onPress: () => router.push(BENEFICIARY_MANAGEMENT_LIST_URL as Href),
     },
     {
       id: "budget-managment",

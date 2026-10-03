@@ -10,6 +10,7 @@ import {
   createCreditCardTables,
   createTransactionMgmtTable,
   createTransactionAttachmentTable,
+  createBeneficiaryTables,
 } from "./schemas";
 import { insertAccTypTable, insertCategoryMgmtTable } from "./seed";
 import { randomUUID } from "expo-crypto";
@@ -578,6 +579,71 @@ export const runMigrations = async (db: SQLite.SQLiteDatabase) => {
     await db.withTransactionAsync(async () => {
       await createTransactionAttachmentTable(db);
       await updateDBVersion(db, 17);
+    });
+  }
+
+  if (currentVersion < 18) {
+    await db.withTransactionAsync(async () => {
+      await createBeneficiaryTables(db);
+      const selfId = randomUUID();
+      await db.runAsync(
+        `INSERT INTO beneficiaries (
+           id, type, icon, name, normalized_name, relationship, is_active, is_self
+         )
+         SELECT ?, 'INDIVIDUAL', 'CircleUserRound', 'Me', 'me', 'Self', 1, 1
+         WHERE NOT EXISTS (
+           SELECT 1 FROM beneficiaries
+           WHERE is_self = 1 AND deleted_at IS NULL
+         );`,
+        [selfId],
+      );
+
+      const transactionColumns = await db.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(transactions);",
+      );
+      if (!transactionColumns.some(({ name }) => name === "beneficiary_id")) {
+        await db.execAsync(
+          "ALTER TABLE transactions ADD COLUMN beneficiary_id TEXT REFERENCES beneficiaries(id);",
+        );
+      }
+
+      await db.execAsync(`
+        UPDATE transactions
+        SET beneficiary_id = (
+          SELECT id FROM beneficiaries
+          WHERE is_self = 1 AND deleted_at IS NULL
+          LIMIT 1
+        )
+        WHERE transaction_type = 'expense'
+          AND beneficiary_id IS NULL;
+
+        CREATE INDEX IF NOT EXISTS idx_transactions_active_beneficiary_date
+          ON transactions(beneficiary_id, transaction_date)
+          WHERE deleted_at IS NULL;
+
+        CREATE TRIGGER IF NOT EXISTS trg_transactions_beneficiary_insert
+        BEFORE INSERT ON transactions
+        BEGIN
+          SELECT CASE
+            WHEN NEW.transaction_type = 'expense' AND NEW.beneficiary_id IS NULL
+              THEN RAISE(ABORT, 'Expense beneficiary is required')
+            WHEN NEW.transaction_type <> 'expense' AND NEW.beneficiary_id IS NOT NULL
+              THEN RAISE(ABORT, 'Beneficiary only applies to expenses')
+          END;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS trg_transactions_beneficiary_update
+        BEFORE UPDATE OF transaction_type, beneficiary_id ON transactions
+        BEGIN
+          SELECT CASE
+            WHEN NEW.transaction_type = 'expense' AND NEW.beneficiary_id IS NULL
+              THEN RAISE(ABORT, 'Expense beneficiary is required')
+            WHEN NEW.transaction_type <> 'expense' AND NEW.beneficiary_id IS NOT NULL
+              THEN RAISE(ABORT, 'Beneficiary only applies to expenses')
+          END;
+        END;
+      `);
+      await updateDBVersion(db, 18);
     });
   }
 };

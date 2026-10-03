@@ -36,6 +36,7 @@ export const transactionManagementFormSchema = z
   .object({
     transactionType: z.enum(TXN_TYPE_ENUM),
     categoryId: z.string(),
+    beneficiaryId: z.string(),
     accountId: z.string(),
     fromAccountId: z.string(),
     toAccountId: z.string(),
@@ -75,6 +76,7 @@ export const transactionManagementFormSchema = z
       {
         transactionType,
         categoryId,
+        beneficiaryId,
         accountId,
         fromAccountId,
         toAccountId,
@@ -183,6 +185,14 @@ export const transactionManagementFormSchema = z
         return;
       }
 
+      if (transactionType === TXN_TYPE_ENUM.EXPENSE && !beneficiaryId) {
+        context.addIssue({
+          code: "custom",
+          path: ["beneficiaryId"],
+          message: "Please select a beneficiary",
+        });
+      }
+
       if (!accountId) {
         context.addIssue({
           code: "custom",
@@ -210,6 +220,7 @@ export const getTransactionManagementFormDefaultValues = (
 ): TransactionManagementFormType => ({
   transactionType: TXN_TYPE_ENUM.EXPENSE,
   categoryId: "",
+  beneficiaryId: "",
   accountId: "",
   fromAccountId: "",
   toAccountId: "",

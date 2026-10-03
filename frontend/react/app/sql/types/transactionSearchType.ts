@@ -6,6 +6,7 @@ export type TransactionSearchFilters = {
   endDate?: string;
   accountIds?: string[];
   categoryIds?: string[];
+  beneficiaryIds?: string[];
   transactionTypes?: TXN_TYPE_ENUM[];
   currencyCodes?: string[];
   minimumAmount?: string;
@@ -41,6 +42,14 @@ export type TransactionSearchFilterOptions = {
     label: string;
     typeId: number;
     translationKey: string | null;
+  }>;
+  beneficiaries: Array<{
+    id: string;
+    icon: string;
+    name: string;
+    type: "INDIVIDUAL" | "GROUP";
+    isActive: boolean;
+    isSelf: boolean;
   }>;
   currencyCodes: string[];
 };

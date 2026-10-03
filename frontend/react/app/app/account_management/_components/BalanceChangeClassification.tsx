@@ -12,11 +12,16 @@ import { CategoryCardPicker } from "../../transaction_management/_components/Cat
 import { DESCRIPTION_MAX_LEN } from "../../../forms/schemas/transaction_management.schema";
 import RecentDescriptionPicker from "../../transaction_management/_components/RecentDescriptionPicker";
 import { TransactionAttachmentAction } from "../../transaction_management/_components/TransactionAttachmentButton";
+import BeneficiarySelector from "../../beneficiary_management/_components/BeneficiarySelector";
+import type { BeneficiaryRspType } from "../../../sql/types/beneficiaryType";
 
 type BalanceChangeClassificationProps = {
   difference: number;
   kind?: BalanceChangeKind;
   categoryId: string;
+  beneficiaryId: string;
+  beneficiaries: BeneficiaryRspType[];
+  showBeneficiaryField: boolean;
   categoryOptions: AppListCardItemType[];
   description: string;
   recentDescriptions: string[];
@@ -26,6 +31,8 @@ type BalanceChangeClassificationProps = {
   disabled: boolean;
   onKindChange: (kind: BalanceChangeKind) => void;
   onCategoryChange: (categoryId: string) => void;
+  onBeneficiaryChange: (beneficiaryId: string) => void;
+  onManageBeneficiaries: () => void;
   onDateChange: (date: string) => void;
   onDescriptionChange: (description: string) => void;
   onAttachmentPress: () => void;
@@ -35,6 +42,9 @@ export default function BalanceChangeClassification({
   difference,
   kind,
   categoryId,
+  beneficiaryId,
+  beneficiaries,
+  showBeneficiaryField,
   categoryOptions,
   description,
   recentDescriptions,
@@ -44,6 +54,8 @@ export default function BalanceChangeClassification({
   disabled,
   onKindChange,
   onCategoryChange,
+  onBeneficiaryChange,
+  onManageBeneficiaries,
   onDateChange,
   onDescriptionChange,
   onAttachmentPress,
@@ -115,6 +127,24 @@ export default function BalanceChangeClassification({
 
       {kind === transactionKind ? (
         <View>
+          <AppDatePicker
+            mode="outlined"
+            label="Transaction Date"
+            value={parseDateValue(transactionDate)}
+            disabled={disabled}
+            onChange={(date) => onDateChange(formatDateValue(date))}
+            withBottomSpacing
+          />
+          {kind === "expense" && showBeneficiaryField ? (
+            <BeneficiarySelector
+              label="For"
+              beneficiaries={beneficiaries}
+              selectedIds={beneficiaryId ? [beneficiaryId] : []}
+              disabled={disabled}
+              onChange={(ids) => onBeneficiaryChange(ids[0] ?? "")}
+              onManage={onManageBeneficiaries}
+            />
+          ) : null}
           <CategoryCardPicker
             label="Category"
             value={categoryId}
@@ -122,16 +152,6 @@ export default function BalanceChangeClassification({
             disabled={disabled}
             onChange={onCategoryChange}
             useInternalScroll={false}
-            leadingControl={
-              <AppDatePicker
-                mode="outlined"
-                label="Transaction Date"
-                value={parseDateValue(transactionDate)}
-                disabled={disabled}
-                onChange={(date) => onDateChange(formatDateValue(date))}
-                withBottomSpacing={false}
-              />
-            }
           />
           <AppTextInput
             mode="outlined"
