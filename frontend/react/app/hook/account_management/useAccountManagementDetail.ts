@@ -13,8 +13,10 @@ import {
   invalidateQuery,
   transactionManagementQueryKeys,
   creditCardQueryKeys,
+  beneficiaryQueryKeys,
 } from "../../constants/queryKeys";
 import { ACCOUNT_TYPE_PAGE_SIZE } from "../../constants/size";
+import { BENEFICIARY_MANAGEMENT_LIST_URL } from "../../constants/urls";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
 import {
   accountManagementFormDefaultValues,
@@ -45,6 +47,7 @@ import {
   getCurrentCreditCardCycle,
   reconcileAllCreditCards,
 } from "../../sql/service/creditCardService";
+import { getSelectableBeneficiaries } from "../../sql/service/beneficiaryService";
 
 export default function useAccountManagementDetail() {
   const { t } = useTranslation();
@@ -61,6 +64,8 @@ export default function useAccountManagementDetail() {
     BalanceChangeKind | undefined
   >();
   const [balanceChangeCategoryId, setBalanceChangeCategoryId] = useState("");
+  const [balanceChangeBeneficiaryId, setBalanceChangeBeneficiaryId] =
+    useState("");
   const [balanceChangeDescription, setBalanceChangeDescription] = useState("");
   const [balanceChangeDate, setBalanceChangeDate] = useState(() =>
     formatDateValue(new Date()),
@@ -144,6 +149,12 @@ export default function useAccountManagementDetail() {
     queryFn: () => getCategoryMgmtList(categoryTypeId, 1, 100),
     enabled: categoryTypeId > 0,
   });
+  const { data: beneficiaries = [] } = useQuery({
+    queryKey: beneficiaryQueryKeys.selectable(),
+    queryFn: getSelectableBeneficiaries,
+  });
+  const selfBeneficiary = beneficiaries.find((item) => item.is_self);
+  const showBeneficiaryField = beneficiaries.some((item) => !item.is_self);
   const balanceChangeCategoryOptions = useMemo(
     () =>
       balanceChangeCategories.map((item) => ({
@@ -164,7 +175,12 @@ export default function useAccountManagementDetail() {
   const hasBalanceDifference = compareAmounts(balanceDifference, 0) !== 0;
   const isBalanceChangeReady = hasBalanceDifference
     ? balanceChangeKind === "correction" ||
-      Boolean(balanceChangeKind && balanceChangeCategoryId && balanceChangeDate)
+      Boolean(
+        balanceChangeKind &&
+        balanceChangeCategoryId &&
+        balanceChangeDate &&
+        (balanceChangeKind !== "expense" || balanceChangeBeneficiaryId),
+      )
     : attachmentState.attachmentCount === 0;
 
   const setBalanceChangeKind = (kind: BalanceChangeKind) => {
@@ -192,6 +208,11 @@ export default function useAccountManagementDetail() {
         compareAmounts(balanceDifference, 0) === 0
           ? undefined
           : balanceChangeCategoryId,
+      balanceChangeBeneficiaryId:
+        compareAmounts(balanceDifference, 0) === 0 ||
+        balanceChangeKind !== "expense"
+          ? undefined
+          : balanceChangeBeneficiaryId,
       balanceChangeDate:
         compareAmounts(balanceDifference, 0) === 0
           ? undefined
@@ -212,7 +233,7 @@ export default function useAccountManagementDetail() {
           label: data.label,
           reason: validationError,
         });
-        setRspErrorMsg(validationError);
+        setRspErrorMsg(t(validationError));
         return;
       }
       await reconcileAllCreditCards();
@@ -299,6 +320,12 @@ export default function useAccountManagementDetail() {
   }, [balanceDirection]);
 
   useEffect(() => {
+    if (!balanceChangeBeneficiaryId && selfBeneficiary) {
+      setBalanceChangeBeneficiaryId(selfBeneficiary.id);
+    }
+  }, [balanceChangeBeneficiaryId, selfBeneficiary]);
+
+  useEffect(() => {
     if (
       !accountQuery.data ||
       (shouldLoadCurrentCycle && currentCycleQuery.isLoading)
@@ -365,6 +392,8 @@ export default function useAccountManagementDetail() {
     attachmentState,
     creditCardTypeId,
     balanceChangeCategoryId,
+    balanceChangeBeneficiaryId,
+    beneficiaries,
     balanceChangeCategoryOptions,
     balanceChangeDate,
     balanceChangeDescription,
@@ -386,12 +415,15 @@ export default function useAccountManagementDetail() {
     setFocus,
     setValue,
     setBalanceChangeCategoryId,
+    setBalanceChangeBeneficiaryId,
     setBalanceChangeDate,
     setBalanceChangeDescription,
     setBalanceChangeKind,
     setShowDeactivateDialog,
     setShowDeleteDialog,
     showCurrencyField: currencyPreferences.showCurrencyField,
+    showBeneficiaryField,
+    onManageBeneficiaries: () => router.push(BENEFICIARY_MANAGEMENT_LIST_URL),
     showDeactivateDialog,
     showDeleteDialog,
   };

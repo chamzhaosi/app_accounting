@@ -35,6 +35,7 @@ import TransactionAttachmentButton from "./_components/TransactionAttachmentButt
 import TransactionAttachmentManager from "./_components/TransactionAttachmentManager";
 import TransactionAttachmentPreview from "./_components/TransactionAttachmentPreview";
 import RecentDescriptionPicker from "./_components/RecentDescriptionPicker";
+import BeneficiarySelector from "../beneficiary_management/_components/BeneficiarySelector";
 
 type TransactionFormScreenLogic = Omit<
   ReturnType<typeof useTransactionManagementCreate>,
@@ -65,6 +66,8 @@ export function TransactionFormScreen({
   const { THEME } = useThemeStore();
   const {
     accountCurrencyCode,
+    beneficiaries,
+    beneficiaryId,
     attachmentState,
     accountFieldProps,
     activeAccountField,
@@ -82,12 +85,14 @@ export function TransactionFormScreen({
     isSubmitting,
     isSubmitted,
     onManageCategories,
+    onManageBeneficiaries,
     openAccountPicker,
     rateSuggestionLabel,
     recentDescriptions = [],
     responseError,
     setValue,
     showCurrencyField,
+    showBeneficiaryField,
     transactionType,
     usesExchangeRate,
   } = logic;
@@ -104,6 +109,7 @@ export function TransactionFormScreen({
           ref={ref}
           mode="outlined"
           label="Transaction Date"
+          style={{ height: 56 }}
           value={dayjs(value).toDate()}
           onChange={(date) => onChange(dayjs(date).format("YYYY-MM-DD"))}
           onBlur={onBlur}
@@ -273,7 +279,7 @@ export function TransactionFormScreen({
           </>
         }
       />
-      <View className="p-4 pb-3 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
+      <View className="p-4 pb-0 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer">
         <AppText variant="titleMedium" className="mb-2">
           {t("Transaction Type")}
         </AppText>
@@ -346,24 +352,20 @@ export function TransactionFormScreen({
       </View>
 
       <AppScrollView
+        enableOnAndroid
+        enableAutomaticScroll
         className="p-4 bg-LIGHT-surfaceContainer dark:bg-DARK-surfaceContainer border-0 flex-1"
-        contentContainerStyle={{ justifyContent: "flex-start" }}
+        contentContainerStyle={{
+          justifyContent: "flex-start",
+          paddingBottom: 32,
+        }}
       >
-        <CategoryIdField
-          control={control}
-          transactionType={transactionType}
-          categoryItems={categoryItems}
-          error={categoryError}
-          isLoading={isLoadingCategories}
-          disabled={isSubmitting}
-          onManageCategories={onManageCategories}
-        />
-
         {transactionType === TXN_TYPE_ENUM.TRANSFER ? (
           <>
             {renderTransactionDate()}
             <View className="flex-row items-center">
               <AccountIdField
+                className="flex-1"
                 {...accountFieldProps}
                 fieldName="fromAccountId"
                 label="From Account"
@@ -384,6 +386,7 @@ export function TransactionFormScreen({
                 <AppIcon name="MoveRight" size={24} />
               </View>
               <AccountIdField
+                className="flex-1"
                 {...accountFieldProps}
                 fieldName="toAccountId"
                 label="To Account"
@@ -407,11 +410,13 @@ export function TransactionFormScreen({
           </>
         ) : (
           <>
-            <View className="flex-row gap-2">
+            <View key="date-account-row" className="flex-row gap-2 items-start">
               <View className="flex-1">{renderTransactionDate()}</View>
               <AccountIdField
+                className="flex-1"
                 {...accountFieldProps}
                 fieldName="accountId"
+                headerLayout="category"
                 label="Account"
                 isPickerVisible={
                   isAccountPickerVisible && activeAccountField === "accountId"
@@ -422,6 +427,44 @@ export function TransactionFormScreen({
                 }
                 disabled={isSubmitting}
               />
+            </View>
+            <View
+              key="beneficiary-category-row"
+              className="flex-row gap-2 items-start"
+            >
+              {transactionType === TXN_TYPE_ENUM.EXPENSE &&
+              showBeneficiaryField ? (
+                <View className="flex-1" style={{ flexBasis: 0, minWidth: 0 }}>
+                  <Controller
+                    control={control}
+                    name="beneficiaryId"
+                    render={({ field, fieldState: { error } }) => (
+                      <BeneficiarySelector
+                        label="For"
+                        beneficiaries={beneficiaries}
+                        selectedIds={beneficiaryId ? [beneficiaryId] : []}
+                        headerLayout="category"
+                        presentation="modal"
+                        disabled={isSubmitting}
+                        errorMessage={error?.message}
+                        onChange={(ids) => field.onChange(ids[0] ?? "")}
+                        onManage={onManageBeneficiaries}
+                      />
+                    )}
+                  />
+                </View>
+              ) : null}
+              <View className="flex-1" style={{ flexBasis: 0, minWidth: 0 }}>
+                <CategoryIdField
+                  control={control}
+                  transactionType={transactionType}
+                  categoryItems={categoryItems}
+                  error={categoryError}
+                  isLoading={isLoadingCategories}
+                  disabled={isSubmitting}
+                  onManageCategories={onManageCategories}
+                />
+              </View>
             </View>
             <View className="flex-row gap-2">
               {showCurrencyField && (

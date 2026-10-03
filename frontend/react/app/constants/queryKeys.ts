@@ -12,6 +12,7 @@ export enum QueryKeyModule {
   CREDIT_CARD = "creditCard",
   TRANSACTION_SEARCH = "transactionSearch",
   BOOK = "book",
+  BENEFICIARY = "beneficiary",
 }
 
 const bookScope = () => ["book", getActiveBookQueryScope()] as const;
@@ -23,6 +24,16 @@ export const bookQueryKeys = {
     [...bookQueryKeys.lists(), { includeInactive }] as const,
   details: () => [...bookQueryKeys.all, "detail"] as const,
   detail: (id: string) => [...bookQueryKeys.details(), id] as const,
+};
+
+export const beneficiaryQueryKeys = {
+  all: [QueryKeyModule.BENEFICIARY] as const,
+  lists: () => [...beneficiaryQueryKeys.all, "list"] as const,
+  list: (params: { type?: string; includeInactive?: boolean }) =>
+    [...beneficiaryQueryKeys.lists(), params] as const,
+  selectable: () => [...beneficiaryQueryKeys.lists(), "selectable"] as const,
+  details: () => [...beneficiaryQueryKeys.all, "detail"] as const,
+  detail: (id: string) => [...beneficiaryQueryKeys.details(), id] as const,
 };
 
 export const transactionSearchQueryKeys = {
@@ -66,6 +77,18 @@ export const budgetQueryKeys = {
   months: () => [...budgetQueryKeys.all, "month"] as const,
   month: (params: { month: string; currencyCode: string }) =>
     [...budgetQueryKeys.months(), ...bookScope(), params] as const,
+  filteredProgress: (params: {
+    budgetId: string;
+    month: string;
+    currencyCode: string;
+    beneficiaryIds: string[];
+  }) =>
+    [
+      ...budgetQueryKeys.months(),
+      "beneficiaryFilter",
+      ...bookScope(),
+      params,
+    ] as const,
   dailyRemaining: (params: {
     startDate: string;
     endDate: string;
@@ -248,6 +271,7 @@ export const transactionManagementQueryKeys = {
     startDate: string;
     endDate: string;
     currencyCode?: string;
+    beneficiaryIds?: string[];
   }) =>
     [
       ...transactionManagementQueryKeys.lists(),
@@ -260,6 +284,7 @@ export const transactionManagementQueryKeys = {
     startDate: string;
     endDate: string;
     currencyCode: string;
+    beneficiaryIds?: string[];
   }) =>
     [
       ...transactionManagementQueryKeys.lists(),
@@ -275,6 +300,7 @@ export const transactionManagementQueryKeys = {
     categoryId?: string;
     currencyCode?: string;
     creditCardStatementDate?: string;
+    beneficiaryIds?: string[];
   }) =>
     [
       ...transactionManagementQueryKeys.lists(),

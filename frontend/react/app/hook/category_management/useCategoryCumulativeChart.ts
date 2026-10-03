@@ -14,6 +14,7 @@ type UseCategoryCumulativeChartParams = {
   startDate: string;
   endDate: string;
   currencyCode: string;
+  beneficiaryIds?: string[];
 };
 
 export default function useCategoryCumulativeChart({
@@ -21,6 +22,7 @@ export default function useCategoryCumulativeChart({
   startDate,
   endDate,
   currencyCode,
+  beneficiaryIds = [],
 }: UseCategoryCumulativeChartParams) {
   const { locale } = useTranslation();
   const query = useQuery({
@@ -29,9 +31,16 @@ export default function useCategoryCumulativeChart({
       startDate,
       endDate,
       currencyCode,
+      beneficiaryIds,
     }),
     queryFn: () =>
-      getCategoryDailyTotals(categoryId, startDate, endDate, currencyCode),
+      getCategoryDailyTotals(
+        categoryId,
+        startDate,
+        endDate,
+        currencyCode,
+        beneficiaryIds,
+      ),
     enabled: Boolean(categoryId && startDate && endDate && currencyCode),
   });
 

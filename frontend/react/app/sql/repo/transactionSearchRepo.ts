@@ -23,10 +23,13 @@ const TRANSACTION_SEARCH_FROM = `
     AND to_accounts.book_id = transactions.book_id
   INNER JOIN books
     ON books.id = transactions.book_id
+  LEFT JOIN beneficiaries
+    ON beneficiaries.id = transactions.beneficiary_id
 `;
 
 const DESCRIPTION_VALUE = "LOWER(COALESCE(transactions.descriptions, ''))";
 const CATEGORY_VALUE = "LOWER(COALESCE(categories.label, ''))";
+const BENEFICIARY_VALUE = "LOWER(COALESCE(beneficiaries.name, ''))";
 const ACCOUNT_MATCH = `(
   LOWER(COALESCE(accounts.label, '')) LIKE LOWER(?)
   OR LOWER(COALESCE(from_accounts.label, '')) LIKE LOWER(?)
@@ -105,12 +108,18 @@ export const searchTransactionsFromDB = async ({
         `CASE WHEN ${CATEGORY_VALUE} LIKE LOWER(?) THEN 20 ELSE 0 END`,
       );
       scoreParams.push(contains);
+      scoreParts.push(
+        `CASE WHEN ${BENEFICIARY_VALUE} LIKE LOWER(?) THEN 20 ELSE 0 END`,
+      );
+      scoreParams.push(contains);
       scoreParts.push(`CASE WHEN ${ACCOUNT_MATCH} THEN 10 ELSE 0 END`);
       scoreParams.push(contains, contains, contains);
 
       keywordMatches.push(`${DESCRIPTION_VALUE} LIKE LOWER(?)`);
       whereParams.push(contains);
       keywordMatches.push(`${CATEGORY_VALUE} LIKE LOWER(?)`);
+      whereParams.push(contains);
+      keywordMatches.push(`${BENEFICIARY_VALUE} LIKE LOWER(?)`);
       whereParams.push(contains);
       keywordMatches.push(ACCOUNT_MATCH);
       whereParams.push(contains, contains, contains);
@@ -165,6 +174,12 @@ export const searchTransactionsFromDB = async ({
         `transactions.category_id IN (${buildPlaceholders(filters.categoryIds)})`,
       );
       filterParams.push(...filters.categoryIds);
+    }
+    if (filters.beneficiaryIds?.length) {
+      filtersSql.push(
+        `transactions.beneficiary_id IN (${buildPlaceholders(filters.beneficiaryIds)})`,
+      );
+      filterParams.push(...filters.beneficiaryIds);
     }
     if (filters.transactionTypes?.length) {
       filtersSql.push(
@@ -226,6 +241,10 @@ export const searchTransactionsFromDB = async ({
           categories.label AS category_label,
           categories.translation_key AS category_translation_key,
           categories.icon AS category_icon,
+          beneficiaries.name AS beneficiary_name,
+          beneficiaries.icon AS beneficiary_icon,
+          beneficiaries.is_active AS beneficiary_is_active,
+          beneficiaries.is_self AS beneficiary_is_self,
           accounts.label AS account_label,
           from_accounts.label AS from_account_label,
           to_accounts.label AS to_account_label,
@@ -274,18 +293,19 @@ export const getTransactionSearchFilterOptionsFromDB =
     try {
       const db = await getDB();
       const bookId = getRequiredActiveBookId();
-      const [accounts, categories, currencies, books] = await Promise.all([
-        db.getAllAsync<{
-          id: string;
-          icon: string;
-          label: string;
-          currency_code: string;
-          current_balance: number;
-          descriptions: string | null;
-          type_id: string;
-          type_label: string;
-        }>(
-          `SELECT
+      const [accounts, beneficiaries, categories, currencies, books] =
+        await Promise.all([
+          db.getAllAsync<{
+            id: string;
+            icon: string;
+            label: string;
+            currency_code: string;
+            current_balance: number;
+            descriptions: string | null;
+            type_id: string;
+            type_label: string;
+          }>(
+            `SELECT
              accounts.id,
              account_types.icon,
              accounts.label,
@@ -300,24 +320,42 @@ export const getTransactionSearchFilterOptionsFromDB =
            AND accounts.book_id = ?
          ORDER BY account_types.label COLLATE NOCASE ASC,
                   accounts.label COLLATE NOCASE ASC;`,
-          [bookId],
-        ),
-        db.getAllAsync<{
-          id: string;
-          icon: string;
-          label: string;
-          type_id: number;
-          translation_key: string | null;
-        }>(
-          `SELECT id, icon, label, type_id, translation_key
+            [bookId],
+          ),
+          db.getAllAsync<{
+            id: string;
+            icon: string;
+            name: string;
+            type: "INDIVIDUAL" | "GROUP";
+            is_active: number;
+            is_self: number;
+          }>(
+            `SELECT id, icon, name, type, is_active, is_self
+           FROM beneficiaries
+           WHERE deleted_at IS NULL
+             AND (is_active = 1 OR EXISTS (
+               SELECT 1 FROM transactions
+               WHERE transactions.beneficiary_id = beneficiaries.id
+                 AND transactions.deleted_at IS NULL
+             ))
+           ORDER BY is_active DESC, type ASC, name COLLATE NOCASE ASC;`,
+          ),
+          db.getAllAsync<{
+            id: string;
+            icon: string;
+            label: string;
+            type_id: number;
+            translation_key: string | null;
+          }>(
+            `SELECT id, icon, label, type_id, translation_key
          FROM categories
          WHERE deleted_at IS NULL
            AND book_id = ?
          ORDER BY type_id ASC, label COLLATE NOCASE ASC;`,
-          [bookId],
-        ),
-        db.getAllAsync<{ code: string }>(
-          `SELECT code
+            [bookId],
+          ),
+          db.getAllAsync<{ code: string }>(
+            `SELECT code
          FROM (
            SELECT currency_code AS code
            FROM transactions
@@ -328,19 +366,19 @@ export const getTransactionSearchFilterOptionsFromDB =
            WHERE deleted_at IS NULL AND book_id = ?
          )
          ORDER BY code ASC;`,
-          [bookId, bookId],
-        ),
-        db.getAllAsync<{
-          id: string;
-          icon: string;
-          label: string;
-          is_active: boolean;
-        }>(
-          `SELECT id, icon, label, is_active
+            [bookId, bookId],
+          ),
+          db.getAllAsync<{
+            id: string;
+            icon: string;
+            label: string;
+            is_active: boolean;
+          }>(
+            `SELECT id, icon, label, is_active
            FROM books
            ORDER BY sort_order ASC, created_at ASC;`,
-        ),
-      ]);
+          ),
+        ]);
 
       return {
         books: books.map(({ id, icon, label, is_active }) => ({
@@ -377,6 +415,16 @@ export const getTransactionSearchFilterOptionsFromDB =
             label,
             typeId: type_id,
             translationKey: translation_key,
+          }),
+        ),
+        beneficiaries: beneficiaries.map(
+          ({ id, icon, name, type, is_active, is_self }) => ({
+            id,
+            icon,
+            name,
+            type,
+            isActive: Boolean(is_active),
+            isSelf: Boolean(is_self),
           }),
         ),
         currencyCodes: currencies.map(({ code }) => code),

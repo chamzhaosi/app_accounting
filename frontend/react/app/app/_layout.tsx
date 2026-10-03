@@ -236,6 +236,10 @@ export default function StackLayout() {
               name="budget_management"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="beneficiary_management"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="security" options={{ headerShown: false }} />
             <Stack.Screen
               name="account_settings"

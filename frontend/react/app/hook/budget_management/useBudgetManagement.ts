@@ -14,6 +14,7 @@ import {
   budgetQueryKeys,
   currencyManagementQueryKeys,
   invalidateQuery,
+  beneficiaryQueryKeys,
 } from "../../constants/queryKeys";
 import { BUDGET_MANAGEMENT_LIST_URL } from "../../constants/urls";
 import {
@@ -40,6 +41,7 @@ import { getMonthKey } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
+import { getSelectableBeneficiaries } from "../../sql/service/beneficiaryService";
 
 export default function useBudgetManagement() {
   const { id: planId } = useLocalSearchParams<{ id?: string }>();
@@ -50,6 +52,9 @@ export default function useBudgetManagement() {
   );
   const isSingleCurrency = useSingleCurrencyMode();
   const [allocations, setAllocations] = useState<Record<string, string>>({});
+  const [beneficiaryAllocations, setBeneficiaryAllocations] = useState<
+    Record<string, Record<string, string>>
+  >({});
   const [isCategoryPickerVisible, setIsCategoryPickerVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [rspErrorMsg, setRspErrorMsg] = useState("");
@@ -67,6 +72,12 @@ export default function useBudgetManagement() {
     queryKey: currencyManagementQueryKeys.preferences(),
     queryFn: getCurrencyPreferences,
   });
+  const beneficiaryQuery = useQuery({
+    queryKey: beneficiaryQueryKeys.selectable(),
+    queryFn: getSelectableBeneficiaries,
+  });
+  const beneficiaries = beneficiaryQuery.data ?? [];
+  const showBeneficiaryControls = beneficiaries.some((item) => !item.is_self);
   const {
     control,
     handleSubmit,
@@ -118,6 +129,22 @@ export default function useBudgetManagement() {
               query.data.currencyCode ?? undefined,
             ),
           ]),
+      ),
+    );
+    setBeneficiaryAllocations(
+      Object.fromEntries(
+        query.data.categories.map((category) => [
+          category.category_id,
+          Object.fromEntries(
+            category.beneficiary_allocations.map((allocation) => [
+              allocation.beneficiary_id,
+              toAmountString(
+                allocation.amount,
+                query.data?.currencyCode ?? undefined,
+              ),
+            ]),
+          ),
+        ]),
       ),
     );
   }, [query.data, reset]);
@@ -194,7 +221,39 @@ export default function useBudgetManagement() {
       delete next[categoryId];
       return next;
     });
+    setBeneficiaryAllocations((current) => {
+      const next = { ...current };
+      delete next[categoryId];
+      return next;
+    });
   };
+
+  const onBeneficiarySelectionChange = (
+    categoryId: string,
+    beneficiaryIds: string[],
+  ) =>
+    setBeneficiaryAllocations((current) => ({
+      ...current,
+      [categoryId]: Object.fromEntries(
+        beneficiaryIds.map((beneficiaryId) => [
+          beneficiaryId,
+          current[categoryId]?.[beneficiaryId] ?? getZeroAmount(currencyCode),
+        ]),
+      ),
+    }));
+
+  const onBeneficiaryAllocationChange = (
+    categoryId: string,
+    beneficiaryId: string,
+    amount: string,
+  ) =>
+    setBeneficiaryAllocations((current) => ({
+      ...current,
+      [categoryId]: {
+        ...(current[categoryId] ?? {}),
+        [beneficiaryId]: amount,
+      },
+    }));
 
   const onSelectCategory = (category: BudgetManageCategoryType) => {
     setAllocations((current) => ({
@@ -219,6 +278,21 @@ export default function useBudgetManagement() {
         ]),
       ),
     );
+    setBeneficiaryAllocations((current) =>
+      Object.fromEntries(
+        Object.entries(current).map(([categoryId, categoryAllocations]) => [
+          categoryId,
+          Object.fromEntries(
+            Object.entries(categoryAllocations).map(
+              ([beneficiaryId, amount]) => [
+                beneficiaryId,
+                toAmountString(amount, nextCurrencyCode),
+              ],
+            ),
+          ),
+        ]),
+      ),
+    );
   };
 
   const onSubmit = async (value: BudgetManagementFormType) => {
@@ -236,6 +310,12 @@ export default function useBudgetManagement() {
           ([categoryId, amount]) => ({
             categoryId,
             amount: toAmountString(amount, value.currencyCode),
+            beneficiaryAllocations: Object.entries(
+              beneficiaryAllocations[categoryId] ?? {},
+            ).map(([beneficiaryId, beneficiaryAmount]) => ({
+              beneficiaryId,
+              amount: toAmountString(beneficiaryAmount, value.currencyCode),
+            })),
           }),
         ),
       });
@@ -261,6 +341,8 @@ export default function useBudgetManagement() {
     allocatedAmount,
     allocationDifference,
     allocations,
+    beneficiaries,
+    beneficiaryAllocations,
     amountDecimalPlaces: getCurrencyDecimalDigits(currencyCode),
     amountMaxLength: getAmountMaxLength(currencyCode),
     availableCategories,
@@ -280,6 +362,8 @@ export default function useBudgetManagement() {
         (availableCurrenciesQuery.isLoading || preferencesQuery.isLoading)),
     isSaving,
     onAllocationChange,
+    onBeneficiaryAllocationChange,
+    onBeneficiarySelectionChange,
     onCurrencyChange,
     onDismissCategoryPicker: () => setIsCategoryPickerVisible(false),
     onOpenCategoryPicker: () => setIsCategoryPickerVisible(true),
@@ -290,5 +374,6 @@ export default function useBudgetManagement() {
     rspErrorMsg,
     selectedCategories,
     showCurrencyField: !isSingleCurrency,
+    showBeneficiaryControls,
   };
 }

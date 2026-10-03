@@ -7,11 +7,13 @@ import { getCategoryDisplayLabel } from "../category_management/categoryManageme
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 
 export type TransactionListItem = {
+  beneficiaryLabel?: string;
   description?: string;
   id: string;
   icon: AppIconProps["name"];
   title: string;
   subtitle: string;
+  metadata?: string;
   fromAccountLabel?: string;
   toAccountLabel?: string;
   accountId?: string;
@@ -34,11 +36,17 @@ type MapTransactionListItemOptions = {
   accountId?: string;
   isSingleCurrency: boolean;
   t: (text: string, values?: Record<string, string | number>) => string;
+  showSelfBeneficiary?: boolean;
 };
 
 export const mapTransactionListItem = (
   transaction: TransactionMgmtRspType,
-  { accountId, isSingleCurrency, t }: MapTransactionListItemOptions,
+  {
+    accountId,
+    isSingleCurrency,
+    t,
+    showSelfBeneficiary = false,
+  }: MapTransactionListItemOptions,
 ): TransactionListItem => {
   const isIncome = transaction.transaction_type === TXN_TYPE_ENUM.INCOME;
   const isExpense = transaction.transaction_type === TXN_TYPE_ENUM.EXPENSE;
@@ -95,14 +103,25 @@ export const mapTransactionListItem = (
                 : "decreased",
             ),
           })}`;
+  const beneficiaryMetadata =
+    isExpense &&
+    transaction.beneficiary_name &&
+    (showSelfBeneficiary || !transaction.beneficiary_is_self)
+      ? t("For {{name}}", { name: transaction.beneficiary_name })
+      : undefined;
+  const description = transaction.descriptions?.trim() || undefined;
+  const metadata =
+    [description, beneficiaryMetadata].filter(Boolean).join(" · ") || undefined;
 
   return {
-    description: transaction.descriptions?.trim() || undefined,
+    beneficiaryLabel: beneficiaryMetadata,
+    description,
     id: transaction.id,
     icon: (transaction.category_icon ??
       (isTransfer ? "ArrowLeftRight" : "WalletCards")) as AppIconProps["name"],
     title,
     subtitle,
+    metadata,
     fromAccountLabel: isTransfer
       ? getTransactionAccountDisplayLabel(
           transaction.from_account_label ?? t("Account"),

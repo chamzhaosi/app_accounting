@@ -32,6 +32,7 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
       errorField,
       onBlur,
       disabled,
+      style,
       withBottomSpacing = true,
       ...props
     },
@@ -56,7 +57,10 @@ const AppDatePicker = forwardRef<RNTextInput, AppDatePickerProps>(
           <AppTextInput
             {...props}
             ref={ref}
-            style={{ marginBottom: withBottomSpacing ? 16 : 0 }}
+            style={StyleSheet.flatten([
+              style,
+              { marginBottom: withBottomSpacing ? 16 : 0 },
+            ])}
             value={formatDateValue(value)}
             editable={false}
             disabled={disabled}

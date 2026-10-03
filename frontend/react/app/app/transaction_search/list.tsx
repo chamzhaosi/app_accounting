@@ -67,7 +67,7 @@ export default function TransactionSearchList() {
             {t(
               logic.isSearchActive
                 ? "No transactions matched your search."
-                : "Search by description, category, account, or amount.",
+                : "Search by description, beneficiary, category, account, or amount.",
             )}
           </Text>
         </>
@@ -216,6 +216,7 @@ export default function TransactionSearchList() {
           filterError={logic.filterError}
           accountPickerItems={logic.accountPickerItems}
           categoryOptions={logic.categoryOptions}
+          beneficiaryPickerItems={logic.beneficiaryPickerItems}
           currencyOptions={logic.currencyOptions}
           transactionTypeOptions={logic.transactionTypeOptions}
           bookOptions={logic.bookOptions}

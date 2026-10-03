@@ -29,6 +29,7 @@ import { useTranslation } from "../../i18n/helper";
 import { formatSectionDate } from "../../utils/date";
 import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 import type { TransactionDateSection } from "../../hook/transaction_management/useTransactionManagementList";
+import TransactionMetadataLine from "./_components/TransactionMetadataLine";
 
 export default function TransactionManagementList(
   props: TransactionManagementListProps,
@@ -279,7 +280,9 @@ export default function TransactionManagementList(
               accessibilityRole="button"
               accessibilityLabel={`${item.title}${
                 item.description ? `, ${item.description}` : ""
-              }${item.hasAttachments ? `, ${t("Has attachments")}` : ""}, ${displayAmount}${
+              }${item.beneficiaryLabel ? `, ${item.beneficiaryLabel}` : ""}${
+                item.hasAttachments ? `, ${t("Has attachments")}` : ""
+              }, ${displayAmount}${
                 secondaryAmount ? `, ${secondaryAmount}` : ""
               }`}
               accessibilityHint={
@@ -359,17 +362,13 @@ export default function TransactionManagementList(
                       </Text>
                     </View>
                   ) : (
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.transactionSubtitle,
-                        { color: THEME.onSurfaceVariant },
-                      ]}
-                    >
-                      {item.subtitle}
-                    </Text>
+                    <TransactionMetadataLine
+                      beneficiaryLabel={item.beneficiaryLabel}
+                      description={item.description}
+                    />
                   )}
-                  {item.description ? (
+                  {item.transactionType === TXN_TYPE_ENUM.TRANSFER &&
+                  item.description ? (
                     <Text
                       numberOfLines={1}
                       ellipsizeMode="tail"
@@ -404,6 +403,18 @@ export default function TransactionManagementList(
                       ]}
                     >
                       {secondaryAmount}
+                    </Text>
+                  ) : null}
+                  {item.transactionType !== TXN_TYPE_ENUM.TRANSFER ? (
+                    <Text
+                      variant="labelSmall"
+                      numberOfLines={1}
+                      style={{
+                        color: THEME.onSurfaceVariant,
+                        textAlign: "right",
+                      }}
+                    >
+                      {item.subtitle}
                     </Text>
                   ) : null}
                 </View>

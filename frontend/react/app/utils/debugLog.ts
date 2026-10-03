@@ -23,6 +23,8 @@ export enum DEBUG_TAG {
   CREDIT_CARD_DB = "[CreditCard:DB]",
   BOOK = "[Book]",
   BOOK_DB = "[Book:DB]",
+  BENEFICIARY = "[Beneficiary]",
+  BENEFICIARY_DB = "[Beneficiary:DB]",
 }
 
 export const debugLog = (...args: unknown[]) => {

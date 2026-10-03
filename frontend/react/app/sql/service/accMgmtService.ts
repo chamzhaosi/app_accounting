@@ -15,6 +15,7 @@ import {
   getAssetBalanceFromDB,
   updateAccMgmtToDB,
 } from "../repo/accMgmtRepo";
+import { getBeneficiaryById } from "./beneficiaryService";
 import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
 import {
   AccMgmtCreateReqType,
@@ -197,6 +198,13 @@ export const updateAccMgmt = async (data: AccMgmtUpdateReqType) => {
         return `Selected category is unavailable for this ${expectedKind}.`;
       if ((data.balanceChangeDescription?.trim().length ?? 0) > 100)
         return "Description must not exceed 100 characters.";
+      if (expectedKind === "expense") {
+        const beneficiary = await getBeneficiaryById(
+          data.balanceChangeBeneficiaryId ?? "",
+        );
+        if (!beneficiary?.is_active)
+          return "Select an active beneficiary for the missing expense.";
+      }
     }
   }
 

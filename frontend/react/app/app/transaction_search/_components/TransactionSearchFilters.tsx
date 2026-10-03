@@ -12,9 +12,11 @@ import type { SelectOptionType } from "../../../components/AppSelect";
 import AppTextInput from "../../../components/AppTextInput";
 import { useTranslation } from "../../../i18n/helper";
 import type { TransactionSearchFilters } from "../../../sql/types/transactionSearchType";
+import type { BeneficiaryFilterOptionType } from "../../../sql/types/beneficiaryType";
 import { useThemeStore } from "../../../stores/useThemeStore";
 import { formatDateValue, parseDateValue } from "../../../utils/date";
 import type { AccountPickerModalItem } from "../../transaction_management/_components/AccountPickerModal";
+import BeneficiarySelector from "../../beneficiary_management/_components/BeneficiarySelector";
 import TransactionSearchAccountPicker from "./TransactionSearchAccountPicker";
 import TransactionSearchCategoryPicker from "./TransactionSearchCategoryPicker";
 import TransactionSearchMultiSelect from "./TransactionSearchMultiSelect";
@@ -26,6 +28,7 @@ type TransactionSearchFiltersProps = {
   filterError?: string;
   accountPickerItems: AccountPickerModalItem[];
   categoryOptions: SelectOptionType[];
+  beneficiaryPickerItems: BeneficiaryFilterOptionType[];
   currencyOptions: SelectOptionType[];
   transactionTypeOptions: SelectOptionType[];
   bookOptions: SelectOptionType[];
@@ -40,6 +43,7 @@ export default function TransactionSearchFilters({
   filterError,
   accountPickerItems,
   categoryOptions,
+  beneficiaryPickerItems,
   currencyOptions,
   transactionTypeOptions,
   bookOptions,
@@ -187,6 +191,20 @@ export default function TransactionSearchFilters({
               setDraft((current) => ({ ...current, categoryIds }))
             }
           />
+          <View style={styles.beneficiaryPicker}>
+            <BeneficiarySelector
+              label="Beneficiary"
+              beneficiaries={beneficiaryPickerItems}
+              selectedIds={draft.beneficiaryIds ?? []}
+              multiple
+              allowInactiveSelection
+              headerLayout="category"
+              presentation="modal"
+              onChange={(beneficiaryIds) =>
+                setDraft((current) => ({ ...current, beneficiaryIds }))
+              }
+            />
+          </View>
           <View style={styles.selectRows}>
             <TransactionSearchMultiSelect
               label={t("Transaction type")}
@@ -300,7 +318,8 @@ const styles = StyleSheet.create({
   clearDateButton: { alignSelf: "flex-end", marginBottom: 8, marginTop: -12 },
   textButtonLabel: { fontSize: 14 },
   textButtonContent: { marginVertical: 0 },
-  selectRows: { gap: 12, marginTop: 12 },
+  beneficiaryPicker: { marginTop: 12 },
+  selectRows: { gap: 12 },
   amountRow: { flexDirection: "row", gap: 12, marginTop: 12 },
   amountInput: { flex: 1 },
   error: { marginBottom: 8 },

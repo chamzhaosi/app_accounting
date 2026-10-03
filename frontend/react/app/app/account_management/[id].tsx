@@ -170,6 +170,9 @@ export default function AccountManagementDetail() {
             difference={logic.balanceDifference}
             kind={logic.balanceChangeKind}
             categoryId={logic.balanceChangeCategoryId}
+            beneficiaryId={logic.balanceChangeBeneficiaryId}
+            beneficiaries={logic.beneficiaries}
+            showBeneficiaryField={logic.showBeneficiaryField}
             categoryOptions={logic.balanceChangeCategoryOptions}
             description={logic.balanceChangeDescription}
             recentDescriptions={logic.recentBalanceChangeDescriptions}
@@ -183,6 +186,8 @@ export default function AccountManagementDetail() {
             disabled={logic.isSubmitting || isReadOnly}
             onKindChange={logic.setBalanceChangeKind}
             onCategoryChange={logic.setBalanceChangeCategoryId}
+            onBeneficiaryChange={logic.setBalanceChangeBeneficiaryId}
+            onManageBeneficiaries={logic.onManageBeneficiaries}
             onDateChange={logic.setBalanceChangeDate}
             onDescriptionChange={logic.setBalanceChangeDescription}
             onAttachmentPress={logic.attachmentState.onAttachmentPress}

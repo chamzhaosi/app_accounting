@@ -12,6 +12,7 @@ import AppCurrencyTotalsSheet from "../../../components/AppCurrencyTotalsSheet";
 import AppFloatingButton from "../../../components/AppFloatingButton";
 import { useBookStore } from "../../../stores/useBookStore";
 import AppIcon, { AppIconProps } from "../../../components/AppIcon";
+import AppIconButton from "../../../components/AppIconButton";
 import AppSwipePager from "../../../components/AppSwipePager";
 import AppView from "../../../components/AppView";
 import {
@@ -30,6 +31,7 @@ import { useTranslation } from "../../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../../hook/category_management/categoryManagementList.utils";
 import CategoryCurrencyNavigator from "./_components/CategoryCurrencyNavigator";
 import InactiveBookBanner from "../../../components/InactiveBookBanner";
+import BeneficiaryFilterModal from "../../beneficiary_management/_components/BeneficiaryFilterModal";
 
 export default function CategoryDetail() {
   const isWritable = useBookStore((state) =>
@@ -44,6 +46,8 @@ export default function CategoryDetail() {
   const isSingleCurrency = useSingleCurrencyMode();
   const {
     category,
+    beneficiaries,
+    beneficiaryIds,
     currencyCode,
     currencyCodes,
     currencyOptions,
@@ -54,9 +58,13 @@ export default function CategoryDetail() {
     id,
     hiddenCurrencyTotalCount,
     isCurrencyTotalsVisible,
+    isBeneficiaryFilterVisible,
     isLoading,
     onCloseCurrencyTotals,
     onOpenCurrencyTotals,
+    setBeneficiaryIds,
+    setIsBeneficiaryFilterVisible,
+    showBeneficiaryFilter,
     periodTotal,
     selectedCurrencyCode,
     setSelectedCurrencyCode,
@@ -111,6 +119,13 @@ export default function CategoryDetail() {
         visible={isCurrencyTotalsVisible}
         onDismiss={onCloseCurrencyTotals}
       />
+      <BeneficiaryFilterModal
+        visible={isBeneficiaryFilterVisible}
+        beneficiaries={beneficiaries}
+        selectedIds={beneficiaryIds}
+        onApply={setBeneficiaryIds}
+        onDismiss={() => setIsBeneficiaryFilterVisible(false)}
+      />
       <AppSwipePager>
         <Surface
           elevation={1}
@@ -160,6 +175,18 @@ export default function CategoryDetail() {
                 style={styles.currencyNavigator}
               />
             )}
+            {showBeneficiaryFilter ? (
+              <AppIconButton
+                iconName="ListFilter"
+                accessibilityLabel={t("Filter by Beneficiary")}
+                onPress={() => setIsBeneficiaryFilterVisible(true)}
+                style={
+                  beneficiaryIds.length
+                    ? { backgroundColor: THEME.tertiaryContainer }
+                    : undefined
+                }
+              />
+            ) : null}
           </View>
 
           <AppDateRangePicker
@@ -250,6 +277,7 @@ export default function CategoryDetail() {
             startDate={startDate}
             endDate={endDate}
             currencyCode={currencyCode}
+            beneficiaryIds={beneficiaryIds}
           />
         ) : null}
       </AppSwipePager>
@@ -261,6 +289,7 @@ export default function CategoryDetail() {
           categoryId={id}
           currencyCode={currencyCode}
           currencyCodes={currencyCodes}
+          beneficiaryIds={beneficiaryIds}
         />
       )}
 

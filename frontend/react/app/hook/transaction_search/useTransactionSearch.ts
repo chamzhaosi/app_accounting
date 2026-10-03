@@ -20,6 +20,7 @@ import {
   searchTransactions,
 } from "../../sql/service/transactionSearchService";
 import type { TransactionSearchFilters } from "../../sql/types/transactionSearchType";
+import type { BeneficiaryFilterOptionType } from "../../sql/types/beneficiaryType";
 import { useTranslation } from "../../i18n/helper";
 import { compareAmounts, isAmountWithinRange } from "../../utils/amount";
 import { DEBUG_TAG } from "../../utils/debugLog";
@@ -47,6 +48,9 @@ const normalizeFilters = (
   ...filters,
   accountIds: filters.accountIds?.length ? filters.accountIds : undefined,
   categoryIds: filters.categoryIds?.length ? filters.categoryIds : undefined,
+  beneficiaryIds: filters.beneficiaryIds?.length
+    ? filters.beneficiaryIds
+    : undefined,
   transactionTypes: filters.transactionTypes?.length
     ? filters.transactionTypes
     : undefined,
@@ -206,9 +210,21 @@ export default function useTransactionSearch() {
   const results = useMemo(
     () =>
       (searchQuery.data?.pages.flat() ?? []).map((transaction) =>
-        mapTransactionListItem(transaction, { isSingleCurrency, t }),
+        mapTransactionListItem(transaction, {
+          isSingleCurrency,
+          t,
+          showSelfBeneficiary:
+            filterOptionsQuery.data?.beneficiaries.some(
+              (beneficiary) => beneficiary.isActive && !beneficiary.isSelf,
+            ) ?? false,
+        }),
       ),
-    [isSingleCurrency, searchQuery.data, t],
+    [
+      filterOptionsQuery.data?.beneficiaries,
+      isSingleCurrency,
+      searchQuery.data,
+      t,
+    ],
   );
 
   const accountPickerItems = useMemo(
@@ -293,11 +309,24 @@ export default function useTransactionSearch() {
     ],
     [filterOptionsQuery.data?.books, t],
   );
+  const beneficiaryPickerItems = useMemo<BeneficiaryFilterOptionType[]>(
+    () =>
+      (filterOptionsQuery.data?.beneficiaries ?? []).map((beneficiary) => ({
+        id: beneficiary.id,
+        icon: beneficiary.icon,
+        is_active: beneficiary.isActive,
+        is_self: beneficiary.isSelf,
+        name: beneficiary.name,
+        type: beneficiary.type,
+      })),
+    [filterOptionsQuery.data?.beneficiaries],
+  );
 
   const activeFilterCount = [
     Boolean(filters.startDate || filters.endDate),
     Boolean(filters.accountIds?.length),
     Boolean(filters.categoryIds?.length),
+    Boolean(filters.beneficiaryIds?.length),
     Boolean(filters.transactionTypes?.length),
     Boolean(filters.currencyCodes?.length),
     Boolean(filters.minimumAmount || filters.maximumAmount),
@@ -373,6 +402,7 @@ export default function useTransactionSearch() {
     activeFilterCount,
     applyFilters,
     categoryOptions,
+    beneficiaryPickerItems,
     clearHistory,
     currencyOptions,
     filterError,

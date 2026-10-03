@@ -1,13 +1,18 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { TXN_TYPE_ENUM } from "../../constants/enum";
-import { transactionManagementQueryKeys } from "../../constants/queryKeys";
+import {
+  beneficiaryQueryKeys,
+  transactionManagementQueryKeys,
+} from "../../constants/queryKeys";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import { getTransactionMgmtList } from "../../sql/service/transactionMgmtService";
 import { sumAmounts } from "../../utils/amount";
 import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { useTranslation } from "../../i18n/helper";
 import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode";
+import { useQuery } from "@tanstack/react-query";
+import { getSelectableBeneficiaries } from "../../sql/service/beneficiaryService";
 import {
   mapTransactionListItem,
   type TransactionListItem,
@@ -21,6 +26,7 @@ export type TransactionManagementListProps = {
   currencyCode?: string;
   currencyCodes?: string[];
   creditCardStatementDate?: string;
+  beneficiaryIds?: string[];
 };
 
 export type { TransactionListItem } from "./transactionList.utils";
@@ -39,9 +45,16 @@ export default function useTransactionManagementList({
   categoryId,
   currencyCode,
   creditCardStatementDate,
+  beneficiaryIds = [],
 }: TransactionManagementListProps) {
   const { t } = useTranslation();
   const isSingleCurrency = useSingleCurrencyMode();
+  const beneficiaryQuery = useQuery({
+    queryKey: beneficiaryQueryKeys.selectable(),
+    queryFn: getSelectableBeneficiaries,
+  });
+  const showSelfBeneficiary =
+    beneficiaryQuery.data?.some((item) => !item.is_self) ?? false;
   const {
     data,
     error,
@@ -60,6 +73,7 @@ export default function useTransactionManagementList({
       categoryId,
       currencyCode,
       creditCardStatementDate,
+      beneficiaryIds,
     }),
     queryFn: ({ pageParam }) =>
       getTransactionMgmtList(
@@ -71,6 +85,7 @@ export default function useTransactionManagementList({
         categoryId,
         currencyCode,
         creditCardStatementDate,
+        beneficiaryIds,
       ),
     enabled: Boolean(startDate && endDate),
     initialPageParam: 1,
@@ -86,6 +101,7 @@ export default function useTransactionManagementList({
         accountId,
         isSingleCurrency,
         t,
+        showSelfBeneficiary,
       });
       const items = groups.get(item.transactionDate) ?? [];
       items.push(item);
@@ -127,7 +143,14 @@ export default function useTransactionManagementList({
     }
 
     return sections;
-  }, [accountId, creditCardStatementDate, data, isSingleCurrency, t]);
+  }, [
+    accountId,
+    creditCardStatementDate,
+    data,
+    isSingleCurrency,
+    showSelfBeneficiary,
+    t,
+  ]);
 
   useEffect(() => {
     if (!error) return;

@@ -19,6 +19,7 @@ export type ExchangeRateSuggestionType = {
 export type TransactionMgmtCreateReqType = {
   transactionType: TXN_TYPE_ENUM;
   categoryId: string;
+  beneficiaryId: string;
   accountId: string;
   fromAccountId: string;
   toAccountId: string;
@@ -81,6 +82,7 @@ export type TransactionMgmtRspType = {
   book_is_active?: boolean;
   transaction_type: TXN_TYPE_ENUM;
   category_id: string | null;
+  beneficiary_id: string | null;
   account_id: string | null;
   from_account_id: string | null;
   to_account_id: string | null;
@@ -99,6 +101,10 @@ export type TransactionMgmtRspType = {
   category_label: string | null;
   category_translation_key: string | null;
   category_icon: string | null;
+  beneficiary_name: string | null;
+  beneficiary_icon: string | null;
+  beneficiary_is_active: 0 | 1 | null;
+  beneficiary_is_self: 0 | 1 | null;
   account_label: string | null;
   from_account_label: string | null;
   to_account_label: string | null;
