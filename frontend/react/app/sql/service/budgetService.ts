@@ -3,6 +3,7 @@ import {
   getBudgetByCurrencyAndMonthFromDB,
   getBudgetByPlanAndMonthFromDB,
   getBudgetCategoryProgressFromDB,
+  getFilteredBudgetCategoryProgressFromDB,
   getBudgetDailyRemainingFromDB,
   getBudgetManageCategoriesFromDB,
   getBudgetPlanCurrencyCodesFromDB,
@@ -25,6 +26,7 @@ import {
 } from "../../utils/amount";
 import { getMonthKey } from "../../utils/date";
 import { getCurrencyPreferences } from "./currencyManagementService";
+import { getSelectableBeneficiaries } from "./beneficiaryService";
 
 export const getBudgetDailyRemaining = async (
   startDate: string,
@@ -95,6 +97,19 @@ export const getBudgetOverview = async (
   };
 };
 
+export const getFilteredBudgetCategoryProgress = (
+  budgetId: string,
+  month: string,
+  currencyCode: string,
+  beneficiaryIds: string[],
+) =>
+  getFilteredBudgetCategoryProgressFromDB(
+    budgetId,
+    month,
+    currencyCode,
+    beneficiaryIds,
+  );
+
 export const getBudgetManagement = async (
   planId?: string,
 ): Promise<BudgetManagementType> => {
@@ -157,9 +172,9 @@ export const saveBudget = async (
   if (data.allocations.some((item) => compareAmounts(item.amount, 0) === 0))
     return "Enter an amount greater than zero for every selected category.";
 
-  const positiveAllocations = data.allocations.filter(
-    (item) => compareAmounts(item.amount, 0) > 0,
-  );
+  const positiveAllocations = data.allocations
+    .filter((item) => compareAmounts(item.amount, 0) > 0)
+    .map((item) => ({ ...item }));
   const allocatedAmount = sumAmounts(
     positiveAllocations.map((item) => item.amount),
   );
@@ -181,6 +196,33 @@ export const saveBudget = async (
   );
   if (categoryIds.some((id) => !availableIds.has(id)))
     return "One or more expense categories are no longer available.";
+
+  const activeBeneficiaries = await getSelectableBeneficiaries();
+  const activeBeneficiaryIds = new Set(
+    activeBeneficiaries.map((item) => item.id),
+  );
+  for (const allocation of positiveAllocations) {
+    const beneficiaryIds = allocation.beneficiaryAllocations.map(
+      (item) => item.beneficiaryId,
+    );
+    if (new Set(beneficiaryIds).size !== beneficiaryIds.length)
+      return "The same beneficiary cannot be allocated twice within a category.";
+    if (beneficiaryIds.some((id) => !activeBeneficiaryIds.has(id)))
+      return "One or more beneficiaries are no longer available.";
+    if (
+      allocation.beneficiaryAllocations.some(
+        (item) =>
+          !isValidAmount(item.amount, data.currencyCode) ||
+          compareAmounts(item.amount, 0) <= 0,
+      )
+    )
+      return "Enter a valid amount for every beneficiary allocation.";
+    const beneficiaryTotal = sumAmounts(
+      allocation.beneficiaryAllocations.map((item) => item.amount),
+    );
+    if (compareAmounts(beneficiaryTotal, allocation.amount) > 0)
+      return "Beneficiary allocations cannot exceed their category allocation.";
+  }
 
   debugLog(DEBUG_TAG.BUDGET, "Saving recurring budget", {
     planId: data.planId,

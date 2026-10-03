@@ -26,10 +26,12 @@ import {
   invalidateQuery,
   transactionManagementQueryKeys,
   creditCardQueryKeys,
+  beneficiaryQueryKeys,
 } from "../../constants/queryKeys";
 import {
   ACCOUNT_MANAGEMENT_LIST_URL,
   CATEGORY_MANAGEMENT_LIST_URL,
+  BENEFICIARY_MANAGEMENT_LIST_URL,
 } from "../../constants/urls";
 import { DEFAULT_PAGE_SIZE } from "../../constants/size";
 import {
@@ -63,6 +65,7 @@ import useSingleCurrencyMode from "../currency_management/useSingleCurrencyMode"
 import { getTransactionAccountDisplayLabel } from "./transactionAccount.utils";
 import useFrequentTransactionDescriptions from "./useFrequentTransactionDescriptions";
 import useTransactionAttachments from "./useTransactionAttachments";
+import { getBeneficiaryList } from "../../sql/service/beneficiaryService";
 import {
   canConfirmCreditCardMinimumPayment,
   confirmCreditCardMinimumPayment,
@@ -88,6 +91,7 @@ export default function useTransactionManagementDetail() {
   const [pendingMinimumAccountId, setPendingMinimumAccountId] = useState("");
   const reopenAccountPickerOnFocus = useRef(false);
   const refreshCategoriesOnFocus = useRef(false);
+  const refreshBeneficiariesOnFocus = useRef(false);
   const attachmentState = useTransactionAttachments(id);
   const isSubmitting =
     isDeleting || isSaving || attachmentState.isProcessingAttachment;
@@ -131,6 +135,7 @@ export default function useTransactionManagementDetail() {
   } = useFieldArray({ control, name: "fees" });
 
   const transactionType = watch("transactionType");
+  const beneficiaryId = watch("beneficiaryId");
   const categoryId = watch("categoryId");
   const accountId = watch("accountId");
   const fromAccountId = watch("fromAccountId");
@@ -194,6 +199,17 @@ export default function useTransactionManagementDetail() {
     queryKey: categoryManagementQueryKeys.feeList(),
     queryFn: () => getCategoryMgmtList(2, 1, 1000),
   });
+  const { data: allBeneficiaries = [], refetch: refetchBeneficiaries } =
+    useQuery({
+      queryKey: beneficiaryQueryKeys.list({ includeInactive: true }),
+      queryFn: () => getBeneficiaryList(undefined, true),
+    });
+  const beneficiaries = allBeneficiaries.filter(
+    (item) => item.is_active || item.id === transaction?.beneficiary_id,
+  );
+  const showBeneficiaryField =
+    allBeneficiaries.some((item) => item.is_active && !item.is_self) ||
+    Boolean(transaction?.beneficiary_id && !transaction.beneficiary_is_self);
 
   const recentDescriptions = useFrequentTransactionDescriptions(
     categoryId,
@@ -540,6 +556,11 @@ export default function useTransactionManagementDetail() {
     });
   };
 
+  const onManageBeneficiaries = () => {
+    refreshBeneficiariesOnFocus.current = true;
+    router.push(BENEFICIARY_MANAGEMENT_LIST_URL);
+  };
+
   const accountFieldProps = {
     accountItems,
     control,
@@ -565,7 +586,11 @@ export default function useTransactionManagementDetail() {
         refreshCategoriesOnFocus.current = false;
         void refetchCategories();
       }
-    }, [refetchAccounts, refetchCategories]),
+      if (refreshBeneficiariesOnFocus.current) {
+        refreshBeneficiariesOnFocus.current = false;
+        void refetchBeneficiaries();
+      }
+    }, [refetchAccounts, refetchBeneficiaries, refetchCategories]),
   );
 
   useEffect(() => {
@@ -574,6 +599,7 @@ export default function useTransactionManagementDetail() {
     reset({
       transactionType: transaction.transaction_type,
       categoryId: transaction.category_id ?? "",
+      beneficiaryId: transaction.beneficiary_id ?? "",
       accountId: transaction.account_id ?? "",
       fromAccountId: transaction.from_account_id ?? "",
       toAccountId: transaction.to_account_id ?? "",
@@ -743,6 +769,8 @@ export default function useTransactionManagementDetail() {
 
   return {
     accountCurrencyCode,
+    beneficiaries,
+    beneficiaryId,
     attachmentState,
     accountFieldProps,
     addFee,
@@ -781,6 +809,7 @@ export default function useTransactionManagementDetail() {
     onExchangeRateBlur,
     onLoadMoreCategories,
     onManageCategories,
+    onManageBeneficiaries,
     onSubmit,
     onUsePreviousRate,
     openAccountPicker,
@@ -792,6 +821,7 @@ export default function useTransactionManagementDetail() {
     setShowDeleteDialog,
     setValue,
     showCurrencyField: true,
+    showBeneficiaryField,
     showDeleteDialog,
     showMinimumPaymentDialog,
     transactionType,

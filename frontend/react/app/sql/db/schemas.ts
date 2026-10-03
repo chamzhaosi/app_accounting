@@ -16,6 +16,100 @@ import {
   NICKNAME_MAX_LEN as ACCOUNT_SETTINGS_NICKNAME_MAX_LEN,
 } from "../../forms/schemas/account_settings.schema";
 import { DEFAULT_CURRENCY_CODE } from "../../constants/currencies";
+import {
+  BENEFICIARY_DESCRIPTION_MAX_LEN,
+  BENEFICIARY_NAME_MAX_LEN,
+  BENEFICIARY_RELATIONSHIP_MAX_LEN,
+} from "../../forms/schemas/beneficiary.schema";
+
+export const createBeneficiaryTables = async (db: SQLite.SQLiteDatabase) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS beneficiaries (
+      id TEXT PRIMARY KEY,
+      type VARCHAR(10) NOT NULL CHECK (type IN ('INDIVIDUAL', 'GROUP')),
+      icon VARCHAR(100) NOT NULL,
+      name VARCHAR(${BENEFICIARY_NAME_MAX_LEN}) NOT NULL,
+      normalized_name VARCHAR(${BENEFICIARY_NAME_MAX_LEN}) NOT NULL,
+      relationship VARCHAR(${BENEFICIARY_RELATIONSHIP_MAX_LEN}),
+      descriptions VARCHAR(${BENEFICIARY_DESCRIPTION_MAX_LEN}),
+      is_active BOOLEAN NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+      is_self BOOLEAN NOT NULL DEFAULT 0 CHECK (is_self IN (0, 1)),
+
+      sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
+      synced_at DATETIME DEFAULT NULL,
+      deleted_at DATETIME DEFAULT NULL,
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+
+      CHECK (is_self = 0 OR (type = 'INDIVIDUAL' AND is_active = 1))
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiaries_active_normalized_name
+      ON beneficiaries(normalized_name)
+      WHERE deleted_at IS NULL;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiaries_single_self
+      ON beneficiaries(is_self)
+      WHERE is_self = 1 AND deleted_at IS NULL;
+
+    CREATE INDEX IF NOT EXISTS idx_beneficiaries_active_type_name
+      ON beneficiaries(type, is_active, name)
+      WHERE deleted_at IS NULL;
+
+    CREATE TABLE IF NOT EXISTS beneficiary_group_members (
+      group_beneficiary_id TEXT NOT NULL,
+      individual_beneficiary_id TEXT NOT NULL,
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (group_beneficiary_id, individual_beneficiary_id),
+      FOREIGN KEY (group_beneficiary_id) REFERENCES beneficiaries(id),
+      FOREIGN KEY (individual_beneficiary_id) REFERENCES beneficiaries(id),
+      CHECK (group_beneficiary_id <> individual_beneficiary_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_beneficiary_group_members_individual
+      ON beneficiary_group_members(individual_beneficiary_id);
+
+    CREATE TRIGGER IF NOT EXISTS trg_beneficiary_group_members_validate_insert
+    BEFORE INSERT ON beneficiary_group_members
+    BEGIN
+      SELECT CASE
+        WHEN (SELECT type FROM beneficiaries WHERE id = NEW.group_beneficiary_id) <> 'GROUP'
+          THEN RAISE(ABORT, 'Group beneficiary must be a Group')
+        WHEN (SELECT type FROM beneficiaries WHERE id = NEW.individual_beneficiary_id) <> 'INDIVIDUAL'
+          THEN RAISE(ABORT, 'Group member must be an Individual')
+      END;
+    END;
+
+    CREATE TABLE IF NOT EXISTS budget_beneficiary_allocations (
+      id TEXT PRIMARY KEY,
+      budget_category_id TEXT NOT NULL,
+      beneficiary_id TEXT NOT NULL,
+      amount REAL NOT NULL
+        CHECK (
+          amount > 0
+          AND amount <= ${AMOUNT_MAX_VALUE}
+          AND amount = ROUND(amount, 3)
+        ),
+
+      sync_status VARCHAR(20) NOT NULL DEFAULT '${DB_SYNC_STATUS.PENDING}',
+      synced_at DATETIME DEFAULT NULL,
+      deleted_at DATETIME DEFAULT NULL,
+      created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+      updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
+
+      FOREIGN KEY (budget_category_id) REFERENCES budget_categories(id),
+      FOREIGN KEY (beneficiary_id) REFERENCES beneficiaries(id)
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_beneficiary_active_category_beneficiary
+      ON budget_beneficiary_allocations(budget_category_id, beneficiary_id)
+      WHERE deleted_at IS NULL;
+
+    CREATE INDEX IF NOT EXISTS idx_budget_beneficiary_active_category
+      ON budget_beneficiary_allocations(budget_category_id)
+      WHERE deleted_at IS NULL;
+  `);
+};
 
 export const createAccountSettingsTable = async (db: SQLite.SQLiteDatabase) => {
   await db.execAsync(`

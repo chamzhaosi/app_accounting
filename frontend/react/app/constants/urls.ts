@@ -44,3 +44,8 @@ export const GOOGLE_PLAY_REVIEW_URL =
   "https://play.google.com/store/apps/details?id=com.cham.finora&showAllReviews=true";
 
 export const TRANSACTION_SEARCH_URL = "/transaction_search/list";
+
+export const BENEFICIARY_MANAGEMENT_BASE_URL = "/beneficiary_management";
+export const BENEFICIARY_MANAGEMENT_LIST_URL = `${BENEFICIARY_MANAGEMENT_BASE_URL}/list`;
+export const BENEFICIARY_MANAGEMENT_CREATE_URL = `${BENEFICIARY_MANAGEMENT_BASE_URL}/create`;
+export const BENEFICIARY_MANAGEMENT_DETAIL_URL = `${BENEFICIARY_MANAGEMENT_BASE_URL}/[id]`;

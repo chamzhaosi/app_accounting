@@ -1,6 +1,11 @@
 import type { AppIconProps } from "../components/AppIcon";
 
-const ICON_KEYS = ["ACCOUNT_TYPE", "CATEGORY_ICONS"] as const;
+const ICON_KEYS = [
+  "ACCOUNT_TYPE",
+  "CATEGORY_ICONS",
+  "BENEFICIARY_INDIVIDUAL_ICONS",
+  "BENEFICIARY_GROUP_ICONS",
+] as const;
 type AppIconName = AppIconProps["name"];
 
 type CategoryIconGroup = {
@@ -326,4 +331,32 @@ export const ICONS: Record<(typeof ICON_KEYS)[number], AppIconProps["name"][]> =
       "PiggyBank",
     ],
     CATEGORY_ICONS,
+    BENEFICIARY_INDIVIDUAL_ICONS: [
+      "UserRound",
+      "User",
+      "CircleUserRound",
+      "PersonStanding",
+      "Accessibility",
+      "Baby",
+      "ContactRound",
+      "Smile",
+      "Heart",
+      "Star",
+      "GraduationCap",
+      "Briefcase",
+    ],
+    BENEFICIARY_GROUP_ICONS: [
+      "Users",
+      "UsersRound",
+      "House",
+      "Building2",
+      "HeartHandshake",
+      "Handshake",
+      "HandHeart",
+      "School",
+      "Landmark",
+      "BriefcaseBusiness",
+      "Church",
+      "Globe",
+    ],
   };

@@ -22,6 +22,7 @@ import {
   formatPrivateCurrencyAmount,
   formatPrivateSignedCurrencyAmount,
 } from "../../../utils/number";
+import TransactionMetadataLine from "./TransactionMetadataLine";
 
 export default function TransactionListRow({
   item,
@@ -73,9 +74,9 @@ export default function TransactionListRow({
       accessibilityRole="button"
       accessibilityLabel={`${item.title}${
         item.description ? `, ${item.description}` : ""
-      }${item.hasAttachments ? `, ${t("Has attachments")}` : ""}, ${displayAmount}${
-        secondaryAmount ? `, ${secondaryAmount}` : ""
-      }`}
+      }${item.beneficiaryLabel ? `, ${item.beneficiaryLabel}` : ""}${
+        item.hasAttachments ? `, ${t("Has attachments")}` : ""
+      }, ${displayAmount}${secondaryAmount ? `, ${secondaryAmount}` : ""}`}
       accessibilityHint={
         isAdjustment
           ? t("Opens the account for balance editing")
@@ -148,14 +149,13 @@ export default function TransactionListRow({
               </Text>
             </View>
           ) : (
-            <Text
-              numberOfLines={1}
-              style={[styles.subtitle, { color: THEME.onSurfaceVariant }]}
-            >
-              {item.subtitle}
-            </Text>
+            <TransactionMetadataLine
+              beneficiaryLabel={item.beneficiaryLabel}
+              description={item.description}
+            />
           )}
-          {item.description ? (
+          {item.transactionType === TXN_TYPE_ENUM.TRANSFER &&
+          item.description ? (
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -187,6 +187,15 @@ export default function TransactionListRow({
               ]}
             >
               {secondaryAmount}
+            </Text>
+          ) : null}
+          {item.transactionType !== TXN_TYPE_ENUM.TRANSFER ? (
+            <Text
+              variant="labelSmall"
+              numberOfLines={1}
+              style={{ color: THEME.onSurfaceVariant, textAlign: "right" }}
+            >
+              {item.subtitle}
             </Text>
           ) : null}
         </View>

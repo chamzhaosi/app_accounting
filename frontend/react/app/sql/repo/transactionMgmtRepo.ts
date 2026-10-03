@@ -169,6 +169,7 @@ export const getCategoryDailyTotalsFromDB = async (
   startDate: string,
   endDate: string,
   currencyCode: string,
+  beneficiaryIds: string[] = [],
 ): Promise<CategoryDailyTotalType[]> => {
   try {
     const db = await getDB();
@@ -182,9 +183,10 @@ export const getCategoryDailyTotalsFromDB = async (
          AND transaction_date <= ?
          AND account_currency_code = ?
          AND deleted_at IS NULL
+         ${beneficiaryIds.length ? `AND beneficiary_id IN (${beneficiaryIds.map(() => "?").join(", ")})` : ""}
        GROUP BY transaction_date
        ORDER BY transaction_date ASC;`,
-      [categoryId, startDate, endDate, currencyCode],
+      [categoryId, startDate, endDate, currencyCode, ...beneficiaryIds],
     );
     debugLog(
       DEBUG_TAG.TRANSACTION_MANAGEMENT_DB,
@@ -296,6 +298,10 @@ const TRANSACTION_DETAIL_SELECT = `
     categories.label AS category_label,
     categories.translation_key AS category_translation_key,
     categories.icon AS category_icon,
+    beneficiaries.name AS beneficiary_name,
+    beneficiaries.icon AS beneficiary_icon,
+    beneficiaries.is_active AS beneficiary_is_active,
+    beneficiaries.is_self AS beneficiary_is_self,
     accounts.label AS account_label,
     from_accounts.label AS from_account_label,
     to_accounts.label AS to_account_label,
@@ -307,6 +313,8 @@ const TRANSACTION_DETAIL_SELECT = `
   FROM transactions
   LEFT JOIN categories
     ON categories.id = transactions.category_id
+  LEFT JOIN beneficiaries
+    ON beneficiaries.id = transactions.beneficiary_id
   LEFT JOIN accounts
     ON accounts.id = transactions.account_id
   LEFT JOIN accounts AS from_accounts
@@ -438,6 +446,7 @@ export const getCategoryDateRangeSummaryFromDB = async (
   startDate: string,
   endDate: string,
   currencyCode?: string,
+  beneficiaryIds: string[] = [],
 ): Promise<CategoryDateRangeSummaryType[]> => {
   try {
     const db = await getDB();
@@ -452,10 +461,17 @@ export const getCategoryDateRangeSummaryFromDB = async (
           AND transaction_date >= ?
           AND transaction_date <= ?
           ${currencyCode ? "AND account_currency_code = ?" : ""}
+          ${beneficiaryIds.length ? `AND beneficiary_id IN (${beneficiaryIds.map(() => "?").join(", ")})` : ""}
           AND deleted_at IS NULL
         GROUP BY account_currency_code;
       `,
-      [categoryId, startDate, endDate, ...(currencyCode ? [currencyCode] : [])],
+      [
+        categoryId,
+        startDate,
+        endDate,
+        ...(currencyCode ? [currencyCode] : []),
+        ...beneficiaryIds,
+      ],
     );
 
     debugLog(
@@ -754,6 +770,7 @@ export const getTransactionMgmtListFromDB = async (
   categoryId?: string,
   currencyCode?: string,
   creditCardStatementDate?: string,
+  beneficiaryIds: string[] = [],
 ): Promise<TransactionMgmtRspType[]> => {
   try {
     const db = await getDB();
@@ -787,6 +804,12 @@ export const getTransactionMgmtListFromDB = async (
     if (currencyCode) {
       filters.push("transactions.account_currency_code = ?");
       filterParams.push(currencyCode);
+    }
+    if (beneficiaryIds.length) {
+      filters.push(
+        `transactions.beneficiary_id IN (${beneficiaryIds.map(() => "?").join(", ")})`,
+      );
+      filterParams.push(...beneficiaryIds);
     }
 
     if (creditCardStatementDate && accountId) {
@@ -959,6 +982,17 @@ export const createNewTransactionMgmtToDB = async (
     const id = randomUUID();
     const operationId = id;
     const isTransfer = data.transactionType === "transfer";
+    const selfBeneficiary = await db.getFirstAsync<{ id: string }>(
+      `SELECT id FROM beneficiaries
+       WHERE is_self = 1 AND deleted_at IS NULL LIMIT 1;`,
+    );
+    if (!selfBeneficiary) throw new Error("Self beneficiary is unavailable");
+    const mainBeneficiaryId =
+      data.transactionType === "expense" ? data.beneficiaryId : null;
+    const feeBeneficiaryId =
+      data.transactionType === "expense"
+        ? data.beneficiaryId
+        : selfBeneficiary.id;
     const mainBalanceAdjustments = getBalanceAdjustments(
       getBalanceTransaction(data),
     );
@@ -978,6 +1012,7 @@ export const createNewTransactionMgmtToDB = async (
             id,
             transaction_type,
             category_id,
+            beneficiary_id,
             account_id,
             from_account_id,
             to_account_id,
@@ -992,12 +1027,13 @@ export const createNewTransactionMgmtToDB = async (
             exchange_rate_source_transaction_id,
             descriptions,
             transaction_date
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'main', ?, ?, ?, ?, ?, ?, ?, ?, ?);
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'main', ?, ?, ?, ?, ?, ?, ?, ?, ?);
         `,
         [
           id,
           data.transactionType,
           isTransfer ? null : data.categoryId,
+          mainBeneficiaryId,
           isTransfer ? null : data.accountId,
           isTransfer ? data.fromAccountId : null,
           isTransfer ? data.toAccountId : null,
@@ -1035,6 +1071,7 @@ export const createNewTransactionMgmtToDB = async (
               id,
               transaction_type,
               category_id,
+              beneficiary_id,
               account_id,
               from_account_id,
               to_account_id,
@@ -1046,11 +1083,12 @@ export const createNewTransactionMgmtToDB = async (
               converted_amount,
               descriptions,
               transaction_date
-            ) VALUES (?, 'expense', ?, ?, NULL, NULL, ?, 'fee', ?, ?, ?, ?, 'Transaction fee', ?);
+            ) VALUES (?, 'expense', ?, ?, ?, NULL, NULL, ?, 'fee', ?, ?, ?, ?, 'Transaction fee', ?);
           `,
           [
             feeId,
             fee.categoryId,
+            feeBeneficiaryId,
             fee.accountId,
             operationId,
             toCurrencyAmountNumber(fee.amount, feeAccount.currency_code),
@@ -1110,6 +1148,17 @@ export const updateTransactionMgmtToDB = async (
   try {
     const db = await getDB();
     const isTransfer = data.transactionType === "transfer";
+    const selfBeneficiary = await db.getFirstAsync<{ id: string }>(
+      `SELECT id FROM beneficiaries
+       WHERE is_self = 1 AND deleted_at IS NULL LIMIT 1;`,
+    );
+    if (!selfBeneficiary) throw new Error("Self beneficiary is unavailable");
+    const mainBeneficiaryId =
+      data.transactionType === "expense" ? data.beneficiaryId : null;
+    const feeBeneficiaryId =
+      data.transactionType === "expense"
+        ? data.beneficiaryId
+        : selfBeneficiary.id;
     const newBalanceAdjustments = [
       ...getBalanceAdjustments(getBalanceTransaction(data)),
       ...data.fees.map((fee) => ({
@@ -1146,6 +1195,7 @@ export const updateTransactionMgmtToDB = async (
           SET
             transaction_type = ?,
             category_id = ?,
+            beneficiary_id = ?,
             account_id = ?,
             from_account_id = ?,
             to_account_id = ?,
@@ -1166,6 +1216,7 @@ export const updateTransactionMgmtToDB = async (
         [
           data.transactionType,
           isTransfer ? null : data.categoryId,
+          mainBeneficiaryId,
           isTransfer ? null : data.accountId,
           isTransfer ? data.fromAccountId : null,
           isTransfer ? data.toAccountId : null,
@@ -1221,17 +1272,18 @@ export const updateTransactionMgmtToDB = async (
         }
         await db.runAsync(
           `INSERT INTO transactions (
-             id, transaction_type, category_id, account_id,
+             id, transaction_type, category_id, beneficiary_id, account_id,
              from_account_id, to_account_id, operation_id, transaction_role,
              amount, currency_code, account_currency_code, converted_amount,
              descriptions, transaction_date
            ) VALUES (
-             ?, 'expense', ?, ?, NULL, NULL, ?, 'fee',
+             ?, 'expense', ?, ?, ?, NULL, NULL, ?, 'fee',
              ?, ?, ?, ?, 'Transaction fee', ?
            );`,
           [
             feeId,
             fee.categoryId,
+            feeBeneficiaryId,
             fee.accountId,
             currentMain.operation_id,
             toCurrencyAmountNumber(fee.amount, feeAccount.currency_code),

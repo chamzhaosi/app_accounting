@@ -27,6 +27,16 @@ export type BudgetCategoryProgressType = {
   icon: string;
   allocated_amount: number;
   spent_amount: number;
+  beneficiary_allocation_status?: "full" | "partial" | "none";
+};
+
+export type BudgetBeneficiaryAllocationType = {
+  allocation_id: string;
+  beneficiary_id: string;
+  beneficiary_name: string;
+  beneficiary_icon: string;
+  beneficiary_type: "INDIVIDUAL" | "GROUP";
+  amount: number;
 };
 
 export type BudgetOverviewType = {
@@ -53,6 +63,7 @@ export type BudgetManageCategoryType = {
   icon: string;
   allocation_id: string | null;
   amount: number;
+  beneficiary_allocations: BudgetBeneficiaryAllocationType[];
 };
 
 export type BudgetManagementType = {
@@ -69,5 +80,9 @@ export type BudgetSaveReqType = {
   effectiveMonth: string;
   totalBudget: string;
   isActive: boolean;
-  allocations: Array<{ categoryId: string; amount: string }>;
+  allocations: Array<{
+    categoryId: string;
+    amount: string;
+    beneficiaryAllocations: Array<{ beneficiaryId: string; amount: string }>;
+  }>;
 };

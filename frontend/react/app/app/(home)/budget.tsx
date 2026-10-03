@@ -43,6 +43,7 @@ import {
 } from "../../utils/number";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
+import BeneficiaryFilterModal from "../beneficiary_management/_components/BeneficiaryFilterModal";
 
 export default function Budget() {
   const navigation = useNavigation();
@@ -212,6 +213,13 @@ export default function Budget() {
       edges={["top"]}
       className="bg-LIGHT-surfaceContainerLow dark:bg-DARK-surfaceContainerLow"
     >
+      <BeneficiaryFilterModal
+        visible={logic.isFilterVisible}
+        beneficiaries={logic.beneficiaries}
+        selectedIds={logic.beneficiaryIds}
+        onApply={logic.setBeneficiaryIds}
+        onDismiss={() => logic.setIsFilterVisible(false)}
+      />
       {!overview ? (
         <ScrollView
           contentContainerStyle={styles.content}
@@ -407,6 +415,18 @@ export default function Budget() {
 
             <View style={styles.sectionHeader}>
               <Text variant="titleLarge">{t("Category progress")}</Text>
+              {logic.showBeneficiaryFilter ? (
+                <AppIconButton
+                  iconName="ListFilter"
+                  accessibilityLabel={t("Filter by Beneficiary")}
+                  onPress={() => logic.setIsFilterVisible(true)}
+                  style={
+                    logic.beneficiaryIds.length
+                      ? { backgroundColor: THEME.tertiaryContainer }
+                      : undefined
+                  }
+                />
+              ) : null}
             </View>
 
             {logic.categories.map((category) => {
@@ -421,6 +441,7 @@ export default function Budget() {
                         startDate: logic.month,
                         endDate: getMonthEndKey(logic.month),
                         currencyCode: logic.selectedCurrencyCode,
+                        beneficiaryIds: logic.beneficiaryIds.join(","),
                       },
                     } as Href)
                   }
@@ -457,49 +478,57 @@ export default function Budget() {
                           variant="bodySmall"
                           style={{ color: THEME.onSurfaceVariant }}
                         >
-                          {displayAmount(category.spent_amount)} {t("of")}{" "}
-                          {displayAmount(category.allocated_amount)} ·{" "}
-                          {t(category.progressLabel)}
+                          {category.beneficiary_allocation_status === "partial"
+                            ? `${t("Spent")} ${displayAmount(category.spent_amount)} · ${t("Partial allocation")} ${displayAmount(category.allocated_amount)}`
+                            : category.beneficiary_allocation_status === "none"
+                              ? `${t("Spent")} ${displayAmount(category.spent_amount)} · ${t("No beneficiary allocation")}`
+                              : `${displayAmount(category.spent_amount)} ${t("of")} ${displayAmount(category.allocated_amount)} · ${t(category.progressLabel)}`}
                         </Text>
                       </View>
-                      <Text
-                        variant="titleMedium"
-                        style={{
-                          color:
-                            compareAmounts(category.remainingAmount, 0) < 0
-                              ? THEME.error
-                              : category.color,
-                        }}
-                      >
-                        {areAmountsVisible
-                          ? compareAmounts(category.remainingAmount, 0) >= 0
-                            ? formatPrivateLocalizedAmount(
-                                category.remainingAmount,
-                                logic.selectedCurrencyCode,
-                                locale,
-                                true,
-                              )
-                            : `-${formatPrivateLocalizedAmount(
-                                absoluteAmount(category.remainingAmount),
-                                logic.selectedCurrencyCode,
-                                locale,
-                                true,
-                              )}`
-                          : isSingleCurrency
-                            ? MASKED_AMOUNT
-                            : `${logic.selectedCurrencyCode} ${MASKED_AMOUNT}`}
-                      </Text>
+                      {category.beneficiary_allocation_status !== "partial" &&
+                      category.beneficiary_allocation_status !== "none" ? (
+                        <Text
+                          variant="titleMedium"
+                          style={{
+                            color:
+                              compareAmounts(category.remainingAmount, 0) < 0
+                                ? THEME.error
+                                : category.color,
+                          }}
+                        >
+                          {areAmountsVisible
+                            ? compareAmounts(category.remainingAmount, 0) >= 0
+                              ? formatPrivateLocalizedAmount(
+                                  category.remainingAmount,
+                                  logic.selectedCurrencyCode,
+                                  locale,
+                                  true,
+                                )
+                              : `-${formatPrivateLocalizedAmount(
+                                  absoluteAmount(category.remainingAmount),
+                                  logic.selectedCurrencyCode,
+                                  locale,
+                                  true,
+                                )}`
+                            : isSingleCurrency
+                              ? MASKED_AMOUNT
+                              : `${logic.selectedCurrencyCode} ${MASKED_AMOUNT}`}
+                        </Text>
+                      ) : null}
                     </View>
-                    <ProgressBar
-                      progress={Math.min(category.progressRatio, 1)}
-                      color={category.color}
-                      style={styles.categoryProgress}
-                    />
+                    {category.beneficiary_allocation_status !== "partial" &&
+                    category.beneficiary_allocation_status !== "none" ? (
+                      <ProgressBar
+                        progress={Math.min(category.progressRatio, 1)}
+                        color={category.color}
+                        style={styles.categoryProgress}
+                      />
+                    ) : null}
                   </Surface>
                 </TouchableOpacity>
               );
             })}
-            {overview.categories.length === 0 && (
+            {logic.categories.length === 0 && (
               <Text
                 variant="bodyLarge"
                 style={[

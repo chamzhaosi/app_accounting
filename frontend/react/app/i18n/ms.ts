@@ -727,4 +727,86 @@ export const ms: Record<keyof typeof zhHans, string> = {
   "Enter a valid amount.": "Masukkan amaun yang sah.",
   "Minimum amount must not exceed maximum amount.":
     "Amaun minimum tidak boleh melebihi amaun maksimum.",
+  "Beneficiary Management": "Pengurusan Benefisiari",
+  "Individuals and groups for expenses":
+    "Individu dan kumpulan untuk perbelanjaan",
+  Individual: "Individu",
+  Individuals: "Individu",
+  Group: "Kumpulan",
+  Groups: "Kumpulan",
+  "Add Beneficiary": "Tambah Benefisiari",
+  "Edit Beneficiary": "Edit Benefisiari",
+  "Add Individual": "Tambah Individu",
+  "Add Group": "Tambah Kumpulan",
+  "Edit Individual": "Edit Individu",
+  "Edit Group": "Edit Kumpulan",
+  "Individual created successfully": "Individu berjaya dicipta",
+  "Group created successfully": "Kumpulan berjaya dicipta",
+  "Beneficiary updated successfully": "Benefisiari berjaya dikemas kini",
+  "Name / Label": "Nama / Label",
+  Relationship: "Hubungan",
+  "Suggested relationships": "Hubungan yang dicadangkan",
+  Members: "Ahli",
+  Beneficiary: "Benefisiari",
+  Beneficiaries: "Benefisiari",
+  For: "Untuk",
+  "For {{name}}": "Untuk {{name}}",
+  "Select beneficiary": "Pilih benefisiari",
+  "Select members": "Pilih ahli",
+  "Manage beneficiaries": "Urus benefisiari",
+  Active: "Aktif",
+  Inactive: "Tidak aktif",
+  Self: "Diri sendiri",
+  Partner: "Pasangan",
+  Husband: "Suami",
+  Wife: "Isteri",
+  Son: "Anak lelaki",
+  Daughter: "Anak perempuan",
+  Father: "Bapa",
+  Mother: "Ibu",
+  Sibling: "Adik-beradik",
+  Friend: "Rakan",
+  Colleague: "Rakan sekerja",
+  Other: "Lain-lain",
+  "Set relationship to {{relationship}}":
+    "Tetapkan hubungan kepada {{relationship}}",
+  "The self beneficiary must always remain active.":
+    "Benefisiari diri sendiri mesti sentiasa aktif.",
+  "Inactive beneficiaries remain available in historical records.":
+    "Benefisiari tidak aktif kekal tersedia dalam rekod sejarah.",
+  "Beneficiary Allocation": "Peruntukan Benefisiari",
+  "Beneficiary allocated": "Diperuntukkan kepada benefisiari",
+  "Filter by Beneficiary": "Tapis mengikut Benefisiari",
+  "Partial allocation": "Peruntukan separa",
+  "No beneficiary allocation": "Tiada peruntukan benefisiari",
+  "Please enter a beneficiary name": "Sila masukkan nama benefisiari",
+  "Please select a beneficiary": "Sila pilih benefisiari",
+  "Name must not exceed 50 characters": "Nama tidak boleh melebihi 50 aksara",
+  "Relationship must not exceed 50 characters":
+    "Hubungan tidak boleh melebihi 50 aksara",
+  "A beneficiary with the same name already exists.":
+    "Benefisiari dengan nama yang sama sudah wujud.",
+  "The self beneficiary must remain active.":
+    "Benefisiari diri sendiri mesti kekal aktif.",
+  "Beneficiary type cannot be changed.":
+    "Jenis benefisiari tidak boleh diubah.",
+  "Individuals cannot contain group members.":
+    "Individu tidak boleh mengandungi ahli kumpulan.",
+  "Groups may contain Individuals only.":
+    "Kumpulan hanya boleh mengandungi Individu.",
+  "Beneficiary not found.": "Benefisiari tidak ditemui.",
+  "Selected beneficiary is unavailable.":
+    "Benefisiari yang dipilih tidak tersedia.",
+  "Select an active beneficiary for the missing expense.":
+    "Pilih benefisiari aktif untuk perbelanjaan yang hilang.",
+  "The same beneficiary cannot be allocated twice within a category.":
+    "Benefisiari yang sama tidak boleh diperuntukkan dua kali dalam satu kategori.",
+  "One or more beneficiaries are no longer available.":
+    "Satu atau lebih benefisiari tidak lagi tersedia.",
+  "Enter a valid amount for every beneficiary allocation.":
+    "Masukkan amaun yang sah bagi setiap peruntukan benefisiari.",
+  "Beneficiary allocations cannot exceed their category allocation.":
+    "Peruntukan benefisiari tidak boleh melebihi peruntukan kategorinya.",
+  "Search by description, beneficiary, category, account, or amount.":
+    "Cari mengikut penerangan, benefisiari, kategori, akaun atau amaun.",
 };

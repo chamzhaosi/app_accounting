@@ -7,6 +7,7 @@ import {
 import {
   getBudgetOverview,
   getBudgetPlanList,
+  getFilteredBudgetCategoryProgress,
 } from "../../sql/service/budgetService";
 import { getCurrencyPreferences } from "../../sql/service/currencyManagementService";
 import {
@@ -27,6 +28,8 @@ import {
 import { useReportingCurrencyStore } from "../../stores/useReportingCurrencyStore";
 import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
 import { ALL_CURRENCIES_VALUE } from "../../constants/currencies";
+import { beneficiaryQueryKeys } from "../../constants/queryKeys";
+import { getRelevantBeneficiaries } from "../../sql/service/beneficiaryService";
 
 type BudgetProgressTheme = {
   primary: string;
@@ -38,6 +41,8 @@ type BudgetProgressTheme = {
 export default function useBudgetOverview(theme: BudgetProgressTheme) {
   const currentMonth = getMonthKey();
   const [month, setMonthState] = useState(currentMonth);
+  const [beneficiaryIds, setBeneficiaryIds] = useState<string[]>([]);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
   const storedCurrencyCode = useReportingCurrencyStore(
     (state) => state.currencyCode,
   );
@@ -138,6 +143,29 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
     queryFn: () => getBudgetOverview(month, selectedCurrencyCode),
     enabled: Boolean(selectedCurrencyCode),
   });
+  const relevantBeneficiariesQuery = useQuery({
+    queryKey: beneficiaryQueryKeys.list({
+      type: `period:${month}`,
+      includeInactive: true,
+    }),
+    queryFn: () => getRelevantBeneficiaries(month, getMonthEndKey(month)),
+  });
+  const filteredProgressQuery = useQuery({
+    queryKey: budgetQueryKeys.filteredProgress({
+      budgetId: query.data?.budget.id ?? "",
+      month,
+      currencyCode: selectedCurrencyCode,
+      beneficiaryIds,
+    }),
+    queryFn: () =>
+      getFilteredBudgetCategoryProgress(
+        query.data!.budget.id,
+        month,
+        selectedCurrencyCode,
+        beneficiaryIds,
+      ),
+    enabled: Boolean(query.data?.budget.id && beneficiaryIds.length),
+  });
 
   useEffect(() => {
     const error = query.error ?? plansQuery.error ?? preferencesQuery.error;
@@ -172,25 +200,46 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
       ),
     [overview],
   );
+  const displayedCategories = beneficiaryIds.length
+    ? (filteredProgressQuery.data ?? [])
+    : (overview?.categories ?? []);
+  const showBeneficiaryFilter =
+    relevantBeneficiariesQuery.data?.some(
+      (item) => !item.is_self && (item.is_active || month < currentMonth),
+    ) ?? false;
+
+  useEffect(() => {
+    if (!showBeneficiaryFilter && beneficiaryIds.length) setBeneficiaryIds([]);
+  }, [beneficiaryIds.length, showBeneficiaryFilter]);
+
   const categories = useMemo(
     () =>
       overview
-        ? [...overview.categories]
+        ? [...displayedCategories]
             .sort(sortCategoriesByProgress)
             .map((category) => ({
               ...category,
               color:
                 expenseColorByCategoryId.get(category.category_id) ??
                 theme.outline,
-              progressLabel: getCategoryProgressLabel(category),
-              progressRatio: getCategoryProgressRatio(category),
+              progressLabel:
+                category.beneficiary_allocation_status === "partial"
+                  ? "Partial allocation"
+                  : category.beneficiary_allocation_status === "none"
+                    ? "No beneficiary allocation"
+                    : getCategoryProgressLabel(category),
+              progressRatio:
+                category.beneficiary_allocation_status === "partial" ||
+                category.beneficiary_allocation_status === "none"
+                  ? 0
+                  : getCategoryProgressRatio(category),
               remainingAmount: subtractAmounts(
                 category.allocated_amount,
                 category.spent_amount,
               ),
             }))
         : [],
-    [expenseColorByCategoryId, overview, theme.outline],
+    [displayedCategories, expenseColorByCategoryId, overview, theme.outline],
   );
   const selectCurrencyOffset = (offset: number) => {
     const index = currencyCodes.indexOf(selectedCurrencyCode);
@@ -200,6 +249,12 @@ export default function useBudgetOverview(theme: BudgetProgressTheme) {
 
   return {
     categories,
+    beneficiaries: relevantBeneficiariesQuery.data ?? [],
+    beneficiaryIds,
+    isFilterVisible,
+    setBeneficiaryIds,
+    setIsFilterVisible,
+    showBeneficiaryFilter,
     canSelectNextCurrency:
       selectedCurrencyIndex >= 0 &&
       selectedCurrencyIndex < currencyCodes.length - 1,

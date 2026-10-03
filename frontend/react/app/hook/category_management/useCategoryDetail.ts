@@ -8,18 +8,21 @@ import { TXN_TYPE_ENUM } from "../../constants/enum";
 import {
   categoryManagementQueryKeys,
   transactionManagementQueryKeys,
+  beneficiaryQueryKeys,
 } from "../../constants/queryKeys";
 import { getCategoryMgmtById } from "../../sql/service/categoryMgmtService";
 import { getCategoryDateRangeSummary } from "../../sql/service/transactionMgmtService";
 import {
   formatDateValue,
   getCurrentMonthDateRange,
+  getMonthKey,
   parseDateValue,
 } from "../../utils/date";
 import { DEBUG_TAG } from "../../utils/debugLog";
 import { compareAmounts } from "../../utils/amount";
 import { useTranslation } from "../../i18n/helper";
 import usePeriodCurrencyCodes from "../transaction_management/usePeriodCurrencyCodes";
+import { getRelevantBeneficiaries } from "../../sql/service/beneficiaryService";
 
 const getInitialDateRange = (
   startDate?: string,
@@ -39,17 +42,24 @@ export default function useCategoryDetail() {
     startDate: initialStartDate,
     endDate: initialEndDate,
     currencyCode: initialCurrencyCode,
+    beneficiaryIds: initialBeneficiaryIds,
   } = useLocalSearchParams<{
     id: string;
     startDate?: string;
     endDate?: string;
     currencyCode?: string;
+    beneficiaryIds?: string;
   }>();
   const { t } = useTranslation();
   const [selectedCurrencyCode, setSelectedCurrencyCode] = useState(
     initialCurrencyCode ?? ALL_CURRENCIES_VALUE,
   );
   const [isCurrencyTotalsVisible, setIsCurrencyTotalsVisible] = useState(false);
+  const [isBeneficiaryFilterVisible, setIsBeneficiaryFilterVisible] =
+    useState(false);
+  const [beneficiaryIds, setBeneficiaryIds] = useState<string[]>(
+    () => initialBeneficiaryIds?.split(",").filter(Boolean) ?? [],
+  );
   const currencyCode =
     selectedCurrencyCode === ALL_CURRENCIES_VALUE
       ? undefined
@@ -91,10 +101,25 @@ export default function useCategoryDetail() {
       startDate,
       endDate,
       currencyCode,
+      beneficiaryIds,
     }),
     queryFn: () =>
-      getCategoryDateRangeSummary(id, startDate, endDate, currencyCode),
+      getCategoryDateRangeSummary(
+        id,
+        startDate,
+        endDate,
+        currencyCode,
+        beneficiaryIds,
+      ),
     enabled: Boolean(id && startDate && endDate),
+  });
+  const relevantBeneficiariesQuery = useQuery({
+    queryKey: beneficiaryQueryKeys.list({
+      type: `period:${startDate}:${endDate}`,
+      includeInactive: true,
+    }),
+    queryFn: () => getRelevantBeneficiaries(startDate, endDate),
+    enabled: Boolean(startDate && endDate),
   });
 
   useEffect(() => {
@@ -132,9 +157,21 @@ export default function useCategoryDetail() {
         left.currency_code.localeCompare(right.currency_code),
     )
     .slice(0, 2);
+  const showBeneficiaryFilter =
+    category?.type_id === 2 &&
+    (relevantBeneficiariesQuery.data?.some(
+      (item) => !item.is_self && (item.is_active || endDate < getMonthKey()),
+    ) ??
+      false);
+
+  useEffect(() => {
+    if (!showBeneficiaryFilter && beneficiaryIds.length) setBeneficiaryIds([]);
+  }, [beneficiaryIds.length, showBeneficiaryFilter]);
 
   return {
     category,
+    beneficiaries: relevantBeneficiariesQuery.data ?? [],
+    beneficiaryIds,
     currencyCode,
     currencyOptions,
     currencyCodes: enabledCurrencyCodes,
@@ -145,10 +182,14 @@ export default function useCategoryDetail() {
     id,
     isLoading: categoryQuery.isLoading,
     isCurrencyTotalsVisible,
+    isBeneficiaryFilterVisible,
     hiddenCurrencyTotalCount:
       currencyTotals.length - currencyTotalPreview.length,
     onCloseCurrencyTotals: () => setIsCurrencyTotalsVisible(false),
     onOpenCurrencyTotals: () => setIsCurrencyTotalsVisible(true),
+    setBeneficiaryIds,
+    setIsBeneficiaryFilterVisible,
+    showBeneficiaryFilter,
     periodTotal: currencyTotals[0]?.total_amount ?? 0,
     selectedCurrencyCode,
     setSelectedCurrencyCode,

@@ -5,6 +5,7 @@ import { DEBUG_TAG, debugLog } from "../../utils/debugLog";
 import { getCurrencyPreferences } from "./currencyManagementService";
 import { getAccMgmtByIdFromDB } from "../repo/accMgmtRepo";
 import { getCategoryMgmtByIdFromDB } from "../repo/categoryMgmtRepo";
+import { getBeneficiaryById } from "./beneficiaryService";
 import {
   createNewTransactionMgmtToDB,
   deleteTransactionMgmtFromDB,
@@ -70,8 +71,15 @@ export const getCategoryDailyTotals = async (
   startDate: string,
   endDate: string,
   currencyCode: string,
+  beneficiaryIds: string[] = [],
 ): Promise<CategoryDailyTotalType[]> =>
-  getCategoryDailyTotalsFromDB(categoryId, startDate, endDate, currencyCode);
+  getCategoryDailyTotalsFromDB(
+    categoryId,
+    startDate,
+    endDate,
+    currencyCode,
+    beneficiaryIds,
+  );
 
 export const getTransactionDailyTotals = async (
   startDate: string,
@@ -97,12 +105,14 @@ export const getCategoryDateRangeSummary = async (
   startDate: string,
   endDate: string,
   currencyCode?: string,
+  beneficiaryIds: string[] = [],
 ): Promise<CategoryDateRangeSummaryType[]> =>
   getCategoryDateRangeSummaryFromDB(
     categoryId,
     startDate,
     endDate,
     currencyCode,
+    beneficiaryIds,
   );
 
 export const getTransactionDateRangeTotals = async (
@@ -141,6 +151,7 @@ export const getTransactionMgmtList = async (
   categoryId?: string,
   currencyCode?: string,
   creditCardStatementDate?: string,
+  beneficiaryIds: string[] = [],
 ): Promise<TransactionMgmtRspType[]> =>
   getTransactionMgmtListFromDB(
     {
@@ -157,6 +168,7 @@ export const getTransactionMgmtList = async (
     categoryId,
     currencyCode,
     creditCardStatementDate,
+    beneficiaryIds,
   );
 
 export const getTransactionMgmtById = async (
@@ -277,6 +289,13 @@ const validateTransactionMgmt = async (
     )
       return "Transfer currencies must match the selected accounts.";
     return;
+  }
+
+  if (data.transactionType === TXN_TYPE_ENUM.EXPENSE) {
+    const beneficiary = await getBeneficiaryById(data.beneficiaryId);
+    const isSavedBeneficiary = beneficiary?.id === current?.beneficiary_id;
+    if (!beneficiary || (!beneficiary.is_active && !isSavedBeneficiary))
+      return "Selected beneficiary is unavailable.";
   }
 
   const [account, category] = await Promise.all([

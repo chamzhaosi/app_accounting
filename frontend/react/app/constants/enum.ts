@@ -11,3 +11,8 @@ export enum TXN_TYPE_ENUM {
   TRANSFER = "transfer",
   ADJUSTMENT = "adjustment",
 }
+
+export enum BENEFICIARY_TYPE_ENUM {
+  INDIVIDUAL = "INDIVIDUAL",
+  GROUP = "GROUP",
+}

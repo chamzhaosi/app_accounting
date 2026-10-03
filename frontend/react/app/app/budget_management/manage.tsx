@@ -14,6 +14,7 @@ import AppText, { TextTypEnum } from "../../components/AppText";
 import AppView from "../../components/AppView";
 import useBudgetManagement from "../../hook/budget_management/useBudgetManagement";
 import useSingleCurrencyMode from "../../hook/currency_management/useSingleCurrencyMode";
+import { useKeyboardVisible } from "../../hook/useKeyboardVisible";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useAmountPrivacyStore } from "../../stores/useAmountPrivacyStore";
 import { absoluteAmount } from "../../utils/amount";
@@ -21,14 +22,18 @@ import { formatPrivateCurrencyAmount } from "../../utils/number";
 import BudgetCategoryPickerModal from "./_components/BudgetCategoryPickerModal";
 import { useTranslation } from "../../i18n/helper";
 import { getCategoryDisplayLabel } from "../../hook/category_management/categoryManagementList.utils";
+import BudgetBeneficiaryAllocationEditor from "./_components/BudgetBeneficiaryAllocationEditor";
 
 export default function BudgetManagement() {
   const { THEME } = useThemeStore();
   const { t } = useTranslation();
+  const isKeyboardVisible = useKeyboardVisible();
   const {
     allocatedAmount,
     allocationDifference,
     allocations,
+    beneficiaries,
+    beneficiaryAllocations,
     amountDecimalPlaces,
     amountMaxLength,
     availableCategories,
@@ -44,6 +49,8 @@ export default function BudgetManagement() {
     isLoading,
     isSaving,
     onAllocationChange,
+    onBeneficiaryAllocationChange,
+    onBeneficiarySelectionChange,
     onCurrencyChange,
     onDismissCategoryPicker,
     onOpenCategoryPicker,
@@ -54,6 +61,7 @@ export default function BudgetManagement() {
     rspErrorMsg,
     selectedCategories,
     showCurrencyField,
+    showBeneficiaryControls,
     errors,
   } = useBudgetManagement();
   const isFormDisabled = isSaving || isCurrencyDisabled;
@@ -93,7 +101,12 @@ export default function BudgetManagement() {
         onSelect={onSelectCategory}
       />
       <KeyboardAwareScrollView
-        contentContainerStyle={styles.content}
+        enableOnAndroid
+        enableAutomaticScroll
+        contentContainerStyle={[
+          styles.content,
+          isKeyboardVisible ? styles.keyboardContent : undefined,
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <Surface
@@ -221,50 +234,76 @@ export default function BudgetManagement() {
               { backgroundColor: THEME.surfaceContainer },
             ]}
           >
-            <View
-              style={[
-                styles.iconContainer,
-                { backgroundColor: THEME.surfaceContainerHighest },
-              ]}
-            >
-              <AppIcon name={category.icon as AppIconProps["name"]} size={22} />
-            </View>
-            <Text variant="titleMedium" style={styles.categoryLabel}>
-              {getCategoryDisplayLabel(
-                category.label,
-                category.translation_key,
-                t,
-              )}
-            </Text>
-            <AppAmtInput
-              mode="outlined"
-              dense
-              label="Amount"
-              keyboardType="number-pad"
-              value={allocations[category.category_id] ?? "0"}
-              onChangeText={(text) =>
-                onAllocationChange(category.category_id, text)
-              }
-              editable={!isFormDisabled}
-              fixedDecimalInput
-              fixedDecimalPlaces={amountDecimalPlaces}
-              maxLength={amountMaxLength}
-              showClear
-              style={styles.amountInput}
-            />
-            <AppIconButton
-              iconName="Trash2"
-              accessibilityLabel={t("Remove {{name}} allocation", {
-                name: getCategoryDisplayLabel(
+            <View style={styles.categoryMainRow}>
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: THEME.surfaceContainerHighest },
+                ]}
+              >
+                <AppIcon
+                  name={category.icon as AppIconProps["name"]}
+                  size={22}
+                />
+              </View>
+              <Text variant="titleMedium" style={styles.categoryLabel}>
+                {getCategoryDisplayLabel(
                   category.label,
                   category.translation_key,
                   t,
-                ),
-              })}
-              disabled={isFormDisabled}
-              onPress={() => onRemoveAllocation(category.category_id)}
-              style={styles.removeButton}
-            />
+                )}
+              </Text>
+              <AppAmtInput
+                mode="outlined"
+                dense
+                label="Amount"
+                keyboardType="number-pad"
+                value={allocations[category.category_id] ?? "0"}
+                onChangeText={(text) =>
+                  onAllocationChange(category.category_id, text)
+                }
+                editable={!isFormDisabled}
+                fixedDecimalInput
+                fixedDecimalPlaces={amountDecimalPlaces}
+                maxLength={amountMaxLength}
+                showClear
+                style={styles.amountInput}
+              />
+              <AppIconButton
+                iconName="Trash2"
+                accessibilityLabel={t("Remove {{name}} allocation", {
+                  name: getCategoryDisplayLabel(
+                    category.label,
+                    category.translation_key,
+                    t,
+                  ),
+                })}
+                disabled={isFormDisabled}
+                onPress={() => onRemoveAllocation(category.category_id)}
+                style={styles.removeButton}
+              />
+            </View>
+            {showBeneficiaryControls ? (
+              <BudgetBeneficiaryAllocationEditor
+                beneficiaries={beneficiaries}
+                allocations={beneficiaryAllocations[category.category_id] ?? {}}
+                categoryAmount={allocations[category.category_id] ?? "0"}
+                currencyCode={currencyCode}
+                decimalPlaces={amountDecimalPlaces}
+                maxLength={amountMaxLength}
+                disabled={isFormDisabled}
+                onSelectionChange={(ids) =>
+                  onBeneficiarySelectionChange(category.category_id, ids)
+                }
+                onAmountChange={(beneficiaryId, amount) =>
+                  onBeneficiaryAllocationChange(
+                    category.category_id,
+                    beneficiaryId,
+                    amount,
+                  )
+                }
+              />
+            ) : null}
           </Surface>
         ))}
 
@@ -301,7 +340,7 @@ export default function BudgetManagement() {
           </AppText>
         )}
         {rspErrorMsg ? (
-          <AppText type={TextTypEnum.ERROR}>{rspErrorMsg}</AppText>
+          <AppText type={TextTypEnum.ERROR}>{t(rspErrorMsg)}</AppText>
         ) : null}
         <AppButton
           {...SUBMIT_BTN_CONTENT_STYLE}
@@ -356,13 +395,12 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16, margin: 12, padding: 16 },
   categoryLabel: { flex: 1, marginHorizontal: 12 },
   categoryRow: {
-    alignItems: "center",
     borderRadius: 12,
-    flexDirection: "row",
     marginHorizontal: 12,
     marginBottom: 8,
     padding: 10,
   },
+  categoryMainRow: { alignItems: "center", flexDirection: "row" },
   content: { paddingBottom: 32 },
   currencyField: { flex: 1, minWidth: 0 },
   disabledNotice: {
@@ -387,6 +425,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 40,
   },
+  keyboardContent: { paddingBottom: 180 },
   saveButton: { borderRadius: 8, margin: 12, marginTop: 20 },
   retryButton: { borderRadius: 8, marginTop: 20, width: "100%" },
   removeButton: { marginLeft: 8, padding: 8 },
